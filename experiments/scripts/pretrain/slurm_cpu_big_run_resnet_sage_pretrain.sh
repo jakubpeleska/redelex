@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=resnet_sage_pretrain
-#SBATCH --cpus-per-task=2
-#SBATCH --mem-per-cpu=128G
+#SBATCH --cpus-per-task=8
+#SBATCH --mem-per-cpu=32G
 #SBATCH --time=24:00:00
-#SBATCH --array=0-0
+#SBATCH --array=0-4
 
-datasets=('rel-amazon')
+datasets=('rel-f1' 'rel-avito' 'rel-trial' 'rel-stack')
 
 conda_env="relational-py"
 
@@ -39,7 +39,7 @@ log_dir=${experiment_dir}/${dataset}
 mkdir -p $log_dir
 
 
-python -u experiments/dbgnn_pretrain.py --dataset=${dataset} --rgnn_model="sage" \
+python -u experiments/pretrain/dbgnn_pretrain.py --dataset=${dataset} --rgnn_model="sage" \
   --tabular_model="resnet" --ray_address=${ray_address} --ray_storage=${log_dir} \
   --run_name=${EXPERIMENT_ID}_${dataset} --mlflow_uri=${MLFLOW_TRACKING_URI} \
   --mlflow_experiment=pelesjak_${EXPERIMENT_NAME} --num_cpus=${SLURM_CPUS_PER_TASK} \
