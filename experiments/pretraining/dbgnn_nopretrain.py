@@ -24,11 +24,11 @@ from relbench.modeling.graph import make_pkey_fkey_graph
 
 sys.path.append(".")
 
-from ctu_relational.nn.utils import (
+from experiments.utils import (
     get_attribute_schema,
     get_text_embedder,
 )
-from experiments.dbgnn_pretrain import run_task_experiment
+from experiments.pretraining.dbgnn_pretrain import run_task_experiment
 
 
 def run_ray_tuner(

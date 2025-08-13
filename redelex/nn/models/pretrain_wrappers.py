@@ -25,8 +25,8 @@ from relbench.tasks import get_task
 from relbench.base import TaskType
 
 
-from ctu_relational.nn.rdl_model import RDLModel
-from ctu_relational.nn.losses import (
+from redelex.nn.models.rdl_model import RDLModel
+from redelex.nn.losses import (
     TableContrastiveLoss,
     EdgeContrastiveLoss,
     ContextContrastiveLoss,

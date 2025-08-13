@@ -37,12 +37,12 @@ from relbench.tasks import get_task
 
 sys.path.append(".")
 
-from ctu_relational.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
-from ctu_relational.datasets import DBDataset
-from ctu_relational.utils import guess_schema, convert_timedelta, standardize_db_dt
+from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
+from redelex.datasets import DBDataset
+from redelex.utils import guess_schema, convert_timedelta, standardize_db_dt
 
 
-from ctu_relational.nn.utils import (
+from experiments.utils import (
     get_cache_path,
     get_metrics,
     get_tune_metric,

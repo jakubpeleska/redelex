@@ -46,11 +46,11 @@ from relbench.metrics import (
 
 sys.path.append(".")
 
-from ctu_relational.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
-from ctu_relational.utils import standardize_table_dt
+from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
+from redelex.utils import standardize_table_dt
 
 
-from ctu_relational.nn.utils import (
+from experiments.utils import (
     get_cache_path,
     get_data,
     get_tune_metric,

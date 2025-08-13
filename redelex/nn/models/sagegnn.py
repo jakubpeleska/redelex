@@ -12,7 +12,7 @@ from torch_geometric.typing import NodeType
 
 from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
 
-from ctu_relational.nn.encoders import LinearRowEncoder
+from redelex.nn.encoders import LinearRowEncoder
 
 
 class SAGEModel(torch.nn.Module):

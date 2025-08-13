@@ -10,7 +10,7 @@ from torch_frame.nn import ResNet
 from torch_geometric.data import HeteroData
 from torch_geometric.nn import MLP, PositionalEncoding
 
-from ctu_relational.nn.encoders import LinearRowEncoder
+from redelex.nn.encoders import LinearRowEncoder
 
 
 class TabularModel(torch.nn.Module):

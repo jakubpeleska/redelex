@@ -8,7 +8,7 @@ from tqdm.std import tqdm
 
 from relbench.base import Dataset, Database, Table
 
-from ctu_relational.db import DBInspector, ForeignKey
+from redelex.db import DBInspector, ForeignKey
 
 __all__ = ["DBDataset"]
 

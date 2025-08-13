@@ -32,9 +32,9 @@ from relbench.metrics import (
     roc_auc,
 )
 
-from ctu_relational.datasets import DBDataset
-from ctu_relational.tasks import CTUBaseEntityTask
-from ctu_relational.utils import (
+from redelex.datasets import DBDataset
+from redelex.tasks import CTUBaseEntityTask
+from redelex.utils import (
     guess_schema,
     convert_timedelta,
     standardize_db_dt,

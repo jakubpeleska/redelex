@@ -5,7 +5,7 @@ import pandas as pd
 
 from relbench.base import Database, Table
 
-from ctu_relational.utils import TIMESTAMP_MIN, TIMESTAMP_MAX
+from redelex.utils import TIMESTAMP_MIN, TIMESTAMP_MAX
 
 from .ctu_dataset import CTUDataset
 

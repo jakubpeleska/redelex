@@ -21,7 +21,7 @@ from relbench.metrics import (
     roc_auc,
 )
 
-from ctu_relational.datasets import CTUDataset
+from redelex.datasets import CTUDataset
 
 __all__ = ["CTUBaseEntityTask"]
 

@@ -3,14 +3,14 @@ requires = ["flit_core>=3.4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "ctu_relational"
-version = "0.4.0"
-description = "CTU Relational: SQL Database Datasets for Machine Learning"
+name = "redelex"
+version = "0.5.1"
+description = "ReDeLEx: A Framework for Relational Deep Learning Exploration"
 authors = [{ name = "Jakub Peleška", email = "jakub.peleska@fel.cvut.cz" }]
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: MIT License"]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 keywords = []
 dependencies = [
     "relbench>=1.1.0",
@@ -20,13 +20,9 @@ dependencies = [
     "inflect>=7.5.0",
     "tqdm>=4.67.1",
     "attrs>=25.3.0",
-    "lightning>=2.5.1.post0",
-    "mlflow>=2.22.1",
-    "ray[data,serve,train,tune]>=2.46.0",
 ]
 
-
-[project.optional-dependencies]
+[dependency-groups]
 cpu = [
     "torch==2.4.1",
     "torchvision==0.19.1",
@@ -43,23 +39,32 @@ cu124 = [
     "torch-geometric>=2.6.1",
     "sentence-transformers>=4.0.1",
 ]
-notebook = ["matplotlib>=3.10.1"]
+
+dev = ["ipykernel>=6.29.5", "matplotlib>=3.10.1", "pre-commit>=4.2.0"]
+experiments = [
+    "lightning>=2.5.1.post0",
+    "mlflow>=2.22.1",
+    "ray[data,serve,train,tune]>=2.46.0",
+    "getml>=1.5.1",
+]
+
 
 [tool.uv]
-conflicts = [[{ extra = "cpu" }, { extra = "cu124" }]]
+default-groups = ["dev", "cpu", "experiments"]
+conflicts = [[{ group = "cpu" }, { group = "cu124" }]]
 
 [tool.uv.sources]
 torch = [
-    { index = "torch-cpu", extra = "cpu" },
-    { index = "torch-cu124", extra = "cu124" },
+    { index = "torch-cpu", group = "cpu" },
+    { index = "torch-cu124", group = "cu124" },
 ]
 torchvision = [
-    { index = "torch-cpu", extra = "cpu" },
-    { index = "torch-cu124", extra = "cu124" },
+    { index = "torch-cpu", group = "cpu" },
+    { index = "torch-cu124", group = "cu124" },
 ]
 torchaudio = [
-    { index = "torch-cpu", extra = "cpu" },
-    { index = "torch-cu124", extra = "cu124" },
+    { index = "torch-cpu", group = "cpu" },
+    { index = "torch-cu124", group = "cu124" },
 ]
 
 
@@ -84,8 +89,3 @@ target-version = "py310"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
-[dependency-groups]
-dev = ["pre-commit>=4.2.0", "pytest>=8.3.5"]
-lint = ["ruff>=0.11.2"]
-notebook = ["ipykernel>=6.29.5"]

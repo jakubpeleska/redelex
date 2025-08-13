@@ -8,7 +8,7 @@ from torch_geometric.typing import NodeType, EdgeType
 
 from torch_frame.data.stats import StatType
 
-from ctu_relational.nn.layers import CrossAttentionConv, SelfAttention
+from redelex.nn.layers import CrossAttentionConv, SelfAttention
 
 
 class DBFormer(torch.nn.Module):

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Optional
 
 import math
 import os
@@ -34,29 +34,19 @@ from relbench.base import BaseTask, EntityTask, TaskType
 from relbench.modeling.graph import get_node_train_table_input
 from relbench.tasks import get_task
 
-
 sys.path.append(".")
 
-from ctu_relational.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
-from ctu_relational.utils import standardize_table_dt
-from ctu_relational.nn.sagegnn import SAGEModel
-from ctu_relational.nn.dbformer import DBFormerModel
-from ctu_relational.nn.utils import (
+from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
+from redelex.utils import standardize_table_dt
+from redelex.nn.models.tabular import TabularModel
+
+from experiments.utils import (
     get_cache_path,
     get_data,
     get_loss,
     get_metrics,
     get_tune_metric,
 )
-
-
-def get_model(architecture: Literal["sage", "dbformer"], entity_table: str, **kwargs):
-    if architecture == "sage":
-        return SAGEModel(**kwargs)
-    elif architecture == "dbformer":
-        return DBFormerModel(entity_table=entity_table, **kwargs)
-    else:
-        raise ValueError(f"Unknown architecture: {architecture}")
 
 
 def run_experiment(
@@ -70,18 +60,14 @@ def run_experiment(
 
     dataset_name: int = config["dataset_name"]
     task_name: int = config["task_name"]
-    model_architecture: str = config["model_architecture"]
     random_seed: int = config["seed"]
     lr: float = config["lr"]
     min_epochs: int = config["min_epochs"]
     batch_size: int = config["batch_size"]
     channels: int = config["channels"]
-    num_layers: int = config["num_layers"]
-    row_encoder: str = config["row_encoder"]
-    num_neighbors: int = config["num_neighbors"]
+    tabular_model: str = config["tabular_model"]
     max_steps_per_epoch: int = config["max_steps_per_epoch"]
     min_total_steps: int = config["min_total_steps"]
-    aggr_fn: str = config["aggr"]
     mlp_norm: str = config["mlp_norm"]
     num_workers: int = 0
 
@@ -103,7 +89,9 @@ def run_experiment(
     tune_metric, higher_is_better = get_tune_metric(dataset_name, task_name)
     metrics = get_metrics(dataset_name, task_name)
 
-    is_temporal = isinstance(task, CTUEntityTaskTemporal) or isinstance(task, EntityTask)
+    is_temporal = (
+        isinstance(task, CTUEntityTaskTemporal) or isinstance(task, EntityTask)
+    ) and hasattr(data[task.entity_table], "time")
 
     loader_dict: Dict[str, NeighborLoader] = {}
 
@@ -113,7 +101,7 @@ def run_experiment(
         table_input = get_node_train_table_input(table=table, task=task)
         loader_dict[split] = NeighborLoader(
             data,
-            num_neighbors=[int(num_neighbors / 2**i) for i in range(num_layers)],
+            num_neighbors=[],
             time_attr="time" if is_temporal else None,
             input_nodes=table_input.nodes,
             input_time=table_input.time if is_temporal else None,
@@ -125,16 +113,12 @@ def run_experiment(
             persistent_workers=num_workers > 0,
         )
 
-    model = get_model(
-        architecture=model_architecture,
-        entity_table=task.entity_table,
-        data=data,
-        col_stats_dict=col_stats_dict,
-        num_layers=num_layers,
+    model = TabularModel(
+        tf=data[task.entity_table].tf,
+        col_stats=col_stats_dict[task.entity_table],
+        tabular_model=tabular_model,
         channels=channels,
-        row_encoder=row_encoder,
         out_channels=out_channels,
-        aggr=aggr_fn,
         norm=mlp_norm,
     )
     model = model.to(device)
@@ -150,22 +134,16 @@ def run_experiment(
         steps = 0
         total_steps = min(len(loader), max_steps_per_epoch)
         for batch in tqdm(loader, total=total_steps):
-            batch = batch.to(device)
+            batch = batch.to(device)[task.entity_table]
 
             optimizer.zero_grad()
-            pred = model(
-                batch,
-                task.entity_table,
-            )
+            pred = model(batch)
             pred = pred.view(-1) if pred.size(1) == 1 else pred
 
-            if pred.size(0) != batch[task.entity_table].batch_size:
-                pred = pred[: batch[task.entity_table].batch_size]
-
             if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-                target = batch[task.entity_table].y.long()
+                target = batch.y.long()
             else:
-                target = batch[task.entity_table].y.float()
+                target = batch.y.float()
 
             loss = loss_fn(pred.float(), target)
             loss.backward()
@@ -188,11 +166,8 @@ def run_experiment(
 
         pred_list = []
         for batch in tqdm(loader):
-            batch = batch.to(device)
-            pred = model(
-                batch,
-                task.entity_table,
-            )
+            batch = batch.to(device)[task.entity_table]
+            pred = model(batch)
 
             if task.task_type in [
                 TaskType.BINARY_CLASSIFICATION,
@@ -204,9 +179,6 @@ def run_experiment(
                 pred = torch.softmax(pred, dim=1)
 
             pred = pred.view(-1) if pred.size(1) == 1 else pred
-
-            if pred.size(0) != batch[task.entity_table].batch_size:
-                pred = pred[: batch[task.entity_table].batch_size]
 
             pred_list.append(pred.detach().cpu())
         return torch.cat(pred_list, dim=0).numpy()
@@ -246,6 +218,7 @@ def run_experiment(
             not higher_is_better and val_metrics[tune_metric] <= best_val_metric
         ):
             best_val_metric = val_metrics[tune_metric]
+            metrics_dict.update({f"best_val_{k}": v for k, v in val_metrics.items()})
             # torch.save(model.state_dict(), model_checkpoint)
 
             test_pred = test("test")
@@ -258,8 +231,7 @@ def run_experiment(
 def run_ray_tuner(
     dataset_name: str,
     task_name: str,
-    model_architecture: str,
-    row_encoder: str,
+    tabular_model: str,
     ray_address: Optional[str] = None,
     ray_storage_path: Optional[str] = None,
     ray_experiment_name: Optional[str] = None,
@@ -270,6 +242,7 @@ def run_ray_tuner(
     num_gpus: int = 0,
     num_cpus: int = 1,
     random_seed: int = 42,
+    aggregate_neighbors: bool = False,
     cache_dir: str = ".cache",
 ):
     random.seed(random_seed)
@@ -302,21 +275,17 @@ def run_ray_tuner(
     config = {
         "dataset_name": dataset_name,
         "task_name": task_name,
-        "model_architecture": model_architecture,
         "seed": tune.randint(0, 1000),
         # training config
         "min_epochs": 10,
         "max_steps_per_epoch": 2000,
         "min_total_steps": 1000,
         "lr": 0.001,  # tune.choice([0.001, 0.005]),
-        "batch_size": 512,  # tune.choice([128, 256, 512]),
         # sampling config
-        "num_neighbors": tune.grid_search([16, 32, 64]),
+        "batch_size": 512,  # tune.choice([128, 256, 512]),
         # model config
-        "row_encoder": row_encoder,  # tune.grid_search(["resnet", "linear"]),
+        "tabular_model": tabular_model,  # tune.grid_search(["resnet", "linear"]),
         "channels": 64,  # tune.grid_search([16, 32, 64]),
-        "num_layers": tune.grid_search([1, 2, 3, 4]),
-        "aggr": "sum",  # tune.grid_search(["max", "sum", "mean"]),
         "mlp_norm": "batch_norm",  # tune.grid_search(["batch_norm", "layer_norm"]),
     }
     # scheduler = ASHAScheduler(max_t=max_num_epochs, grace_period=1, reduction_factor=2)
@@ -332,7 +301,13 @@ def run_ray_tuner(
 
     cache_path = get_cache_path(dataset_name, task_name, cache_dir)
 
-    task, data, col_stats_dict = get_data(dataset_name, task_name, cache_path)
+    task, data, col_stats_dict = get_data(
+        dataset_name,
+        task_name,
+        cache_path,
+        entity_table_only=True,
+        aggregate_neighbors=aggregate_neighbors,
+    )
 
     resources = ray.available_resources()
 
@@ -400,8 +375,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--dataset", type=str)
     parser.add_argument("--task", type=str)
-    parser.add_argument("--model", choices=["sage", "dbformer"], default="sage")
-    parser.add_argument("--row_encoder", choices=["resnet", "linear"], default=None)
+    parser.add_argument("--tabular_model", choices=["resnet", "linear"], default=None)
     parser.add_argument("--ray_address", type=str, default="local")
     parser.add_argument("--ray_storage", type=str, default=None)
     parser.add_argument("--run_name", type=str, default=None)
@@ -412,6 +386,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_samples", type=int, default=1)
     parser.add_argument("--num_gpus", type=int, default=0)
     parser.add_argument("--num_cpus", type=int, default=1)
+    parser.add_argument("--aggregate_neighbors", default=False, action="store_true")
 
     args = parser.parse_args()
     print(args)
@@ -431,8 +406,7 @@ if __name__ == "__main__":
         run_ray_tuner(
             dataset_name,
             task_name,
-            model_architecture=args.model,
-            row_encoder=args.row_encoder,
+            tabular_model=args.tabular_model,
             ray_address=args.ray_address,
             ray_storage_path=(
                 os.path.realpath(args.ray_storage)
@@ -447,4 +421,5 @@ if __name__ == "__main__":
             num_samples=args.num_samples,
             num_gpus=args.num_gpus,
             num_cpus=args.num_cpus,
+            aggregate_neighbors=args.aggregate_neighbors,
         )
