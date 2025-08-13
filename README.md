@@ -151,14 +151,17 @@ uv run pre-commit run
 
 If you use ReDeLEx in your work, please cite:
 
-<!-- ```bibtex
-@inproceedings{peleska2025redelex,
-  title = {ReDeLEx: A Framework for Relational Deep Learning Exploration},
-  author = {Peleška, Jakub and Šír, Gustav},
-  booktitle = {ECML PKDD},
-  year = {2025}
+```
+@misc{peleska2025redelex,
+  title={REDELEX: A Framework for Relational Deep Learning Exploration},
+  author={Jakub Peleška and Gustav Šír},
+  year={2025},
+  eprint={2506.22199},
+  archivePrefix={arXiv},
+  primaryClass={cs.LG},
+  url={https://arxiv.org/abs/2506.22199},
 }
-``` -->
+```
 
 ## 📎 Acknowledgements
 
