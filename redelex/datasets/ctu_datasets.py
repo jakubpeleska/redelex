@@ -31,6 +31,9 @@ class Accidents(CTUDataset):
     capital city Ljubljana between the years 1995 and 2006.
     """
 
+    val_timestamp = pd.Timestamp("2004-03-01")
+    test_timestamp = pd.Timestamp("2005-03-01")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "Accidents",
@@ -47,6 +50,9 @@ class AdventureWorks(CTUDataset):
     The database is about a fictious, multinational bicycle manufacturer called \
     Adventure Works Cycles.
     """
+
+    val_timestamp = pd.Timestamp("2014-03-01")
+    test_timestamp = pd.Timestamp("2014-05-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -98,6 +104,9 @@ class Airline(CTUDataset):
     flights between points within the United States (including territories) as described\
     in 14 CFR Part 234 of DOT's regulations. Data are available since January 1995.
     """
+
+    val_timestamp = pd.Timestamp("2016-01-18")
+    test_timestamp = pd.Timestamp("2016-01-25")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -231,6 +240,9 @@ class ClassicModels(CTUDataset):
     line items, products and so on.
     """
 
+    val_timestamp = pd.Timestamp("2004-11-01")
+    test_timestamp = pd.Timestamp("2005-02-01")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "classicmodels",
@@ -292,6 +304,9 @@ class Credit(CTUDataset):
     A bit more complex artificial database with loops.
     """
 
+    val_timestamp = pd.Timestamp("1999-09-01")
+    test_timestamp = pd.Timestamp("1999-10-01")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "Credit",
@@ -315,6 +330,9 @@ class Dallas(CTUDataset):
     Officer-involved shootings as disclosed by the Dallas Police Department.\
     Includes separate tables for officer and subject/suspect information.
     """
+
+    val_timestamp = pd.Timestamp("2014-01-01")
+    test_timestamp = pd.Timestamp("2015-01-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -391,6 +409,9 @@ class Elti(CTUDataset):
 
 
 class Employee(CTUDataset):
+    val_timestamp = pd.Timestamp("2000-01-01")
+    test_timestamp = pd.Timestamp("2001-01-01")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "employee",
@@ -444,6 +465,9 @@ class ErgastF1(CTUDataset):
     such as the time taken in each lap, the time taken for pit stops, the performance \
     in the qualifying rounds etc. of all Formula 1 races from 1950 to 2017.
     """
+
+    val_timestamp = pd.Timestamp("2014-01-01")
+    test_timestamp = pd.Timestamp("2016-01-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -531,6 +555,9 @@ class Financial(CTUDataset):
     successful loans along with their information and transactions. 
     """
 
+    val_timestamp = pd.Timestamp("1998-01-01")
+    test_timestamp = pd.Timestamp("1998-07-01")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "financial",
@@ -550,6 +577,9 @@ class FNHK(CTUDataset):
     Anonymised data from a hospital in Hradec Kralove, Czech Republic, \
     about treatment and medication.
     """
+
+    val_timestamp = pd.Timestamp("2014-09-01")
+    test_timestamp = pd.Timestamp("2014-11-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -579,6 +609,9 @@ class FTP(CTUDataset):
     distribution in that regard.
     """
 
+    val_timestamp = pd.Timestamp("2014-12-15")
+    test_timestamp = pd.Timestamp("2014-12-19")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "ftp",
@@ -592,6 +625,9 @@ class Geneea(CTUDataset):
     """
     Data on deputies and senators in the Czech Republic.
     """
+
+    val_timestamp = pd.Timestamp("2015-06-01")
+    test_timestamp = pd.Timestamp("2015-10-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -634,6 +670,9 @@ class GOSales(CTUDataset):
     GO Sales dataset from IBM contains information about daily sales, methods, retailers,\
     and products of a fictitious outdoor equipment retail chain “Great Outdoors” (GO).
     """
+
+    val_timestamp = pd.Timestamp("2017-10-01")
+    test_timestamp = pd.Timestamp("2018-03-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -680,6 +719,9 @@ class Grants(CTUDataset):
     This dataset includes funding grants from the National Science Foundation.
     """
 
+    val_timestamp = pd.Timestamp("2010-10-01")
+    test_timestamp = pd.Timestamp("2014-01-01")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "Grants",
@@ -713,6 +755,9 @@ class Hockey(CTUDataset):
     alternative leagues: NHA, PCHA, WCHL and WHA. It contains individual and team\
     statistics from 1909-10 through the 2011-12 season.
     """
+
+    val_timestamp = pd.Timestamp("2007-01-01")
+    test_timestamp = pd.Timestamp("2009-01-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -754,6 +799,9 @@ class IMDb(CTUDataset):
     The IMDb database: moderately large, real database of movies.
     """
 
+    val_timestamp = pd.Timestamp("1998-01-01")
+    test_timestamp = pd.Timestamp("2002-01-01")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "imdb_ijs",
@@ -778,6 +826,9 @@ class Lahman(CTUDataset):
     records, post-season data, and more.
     """
 
+    val_timestamp = pd.Timestamp("2010-01-01")
+    test_timestamp = pd.Timestamp("2012-01-01")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "lahman_2014",
@@ -801,6 +852,9 @@ class LegalActs(CTUDataset):
     """
     Bulgarian court decision metadata.
     """
+
+    val_timestamp = pd.Timestamp("2012-02-01")
+    test_timestamp = pd.Timestamp("2012-05-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -972,6 +1026,9 @@ class NCAA(CTUDataset):
     NCAA Basketball Tournament.
     """
 
+    val_timestamp = pd.Timestamp("2010-11-01")
+    test_timestamp = pd.Timestamp("2012-11-05")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "NCAA",
@@ -1011,6 +1068,9 @@ class Northwind(CTUDataset):
     Northwind Traders, which imports and exports specialty foods from around the world.
     """
 
+    val_timestamp = pd.Timestamp("1998-02-01")
+    test_timestamp = pd.Timestamp("1998-04-01")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "northwind",
@@ -1040,6 +1100,9 @@ class PremiereLeague(CTUDataset):
     A database with information about football matches from the UK Premier League.\
     Lists Players, Teams, and matches with action counts for each player.
     """
+
+    val_timestamp = pd.Timestamp("2012-04-01")
+    test_timestamp = pd.Timestamp("2012-05-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -1074,6 +1137,9 @@ class Sakila(CTUDataset):
     """
     The Sakila sample database is designed to represent a DVD rental store.
     """
+
+    val_timestamp = pd.Timestamp("2005-08-19")
+    test_timestamp = pd.Timestamp("2005-08-21")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -1123,6 +1189,9 @@ class SAP(CTUDataset):
     """
     Syntetic dataset containing information about sales of a Credit++.
     """
+
+    val_timestamp = pd.Timestamp("2007-06-10")
+    test_timestamp = pd.Timestamp("2007-06-20")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -1212,6 +1281,9 @@ class Seznam(CTUDataset):
         probehnuto_mimo_penezenku: charged in Czech currency, but not from the wallet.
     """
 
+    val_timestamp = pd.Timestamp("2015-03-01")
+    test_timestamp = pd.Timestamp("2015-07-01")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "Seznam",
@@ -1238,6 +1310,9 @@ class SFScores(CTUDataset):
     of those eateries, and violations found during the inspections. The scores of inspections\
     range from 1 to 100, where 100 means that the establishment meets all required standards.
     """
+
+    val_timestamp = pd.Timestamp("2016-03-01")
+    test_timestamp = pd.Timestamp("2016-07-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -1271,6 +1346,9 @@ class Stats(CTUDataset):
     """
     An anonymized dump of all user-contributed content on the Stats Stack Exchange network.
     """
+
+    val_timestamp = pd.Timestamp("2014-03-01")
+    test_timestamp = pd.Timestamp("2014-06-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -1308,6 +1386,9 @@ class Thrombosis(CTUDataset):
     """
     PKDD'99 Medical dataset describes 41 patients with Thrombosis.
     """
+
+    val_timestamp = pd.Timestamp("1996-01-01")
+    test_timestamp = pd.Timestamp("1997-01-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -1360,6 +1441,9 @@ class TPCD(CTUDataset):
     TPC-D represents a broad range of decision support (DS) applications that require\
     complex, long running queries against large complex data structures.
     """
+
+    val_timestamp = pd.Timestamp("1997-01-01")
+    test_timestamp = pd.Timestamp("1998-01-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -1415,6 +1499,9 @@ class TPCDS(CTUDataset):
     schema, data population, queries, data maintenance model and implementation rules have\
     been designed to be broadly representative of modern decision support systems.
     """
+
+    val_timestamp = pd.Timestamp("2001-01-01")
+    test_timestamp = pd.Timestamp("2002-01-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -1501,6 +1588,9 @@ class TPCH(CTUDataset):
     TPC-H is the benchmark published by the Transaction Processing Performance Council\
     (TPC) for decision support.
     """
+
+    val_timestamp = pd.Timestamp("1997-09-01")
+    test_timestamp = pd.Timestamp("1998-03-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
@@ -1592,6 +1682,9 @@ class VOC(CTUDataset):
     short - The (Dutch) East Indian Company) established on March 20, 1602.
     """
 
+    val_timestamp = pd.Timestamp("1887-01-01")
+    test_timestamp = pd.Timestamp("1902-01-01")
+
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(
             "voc",
@@ -1625,6 +1718,9 @@ class Walmart(CTUDataset):
     The sales of 111 potentially weather-sensitive products (like umbrellas, bread, and milk)\
     around the time of major weather events at 45 of their retail locations.
     """
+
+    val_timestamp = pd.Timestamp("2014-01-01")
+    test_timestamp = pd.Timestamp("2014-06-01")
 
     def __init__(self, cache_dir: Optional[str] = None):
         super().__init__(

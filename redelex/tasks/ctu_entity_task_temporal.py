@@ -1,7 +1,6 @@
 from typing import Callable, Dict, List, Optional
 from numpy.typing import NDArray
 
-import pandas as pd
 
 from relbench.base import Table
 
@@ -11,10 +10,6 @@ __all__ = ["CTUEntityTaskTemporal"]
 
 
 class CTUEntityTaskTemporal(CTUBaseEntityTask):
-    # To be set by subclass.
-    val_timestamp: pd.Timestamp
-    test_timestamp: pd.Timestamp
-
     def make_split(self, split: str, table: Table) -> Table:
         if table.time_col is None:
             raise ValueError("The table must have a time column.")
@@ -22,14 +17,14 @@ class CTUEntityTaskTemporal(CTUBaseEntityTask):
         table.df = table.df[table.df[table.time_col].notna()]
 
         if split == "train":
-            table.df = table.df[table.df[table.time_col] < self.val_timestamp]
+            table.df = table.df[table.df[table.time_col] < self.dataset.val_timestamp]
         elif split == "val":
             table.df = table.df[
-                (table.df[table.time_col] >= self.val_timestamp)
-                & (table.df[table.time_col] < self.test_timestamp)
+                (table.df[table.time_col] >= self.dataset.val_timestamp)
+                & (table.df[table.time_col] < self.dataset.test_timestamp)
             ]
         elif split == "test":
-            table.df = table.df[table.df[table.time_col] >= self.test_timestamp]
+            table.df = table.df[table.df[table.time_col] >= self.dataset.test_timestamp]
         else:
             raise ValueError(f"Invalid split: {split}.")
 
