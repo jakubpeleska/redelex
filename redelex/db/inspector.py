@@ -1,9 +1,9 @@
 from typing import Dict, List, Set, Tuple
 
-from sqlalchemy import Connection, Engine, inspect
+from sqlalchemy import Connection, Engine, inspect, Table, MetaData
 from sqlalchemy.types import TypeEngine
 
-from .column_types import ForeignKey
+from redelex.db import ForeignKey
 
 __all__ = ["DBInspector"]
 
@@ -102,3 +102,24 @@ class DBInspector:
             )
             for fk in self._inspect.get_foreign_keys(table)
         ]
+
+    def get_schema(self) -> Dict[str, Dict[str, TypeEngine]]:
+        """Get the type schema of the remote database.
+
+        Returns:
+            Dict[str, Dict[str, TypeEngine]]: A dictionary mapping table names to column names and their types.
+        """
+
+        remote_md = MetaData()
+        remote_md.reflect(bind=self.engine)
+
+        table_names = self.get_tables()
+
+        schema = {}
+
+        for t_name in table_names:
+            sql_table = Table(t_name, remote_md)
+
+            schema[t_name] = {c.name: c.type for c in sql_table.columns}
+
+        return schema

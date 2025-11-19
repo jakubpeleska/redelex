@@ -1,8 +1,6 @@
 from attrs import field, define
 from typing import List
 
-__all__ = ["ForeignKey"]
-
 
 @define
 class ForeignKey:

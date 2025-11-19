@@ -1,6 +1,5 @@
 from typing import Dict, List, Optional
 
-import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 
@@ -8,7 +7,14 @@ from tqdm.std import tqdm
 
 from relbench.base import Dataset, Database, Table
 
-from redelex.db import DBInspector, ForeignKey
+from redelex.db import ForeignKey, DBInspector
+from redelex.db.utils import (
+    get_rdb_url,
+    get_rdb_connection,
+    SQL_DATE_MAP,
+    SQL_DATE_TYPES,
+    SQL_TO_PANDAS,
+)
 
 __all__ = ["DBDataset"]
 
@@ -61,7 +67,7 @@ class DBDataset(Dataset):
         self.remote_url = (
             remote_url
             if remote_url is not None
-            else self.get_url(dialect, driver, user, password, host, port, database)
+            else get_rdb_url(dialect, driver, user, password, host, port, database)
         )
 
         self.time_col_dict = time_col_dict if time_col_dict is not None else {}
@@ -73,76 +79,6 @@ class DBDataset(Dataset):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(remote_url={self.remote_url})"
-
-    @classmethod
-    def get_url(
-        cls,
-        dialect: str,
-        driver: str,
-        user: str,
-        password: str,
-        host: str,
-        port: str,
-        database: str,
-    ) -> str:
-        """
-        Returns the URL for connecting to the remote database in format used by SQLAlchemy.
-        For more information, see https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls.
-
-        Args:
-            dialect (str): The dialect for the database connection.
-            driver (str): The driver for the database connection.
-            user (str): The username for the database connection.
-            password (str): The password for the database connection.
-            host (str): The host address of the remote database.
-            port (str): The port number for the database connection.
-            database (str): The name of the database.
-
-        Returns:
-            str: The URL for connecting to the remote database.
-        """
-        return f"{dialect}+{driver}://{user}:{password}@{host}:{port}/{database}"
-
-    @classmethod
-    def create_remote_connection(cls, remote_url: str) -> sa.Connection:
-        """
-        Create a new SQLAlchemy Connection instance to the remote database.
-        Don't forget to close the Connection after you are done using it!
-
-        Args:
-            remote_url (str): The URL for connecting to the remote database.
-                Format is dialect+driver://username:password@host:port/database
-
-        Returns:
-            Connection: The SQLAlchemy Connection instance to the remote database.
-        """
-        return sa.Connection(sa.create_engine(remote_url))
-
-    def get_schema(self) -> Dict[str, Dict[str, sa.types.TypeEngine]]:
-        """Get the type schema of the remote database.
-
-        Returns:
-            Dict[str, Dict[str, TypeEngine]]: A dictionary mapping table names to column names and their types.
-        """
-        remote_con = self.create_remote_connection(self.remote_url)
-
-        inspector = DBInspector(remote_con)
-
-        remote_md = sa.MetaData()
-        remote_md.reflect(bind=inspector.engine)
-
-        table_names = inspector.get_tables()
-
-        schema = {}
-
-        for t_name in table_names:
-            sql_table = sa.Table(t_name, remote_md)
-
-            schema[t_name] = {c.name: c.type for c in sql_table.columns}
-
-        remote_con.close()
-
-        return schema
 
     def customize_db(self, db: Database) -> Database:
         """
@@ -165,7 +101,7 @@ class DBDataset(Dataset):
         Returns:
             Database: The Database instance.
         """
-        remote_con = self.create_remote_connection(self.remote_url)
+        remote_con = get_rdb_connection(self.remote_url)
 
         inspector = DBInspector(remote_con)
 
@@ -208,7 +144,10 @@ class DBDataset(Dataset):
             df = pd.read_sql_query(str(query), con=remote_con, dtype=dtypes)
 
             for col, sql_type in sql_types_dict.items():
-                if sql_type in DATE_TYPES or self.time_col_dict.get(t_name, None) == col:
+                if (
+                    sql_type in SQL_DATE_TYPES
+                    or self.time_col_dict.get(t_name, None) == col
+                ):
                     try:
                         df[col] = pd.to_datetime(df[col])
                     except pd.errors.OutOfBoundsDatetime:
@@ -216,9 +155,9 @@ class DBDataset(Dataset):
                     except Exception as e:
                         print(f"Error converting {t_name}.{col} to datetime: {e}")
 
-                if DATE_MAP.get(sql_type, None) is not None:
+                if SQL_DATE_MAP.get(sql_type, None) is not None:
                     try:
-                        df[col] = df[col].astype(DATE_MAP[sql_type], errors="raise")
+                        df[col] = df[col].astype(SQL_DATE_MAP[sql_type], errors="raise")
                     except pd.errors.OutOfBoundsDatetime:
                         print(f"Out of bounds datetime in {t_name}.{col}")
                     except Exception as e:
@@ -256,7 +195,7 @@ class DBDataset(Dataset):
 
         db = Database(table_dict)
 
-        # Add function for custom modifications here (e.g. dropping columns, etc.)
+        # Allow custom modifications here (e.g. dropping columns, etc.)
         try:
             db = self.customize_db(db)
         except NotImplementedError:
@@ -314,35 +253,3 @@ class DBDataset(Dataset):
         )["__PK__"]
 
         return fk_col, fk_name
-
-
-DATE_TYPES = (sa.types.Date, sa.types.DateTime)
-
-DATE_MAP = {
-    sa.types.Date: np.dtype("datetime64[s]"),
-    sa.types.DateTime: np.dtype("datetime64[us]"),
-    sa.types.Time: np.dtype("timedelta64[us]"),
-    sa.types.Interval: np.dtype("timedelta64[us]"),
-}
-
-SQL_TO_PANDAS = {
-    sa.types.BigInteger: pd.Int64Dtype(),
-    sa.types.Boolean: pd.BooleanDtype(),
-    sa.types.Date: "object",
-    sa.types.DateTime: "object",
-    sa.types.Double: pd.Float64Dtype(),
-    sa.types.Enum: pd.CategoricalDtype(),
-    sa.types.Float: pd.Float64Dtype(),
-    sa.types.Integer: pd.Int32Dtype(),
-    sa.types.Interval: "object",
-    # TODO: Handle binary data
-    # sa.types.LargeBinary: "object",
-    sa.types.Numeric: pd.Float64Dtype(),
-    sa.types.SmallInteger: pd.Int16Dtype(),
-    sa.types.String: "string",
-    sa.types.Text: "string",
-    sa.types.Time: "object",
-    sa.types.Unicode: "string",
-    sa.types.UnicodeText: "string",
-    sa.types.Uuid: "object",
-}
