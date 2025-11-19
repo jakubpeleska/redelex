@@ -32,7 +32,7 @@ from relbench.tasks import get_task, get_task_names
 from redelex.data import make_pkey_fkey_graph, get_node_train_table_input
 from redelex.datasets import get_dataset_info
 from redelex.nn.models.rdl_model import RDLModel
-from redelex.nn.corruptors import DBResampleCorruptor
+from redelex.utils.corruptors import DBResampleCorruptor
 from redelex.nn.models.pretrain_wrappers import (
     PretrainingModel,
     LightningPretraining,
