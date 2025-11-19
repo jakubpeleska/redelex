@@ -31,7 +31,6 @@ import getml
 from getml.feature_learning import loss_functions
 
 from relbench.base import BaseTask, Database, EntityTask, TaskType
-from relbench.modeling.utils import to_unix_time
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 
@@ -39,7 +38,7 @@ sys.path.append(".")
 
 from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
 from redelex.datasets import DBDataset
-from redelex.utils import guess_schema, convert_timedelta, standardize_db_dt
+from redelex.utils import guess_schema, convert_timedelta, to_unix_time
 
 
 from experiments.utils import (
@@ -114,7 +113,11 @@ def build_getml_datamodel(
                 (table_name, (fk, rel, db.table_dict[ref_table].pkey_col), ref_table)
             )
             links[ref_table].append(
-                (ref_table, (db.table_dict[ref_table].pkey_col, rev_rel, fk), table_name)
+                (
+                    ref_table,
+                    (db.table_dict[ref_table].pkey_col, rev_rel, fk),
+                    table_name,
+                )
             )
         if table_name == task.entity_table:
             continue
@@ -188,7 +191,9 @@ def target_getml_df(entity_df: getml.data.DataFrame, task: EntityTask, split: st
 
 
 def run_experiment(
-    config: tune.TuneConfig, db: Database, col_to_stype_dict: Dict[str, Dict[str, stype]]
+    config: tune.TuneConfig,
+    db: Database,
+    col_to_stype_dict: Dict[str, Dict[str, stype]],
 ):
     context = ray_train.get_context()
 
@@ -380,7 +385,6 @@ def run_ray_tuner(
         with open(stypes_cache_path, "w") as f:
             json.dump(col_to_stype_dict, f, indent=2, default=str)
 
-    standardize_db_dt(db, col_to_stype_dict)
     for tname, col_to_stype in col_to_stype_dict.items():
         for col, st in col_to_stype.items():
             if st == stype.timestamp:

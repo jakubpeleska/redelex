@@ -25,16 +25,16 @@ class TabularModel(torch.nn.Module):
     ):
         super().__init__()
 
-        def get_tabular_model(row_encoder: str):
-            if row_encoder == "resnet":
+        def get_tabular_model(tabular_model: str):
+            if tabular_model == "resnet":
                 return ResNet, {
                     "channels": 128,
                     "num_layers": 4,
                 }
-            elif row_encoder == "linear":
+            elif tabular_model == "linear":
                 return LinearRowEncoder, {"channels": 128}
             else:
-                raise ValueError(f"Unknown row_encoder: {row_encoder}")
+                raise ValueError(f"Unknown tabular_model: {tabular_model}")
 
         tabular_cls, tabular_kwargs = get_tabular_model(tabular_model)
 

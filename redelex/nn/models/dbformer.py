@@ -23,7 +23,7 @@ class DBFormerModel(torch.nn.Module):
         entity_table: NodeType,
         num_layers: int,
         channels: int,
-        row_encoder: Literal["linear"],
+        tabular_model: Literal["linear"],
         out_channels: int,
         aggr: str,
         norm: str,
@@ -32,16 +32,16 @@ class DBFormerModel(torch.nn.Module):
 
         self.entity_table = entity_table
 
-        def get_encoder(row_encoder: str):
-            if row_encoder == "linear":
+        def get_tabular_model(tabular_model: str):
+            if tabular_model == "linear":
                 return PerFeatureRowEncoder, {
                     "channels": 128,
                     "feature_transform": "linear",
                 }
             else:
-                raise ValueError(f"Unknown row_encoder: {row_encoder}")
+                raise ValueError(f"Unknown tabular_model: {tabular_model}")
 
-        encoder_cls, encoder_kwargs = get_encoder(row_encoder)
+        encoder_cls, encoder_kwargs = get_tabular_model(tabular_model)
 
         self.encoder = HeteroEncoder(
             channels=channels,

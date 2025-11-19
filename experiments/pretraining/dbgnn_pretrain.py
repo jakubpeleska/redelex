@@ -2,7 +2,6 @@ from typing import Any, Dict, Literal, Optional
 
 import os
 import random
-import sys
 from datetime import datetime, timedelta
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -29,12 +28,11 @@ from torch_geometric.nn import MLP
 from relbench.base import TaskType
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task, get_task_names
-from relbench.modeling.graph import make_pkey_fkey_graph, get_node_train_table_input
 
-sys.path.append(".")
+from redelex.data import make_pkey_fkey_graph, get_node_train_table_input
 from redelex.datasets import get_dataset_info
 from redelex.nn.models.rdl_model import RDLModel
-from redelex.nn.corruptors import DBResampleCorruptor
+from redelex.utils.corruptors import DBResampleCorruptor
 from redelex.nn.models.pretrain_wrappers import (
     PretrainingModel,
     LightningPretraining,
