@@ -85,7 +85,7 @@ Issues = "https://github.com/jakubpeleska/ctu-relational-py/issues"
 
 [tool.ruff]
 line-length = 92
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
