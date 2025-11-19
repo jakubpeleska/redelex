@@ -73,7 +73,7 @@ def run_experiment(
     batch_size: int = config["batch_size"]
     channels: int = config["channels"]
     num_layers: int = config["num_layers"]
-    row_encoder: str = config["row_encoder"]
+    tabular_model: str = config["tabular_model"]
     num_neighbors: int = config["num_neighbors"]
     max_steps_per_epoch: int = config["max_steps_per_epoch"]
     min_total_steps: int = config["min_total_steps"]
@@ -127,7 +127,7 @@ def run_experiment(
         col_stats_dict=col_stats_dict,
         num_layers=num_layers,
         channels=channels,
-        row_encoder=row_encoder,
+        tabular_model=tabular_model,
         out_channels=out_channels,
         aggr=aggr_fn,
         norm=mlp_norm,
@@ -254,7 +254,7 @@ def run_ray_tuner(
     dataset_name: str,
     task_name: str,
     model_architecture: str,
-    row_encoder: str,
+    tabular_model: str,
     ray_address: Optional[str] = None,
     ray_storage_path: Optional[str] = None,
     ray_experiment_name: Optional[str] = None,
@@ -308,7 +308,7 @@ def run_ray_tuner(
         # sampling config
         "num_neighbors": tune.grid_search([16, 32, 64]),
         # model config
-        "row_encoder": row_encoder,  # tune.grid_search(["resnet", "linear"]),
+        "tabular_model": tabular_model,  # tune.grid_search(["resnet", "linear"]),
         "channels": 64,  # tune.grid_search([16, 32, 64]),
         "num_layers": tune.grid_search([1, 2, 3, 4]),
         "aggr": "sum",  # tune.grid_search(["max", "sum", "mean"]),
@@ -396,7 +396,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str)
     parser.add_argument("--task", type=str)
     parser.add_argument("--model", choices=["sage", "dbformer"], default="sage")
-    parser.add_argument("--row_encoder", choices=["resnet", "linear"], default=None)
+    parser.add_argument("--tabular_model", choices=["resnet", "linear"], default=None)
     parser.add_argument("--ray_address", type=str, default="local")
     parser.add_argument("--ray_storage", type=str, default=None)
     parser.add_argument("--run_name", type=str, default=None)
@@ -427,7 +427,7 @@ if __name__ == "__main__":
             dataset_name,
             task_name,
             model_architecture=args.model,
-            row_encoder=args.row_encoder,
+            tabular_model=args.tabular_model,
             ray_address=args.ray_address,
             ray_storage_path=(
                 os.path.realpath(args.ray_storage)
