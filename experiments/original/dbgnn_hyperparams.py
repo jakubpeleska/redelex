@@ -3,7 +3,6 @@ from typing import Any, Dict, Literal, Optional
 import math
 import os
 import random
-import sys
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["RAY_memory_monitor_refresh_ms"] = "0"
@@ -31,11 +30,9 @@ from torch_geometric.loader import NeighborLoader
 
 
 from relbench.base import BaseTask, EntityTask, TaskType
-from relbench.modeling.graph import get_node_train_table_input
 from relbench.tasks import get_task
 
-sys.path.append(".")
-
+from redelex.data import get_node_train_table_input
 from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
 from redelex.nn.models.sagegnn import SAGEModel
 from redelex.nn.models.dbformer import DBFormerModel

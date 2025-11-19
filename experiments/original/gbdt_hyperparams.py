@@ -3,7 +3,6 @@ from typing import Dict, Optional
 import copy
 import os
 import random
-import sys
 
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -32,7 +31,6 @@ from torch_frame.gbdt import LightGBM
 from torch_geometric.data import HeteroData
 
 from relbench.base import BaseTask, EntityTask, TaskType
-from relbench.modeling.graph import get_node_train_table_input
 from relbench.tasks import get_task
 from relbench.metrics import (
     average_precision,
@@ -43,9 +41,7 @@ from relbench.metrics import (
     roc_auc,
 )
 
-
-sys.path.append(".")
-
+from redelex.data import get_node_train_table_input
 from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
 
 from experiments.utils import (
