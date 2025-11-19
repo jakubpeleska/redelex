@@ -37,6 +37,7 @@ def convert_timedelta(db: Database):
 
 
 __all__ = [
+    "to_unix_time",
     "convert_timedelta",
     "TIMESTAMP_MIN",
     "TIMESTAMP_MAX",
