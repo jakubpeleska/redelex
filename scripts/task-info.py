@@ -26,12 +26,7 @@ sys.path.append(".")
 
 from redelex.datasets import CTUDataset, DBDataset
 from redelex.tasks import CTUBaseEntityTask
-from redelex.utils import (
-    convert_timedelta,
-    guess_schema,
-    standardize_db_dt,
-    standardize_table_dt,
-)
+from redelex.utils import convert_timedelta, guess_schema
 
 
 class GloveTextEmbedding:
@@ -181,8 +176,6 @@ for dataset_name in all_datasets:
                 schema = dataset.get_schema()
             col_to_stype_dict = guess_schema(db, schema)
 
-        standardize_db_dt(db)
-
         data, col_stats_dict = make_pkey_fkey_graph(
             db,
             col_to_stype_dict=col_to_stype_dict,
@@ -200,7 +193,6 @@ for dataset_name in all_datasets:
             if split != "train":
                 continue
 
-            standardize_table_dt(table)
             table_input = get_node_train_table_input(table=table, task=task)
             is_temporal = table_input.time is not None
             loader = NeighborLoader(

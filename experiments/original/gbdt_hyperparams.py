@@ -47,8 +47,6 @@ from relbench.metrics import (
 sys.path.append(".")
 
 from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
-from redelex.utils import standardize_table_dt
-
 
 from experiments.utils import (
     get_cache_path,
@@ -139,7 +137,6 @@ def run_experiment(
 
     for split in ["train", "val", "test"]:
         table = task.get_table(split, mask_input_cols=False)
-        standardize_table_dt(table)
         table_input = get_node_train_table_input(table=table, task=task)
         tf: TensorFrame = copy.deepcopy(data[task.entity_table].tf[table_input.nodes[1]])
         time_feat = tf.feat_dict.pop(stype.timestamp, None)

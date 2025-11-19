@@ -34,12 +34,7 @@ from relbench.metrics import (
 
 from redelex.datasets import DBDataset
 from redelex.tasks import CTUBaseEntityTask
-from redelex.utils import (
-    guess_schema,
-    convert_timedelta,
-    standardize_db_dt,
-    merge_tf,
-)
+from redelex.utils import guess_schema, convert_timedelta, merge_tf
 
 
 class GloveTextEmbedding:
@@ -161,7 +156,6 @@ def get_data(
         db,
         sql_schema=dataset.get_schema() if isinstance(dataset, DBDataset) else None,
     )
-    standardize_db_dt(db, attribute_schema)
 
     data, col_stats_dict = make_pkey_fkey_graph(
         db,

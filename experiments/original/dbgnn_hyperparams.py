@@ -37,7 +37,6 @@ from relbench.tasks import get_task
 sys.path.append(".")
 
 from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
-from redelex.utils import standardize_table_dt
 from redelex.nn.models.sagegnn import SAGEModel
 from redelex.nn.models.dbformer import DBFormerModel
 
@@ -109,7 +108,6 @@ def run_experiment(
 
     for split in ["train", "val", "test"]:
         table = task.get_table(split, mask_input_cols=False)
-        standardize_table_dt(table)
         table_input = get_node_train_table_input(table=table, task=task)
         loader_dict[split] = NeighborLoader(
             data,
