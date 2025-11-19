@@ -18,7 +18,6 @@ from torch_geometric.data import HeteroData
 
 from relbench.base import Database, EntityTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.modeling.graph import make_pkey_fkey_graph
 from relbench.tasks import get_task
 from relbench.metrics import (
     accuracy,
@@ -32,6 +31,7 @@ from relbench.metrics import (
     roc_auc,
 )
 
+from redelex.data import make_pkey_fkey_graph
 from redelex.datasets import DBDataset
 from redelex.tasks import CTUBaseEntityTask
 from redelex.utils import guess_schema, convert_timedelta, merge_tf

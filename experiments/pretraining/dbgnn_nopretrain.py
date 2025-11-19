@@ -2,7 +2,6 @@ from typing import Optional
 
 import os
 import random
-import sys
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["RAY_memory_monitor_refresh_ms"] = "0"
@@ -20,14 +19,10 @@ import torch
 from relbench.base import TaskType
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task, get_task_names
-from relbench.modeling.graph import make_pkey_fkey_graph
 
-sys.path.append(".")
+from redelex.data import make_pkey_fkey_graph
 
-from experiments.utils import (
-    get_attribute_schema,
-    get_text_embedder,
-)
+from experiments.utils import get_attribute_schema, get_text_embedder
 from experiments.pretraining.dbgnn_pretrain import run_task_experiment
 
 

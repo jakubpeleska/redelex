@@ -1,7 +1,6 @@
 from typing import Dict, List, Optional, Union
 
 import json
-import sys
 
 
 import pandas as pd
@@ -20,10 +19,8 @@ from torch_geometric.loader import NeighborLoader
 from relbench.base import Database, Dataset, EntityTask, TaskType
 from relbench.datasets import get_dataset_names, get_dataset
 from relbench.tasks import get_task_names, get_task
-from relbench.modeling.graph import make_pkey_fkey_graph, get_node_train_table_input
 
-sys.path.append(".")
-
+from redelex.data import make_pkey_fkey_graph, get_node_train_table_input
 from redelex.datasets import CTUDataset, DBDataset
 from redelex.tasks import CTUBaseEntityTask
 from redelex.utils import convert_timedelta, guess_schema
