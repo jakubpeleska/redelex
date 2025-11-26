@@ -1,6 +1,4 @@
 from attrs import field, define
-from typing import List
-
 
 from .foreign_key import ForeignKey
 
@@ -17,7 +15,7 @@ class DBSchema:
     """
 
     @property
-    def table_names(self) -> List[str]:
+    def table_names(self) -> list[str]:
         """
         The list of table names in the database
         """
@@ -41,12 +39,12 @@ class TableSchema:
     The name of the table
     """
 
-    pk: List[str] = field(converter=list)
+    pk: list[str] = field(converter=list)
     """
     The primary key columns
     """
 
-    fks: List[ForeignKey] = field(converter=list)
+    fks: list[ForeignKey] = field(converter=list)
     """
     The foreign keys
     """
@@ -57,7 +55,7 @@ class TableSchema:
     """
 
     @property
-    def columns(self) -> List[str]:
+    def columns(self) -> list[str]:
         """
         The list of column names
         """

@@ -1,5 +1,3 @@
-from typing import Dict, List, Optional
-
 from functools import cached_property, lru_cache
 
 import pandas as pd
@@ -67,7 +65,7 @@ class RemoteDBInterface(DBInterface):
 
             sql_table = sa.Table(tname, self.remote_md)
 
-            type_dict: Dict[str, str] = {}
+            type_dict: dict[str, str] = {}
             for c in sql_table.columns:
                 try:
                     sql_type = type(c.type.as_generic())
@@ -89,8 +87,8 @@ class RemoteDBInterface(DBInterface):
     def get_table(self, table_name: str) -> "pd.DataFrame":
         sql_table = sa.Table(table_name, self.remote_md)
 
-        dtypes: Dict[str, str] = {}
-        sql_types_dict: Dict[str, sa.types.TypeEngine] = {}
+        dtypes: dict[str, str] = {}
+        sql_types_dict: dict[str, sa.types.TypeEngine] = {}
 
         for c in sql_table.columns:
             try:
@@ -135,10 +133,10 @@ class RemoteDBInterface(DBInterface):
 
         return df
 
-    def get_relbench_db(self, time_col_dict: Optional[Dict[str, str]] = {}) -> Database:
-        df_dict: Dict[str, pd.DataFrame] = {}
+    def get_relbench_db(self, time_col_dict: dict[str, str] = {}) -> Database:
+        df_dict: dict[str, pd.DataFrame] = {}
 
-        fk_dict: Dict[str, list[ForeignKey]] = {
+        fk_dict: dict[str, list[ForeignKey]] = {
             tname: self.get_foreign_keys(tname) for tname in self.table_names
         }
 
@@ -151,10 +149,10 @@ class RemoteDBInterface(DBInterface):
 
             df_dict[tname] = df
 
-        table_dict: Dict[str, Table] = {}
+        table_dict: dict[str, Table] = {}
 
         for tname in self.table_names:
-            fkey_col_to_pkey_table: Dict[str, str] = {}
+            fkey_col_to_pkey_table: dict[str, str] = {}
 
             for fk in fk_dict[tname]:
                 # Re-index to remove composite keys.
@@ -188,11 +186,11 @@ class RemoteDBInterface(DBInterface):
 
     def _reindex_fk(
         self,
-        df_dict: Dict[str, pd.DataFrame],
+        df_dict: dict[str, pd.DataFrame],
         src_table: str,
-        src_columns: List[str],
+        src_columns: list[str],
         ref_table: str,
-        ref_columns: List[str],
+        ref_columns: list[str],
     ):
         fk_name = f"FK_{ref_table}_" + "_".join(src_columns)
 
