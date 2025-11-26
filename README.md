@@ -147,6 +147,12 @@ uv run pre-commit install
 uv run pre-commit run
 ```
 
+### Database schema visualizations
+
+Visualizations run on `Graphviz`, which needs to be available on your system.
+
+- Install `Graphviz` https://graphviz.org/download/
+
 ## 📜 Citation
 
 If you use ReDeLEx in your work, please cite:

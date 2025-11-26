@@ -47,10 +47,11 @@ experiments = [
     "ray[data,serve,train,tune]>=2.46.0",
     "getml>=1.5.1",
 ]
+visualization = ["jinja2>=3.1.6", "pydot>=4.0.1"]
 
 
 [tool.uv]
-default-groups = ["dev", "cpu", "experiments"]
+default-groups = ["dev", "cpu", "experiments", "visualization"]
 conflicts = [[{ group = "cpu" }, { group = "cu124" }]]
 
 [tool.uv.sources]
@@ -80,8 +81,8 @@ explicit = true
 
 
 [project.urls]
-Homepage = "https://github.com/jakubpeleska/ctu-relational-py"
-Issues = "https://github.com/jakubpeleska/ctu-relational-py/issues"
+Homepage = "https://github.com/jakubpeleska/redelex"
+Issues = "https://github.com/jakubpeleska/redelex/issues"
 
 [tool.ruff]
 line-length = 92

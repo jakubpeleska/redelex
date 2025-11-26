@@ -9,8 +9,8 @@ from relbench.base import Dataset, Database, Table
 
 from redelex.db import ForeignKey, DBInspector
 from redelex.db.utils import (
-    get_rdb_url,
-    get_rdb_connection,
+    get_db_url,
+    get_db_connection,
     SQL_DATE_MAP,
     SQL_DATE_TYPES,
     SQL_TO_PANDAS,
@@ -67,7 +67,7 @@ class DBDataset(Dataset):
         self.remote_url = (
             remote_url
             if remote_url is not None
-            else get_rdb_url(dialect, driver, user, password, host, port, database)
+            else get_db_url(dialect, driver, user, password, host, port, database)
         )
 
         self.time_col_dict = time_col_dict if time_col_dict is not None else {}
@@ -101,7 +101,7 @@ class DBDataset(Dataset):
         Returns:
             Database: The Database instance.
         """
-        remote_con = get_rdb_connection(self.remote_url)
+        remote_con = get_db_connection(self.remote_url)
 
         inspector = DBInspector(remote_con)
 
