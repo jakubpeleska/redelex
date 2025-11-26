@@ -65,7 +65,7 @@ SQL_TO_PANDAS = {
 }
 
 
-def get_rdb_url(
+def get_db_url(
     dialect: str,
     driver: str,
     user: str,
@@ -106,7 +106,7 @@ def get_rdb_url(
     return f"{dialect}+{driver}://{user}:{password}@{host}:{port}/{database}"
 
 
-def get_rdb_connection(connection_url: str) -> sa.Connection:
+def get_db_connection(connection_url: str) -> sa.Connection:
     """
     Create a new SQLAlchemy Connection instance to the remote database.
     Don't forget to close the Connection after you are done using it!
@@ -125,8 +125,8 @@ __all__ = [
     "SQL_DATE_MAP",
     "SQL_DATE_TYPES",
     "SQL_TO_PANDAS",
-    "get_rdb_url",
-    "get_rdb_connection",
+    "get_db_url",
+    "get_db_connection",
     "HAS_PSYCOPG2",
     "HAS_PG8000",
     "HAS_MYSQL",

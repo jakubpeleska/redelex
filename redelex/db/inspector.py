@@ -3,7 +3,7 @@ from typing import Dict, List, Set, Tuple
 from sqlalchemy import Connection, Engine, inspect, Table, MetaData
 from sqlalchemy.types import TypeEngine
 
-from redelex.db import ForeignKey
+from .foreign_key import ForeignKey
 
 __all__ = ["DBInspector"]
 
