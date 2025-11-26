@@ -136,14 +136,13 @@ class RemoteDBInterface(DBInterface):
         return df
 
     def get_relbench_db(self, time_col_dict: Optional[Dict[str, str]] = {}) -> Database:
-        table_names = self.table_names()
         df_dict: Dict[str, pd.DataFrame] = {}
 
         fk_dict: Dict[str, list[ForeignKey]] = {
-            tname: self.get_foreign_keys(tname) for tname in table_names
+            tname: self.get_foreign_keys(tname) for tname in self.table_names
         }
 
-        for tname in (pbar := tqdm(table_names)):
+        for tname in (pbar := tqdm(self.table_names)):
             pbar.set_postfix_str(tname)
             df = self.get_table(tname)
             df.index.name = "__PK__"
@@ -154,7 +153,7 @@ class RemoteDBInterface(DBInterface):
 
         table_dict: Dict[str, Table] = {}
 
-        for tname in table_names:
+        for tname in self.table_names:
             fkey_col_to_pkey_table: Dict[str, str] = {}
 
             for fk in fk_dict[tname]:

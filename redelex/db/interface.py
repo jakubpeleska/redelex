@@ -9,6 +9,7 @@ from .schema import DBSchema
 
 
 class DBInterface(ABC):
+    @property
     @abstractmethod
     def table_names(self) -> list[str]:
         pass

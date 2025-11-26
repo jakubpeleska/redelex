@@ -9,6 +9,10 @@ from .schema import DBSchema, TableSchema
 
 
 class RelbenchDBInterface(DBInterface):
+    @property
+    def table_names(self) -> list[str]:
+        return list(self.db.table_dict.keys())
+
     def __init__(self, relbench_dataset: RelbenchDataset):
         self.relbench_dataset = relbench_dataset
         self.db = None
@@ -19,9 +23,6 @@ class RelbenchDBInterface(DBInterface):
         self.db = self.relbench_dataset.get_db(False)
         for tname, table in self.db.table_dict.items():
             duckdb.register(tname, table.df)
-
-    def table_names(self) -> list[str]:
-        return list(self.db.table_dict.keys())
 
     def get_primary_key(self, table_name: str) -> list[str]:
         return [self.db.table_dict[table_name].pkey_col]
