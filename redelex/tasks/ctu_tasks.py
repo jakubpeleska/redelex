@@ -1,8 +1,23 @@
 from relbench.base import TaskType
 
-from .ctu_entity_task_classic import CTUEntityTask
-from .ctu_entity_task_temporal import CTUEntityTaskTemporal
-from .ctu_link_task import CTULinkTask
+from .task_impute import ImputeEntityStaticTask, ImputeEntityTemporalTask
+
+
+class CTUEntityTask(ImputeEntityStaticTask):
+    entity_col = "__PK__"
+
+
+class CTUEntityTaskTemporal(ImputeEntityTemporalTask):
+    entity_col = "__PK__"
+
+
+class CTULinkTask:
+    pass
+
+
+##############################################################################
+# CTU Relational Benchmark Tasks
+##############################################################################
 
 
 class AccidentsOriginalTask(CTUEntityTask):
@@ -121,9 +136,10 @@ class CraftBeerOriginalTask(CTUEntityTask):
     task_type = TaskType.MULTICLASS_CLASSIFICATION
 
 
+# TODO: fix link prediction tasks
 class CreditOriginalTask(CTULinkTask):
     entity_table = "member"
-    link_table = "region"
+    target_col = "region_no"
     task_type = TaskType.LINK_PREDICTION
 
 
@@ -151,12 +167,14 @@ class DiabetesOriginalTask(CTUEntityTask):
     task_type = TaskType.MULTICLASS_CLASSIFICATION
 
 
+# TODO: fix link prediction tasks
 class DunurOriginalTask(CTULinkTask):
     entity_table = "target"
     target_col = "is_dunur"
     task_type = TaskType.LINK_PREDICTION
 
 
+# TODO: fix link prediction tasks
 class EltiOriginalTask(CTULinkTask):
     entity_table = "target"
     target_col = "is_elti"
@@ -337,6 +355,7 @@ class MondialOriginalTask(CTUEntityTask):
     task_type = TaskType.BINARY_CLASSIFICATION
 
 
+# TODO: fix link prediction tasks
 class MooneyOriginalTask(CTULinkTask):
     entity_table = "uncle"
     task_type = TaskType.LINK_PREDICTION
@@ -432,6 +451,7 @@ class SalesOriginalTask(CTUEntityTask):
     task_type = TaskType.REGRESSION
 
 
+# TODO: fix link prediction tasks
 class SameGenOriginalTask(CTULinkTask):
     entity_table = "target"
     target_col = "target"
@@ -456,6 +476,7 @@ class SAPSalesTemporalTask(CTUEntityTaskTemporal):
     task_type = TaskType.REGRESSION
 
 
+# TODO: fix link prediction tasks
 class SatelliteOriginalTask(CTULinkTask):
     entity_table = "tm"
     link_table = "fault"
@@ -486,6 +507,7 @@ class SFScoresTemporalTask(CTUEntityTaskTemporal):
     task_type = TaskType.REGRESSION
 
 
+# TODO: fix link prediction tasks
 class ShakespeareOriginalTask(CTULinkTask):
     entity_table = "paragraphs"
     link_table = "characters"
