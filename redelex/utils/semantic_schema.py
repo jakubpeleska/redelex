@@ -19,6 +19,8 @@ from torch_frame.utils import infer_series_stype
 
 from relbench.base import BaseTask, Database, Table, TaskType
 
+from redelex.db import DBSchema, TableSchema
+
 ID_NAME_REGEX = re.compile(
     r"_id$|^id_|_id_|Id$|Id[^a-z]|[Ii]dentifier|IDENTIFIER|ID[^a-zA-Z]|ID$|[guGU]uid[^a-z]|[guGU]uid$|[GU]UID[^a-zA-Z]|[GU]UID$"
 )
@@ -150,7 +152,7 @@ def guess_column_stype(
 
 def guess_table_stypes(
     table: Table,
-    table_schema: Optional[Dict[str, sql_types.TypeEngine]] = {},
+    table_schema: Optional[TableSchema] = None,
     task: Optional[BaseTask] = None,
     ignore_none: bool = True,
 ) -> Dict[str, stype]:
@@ -188,9 +190,12 @@ def guess_table_stypes(
                 raise ValueError(f"Unknown task type {task.task_type.name}")
             continue
 
-        guess = guess_column_stype(
-            table.df[col], col_name=col, sql_type=table_schema.get(col, None)
-        )
+        try:
+            sql_type = getattr(sql_types, table_schema.type_dict.get(col, None))()
+        except Exception:
+            sql_type = None
+
+        guess = guess_column_stype(table.df[col], col_name=col, sql_type=sql_type)
         if ignore_none and guess is None:
             continue
 
@@ -199,7 +204,7 @@ def guess_table_stypes(
 
 
 def guess_schema(
-    db: Database, sql_schema: Optional[Dict[str, Dict[str, sql_types.TypeEngine]]] = {}
+    db: Database, db_schema: Optional[DBSchema] = {}
 ) -> Dict[str, Dict[str, stype]]:
     """Locate all database tables and all columns and run :py:method:`guess_column_type` for all of them.
 
@@ -209,7 +214,7 @@ def guess_schema(
 
     for table_name, table in db.table_dict.items():
         schema[table_name] = guess_table_stypes(
-            table, table_schema=sql_schema.get(table_name, {})
+            table, table_schema=db_schema.table_schemas.get(table_name, None)
         )
 
     return schema

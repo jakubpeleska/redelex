@@ -2,7 +2,6 @@ from typing import Dict, Optional
 
 import os
 import random
-import sys
 import json
 from pathlib import Path
 from collections import defaultdict
@@ -30,14 +29,14 @@ from torch_frame import stype
 import getml
 from getml.feature_learning import loss_functions
 
-from relbench.base import BaseTask, Database, EntityTask, TaskType
+from relbench.base import Database, TaskType
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 
-sys.path.append(".")
 
-from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
 from redelex.datasets import DBDataset
+from redelex.tasks.mixins import BaseTask, ModifyDBTaskMixin, EntityTaskMixin
+from redelex.tasks.utils import is_temporal_task
 from redelex.utils import guess_schema, convert_timedelta, to_unix_time
 
 
@@ -53,7 +52,7 @@ def build_getml_dfs(
 ):
     df_dict: dict[str, getml.data.DataFrame] = {}
 
-    is_temporal = isinstance(task, CTUEntityTaskTemporal) or isinstance(task, EntityTask)
+    is_temporal = is_temporal_task(task)
 
     for table_name, table in db.table_dict.items():
         df_dict[table_name] = getml.data.DataFrame.from_pandas(table.df, name=table_name)
@@ -91,7 +90,7 @@ def max_multiplicity(df: pd.DataFrame, fk_col: str):
 def build_getml_datamodel(
     db: Database,
     df_dict: dict[str, getml.data.DataFrame],
-    task: EntityTask,
+    task: EntityTaskMixin,
 ) -> getml.data.DataModel:
     dm = getml.data.DataModel(df_dict[task.entity_table].to_placeholder(task.entity_table))
 
@@ -145,7 +144,7 @@ def build_getml_datamodel(
     return dm
 
 
-def target_getml_df(entity_df: getml.data.DataFrame, task: EntityTask, split: str):
+def target_getml_df(entity_df: getml.data.DataFrame, task: EntityTaskMixin, split: str):
     target_df = entity_df.copy(f"{task.entity_table}_{split}")
     target_table = task.get_table(split, mask_input_cols=False)
 
@@ -361,8 +360,8 @@ def run_ray_tuner(
 
     dataset = get_dataset(dataset_name)
     task = get_task(dataset_name, task_name)
-    if isinstance(task, CTUBaseEntityTask):
-        db = task.get_sanitized_db(upto_test_timestamp=False)
+    if isinstance(task, ModifyDBTaskMixin):
+        db = task.make_modified_db(inplace=False)
     else:
         db = dataset.get_db(upto_test_timestamp=False)
 
@@ -445,7 +444,7 @@ if __name__ == "__main__":
     dataset_name = args.dataset
     task_name = args.task
 
-    task: CTUBaseEntityTask = get_task(dataset_name, task_name)
+    task = get_task(dataset_name, task_name)
     if task.task_type in [
         TaskType.LINK_PREDICTION,
         TaskType.MULTILABEL_CLASSIFICATION,
