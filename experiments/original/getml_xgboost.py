@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import os
 import random
@@ -25,17 +25,18 @@ import pandas as pd
 import torch
 
 from torch_frame import stype
+from torch_frame.data import StatType
 
 import getml
 from getml.feature_learning import loss_functions
 
-from relbench.base import Database, TaskType
+from relbench.base import Database, Table, TaskType
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 
 
 from redelex.datasets import DBDataset
-from redelex.tasks.mixins import BaseTask, ModifyDBTaskMixin, EntityTaskMixin
+from redelex.tasks.mixins import ModifyDBTaskMixin, EntityTaskMixin
 from redelex.tasks.utils import is_temporal_task
 from redelex.utils import guess_schema, convert_timedelta, to_unix_time
 
@@ -47,37 +48,91 @@ from experiments.utils import (
 )
 
 
-def build_getml_dfs(
-    db: Database, task: BaseTask, col_to_stype_dict: Dict[str, Dict[str, stype]]
-):
-    df_dict: dict[str, getml.data.DataFrame] = {}
+def set_getml_roles(df: getml.data.DataFrame, table: Table, col_to_stype: Dict[str, stype]):
+    role = None
+    for col in df.columns:
+        st = col_to_stype.get(col, None)
+        if col == table.pkey_col or col in table.fkey_col_to_pkey_table:
+            role = getml.data.roles.join_key
+        elif col == table.time_col or st == stype.timestamp:
+            role = getml.data.roles.time_stamp
+        elif st == stype.categorical:
+            role = getml.data.roles.categorical
+        elif st == stype.multicategorical:
+            role = getml.data.roles.text
+        elif st == stype.numerical:
+            role = getml.data.roles.numerical
+        elif st == stype.text_embedded:
+            role = getml.data.roles.text
 
-    is_temporal = is_temporal_task(task)
+        if role is not None:
+            df.set_role(col, role)
+
+    return df
+
+
+def build_task_df(
+    task: EntityTaskMixin, split: str, return_task_table: bool = False
+) -> Union[getml.data.DataFrame, tuple[getml.data.DataFrame, Table]]:
+    task_table = task.get_table(split, mask_input_cols=False)
+    task_df = task_table.df
+
+    target_cols = []
+
+    if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+        unique_values = task.stats[StatType.COUNT][0]
+
+        for i, label in enumerate(unique_values):
+            col = (task_df[task.target_col] == i).astype(int)
+            name = task.target_col + "=" + str(label)
+            task_df[name] = col
+            target_cols.append(name)
+    else:
+        target_cols.append(task.target_col)
+
+    name = f"__task_df_{split}__"
+
+    task_getml_df = getml.data.DataFrame.from_pandas(task_df, name=name)
+
+    for col in target_cols:
+        task_getml_df.set_role(col, getml.data.roles.target)
+
+    if task_table.pkey_col is not None:
+        task_getml_df.set_role(task_table.pkey_col, getml.data.roles.join_key)
+
+    for fk in task_table.fkey_col_to_pkey_table:
+        task_getml_df.set_role(fk, getml.data.roles.join_key)
+
+    if task_table.time_col is not None:
+        task_getml_df.set_role(task_table.time_col, getml.data.roles.time_stamp)
+
+    if return_task_table:
+        return task_getml_df, task_table
+
+    return task_getml_df
+
+
+def build_getml_task_data(
+    db: Database,
+    task: EntityTaskMixin,
+    col_to_stype_dict: Dict[str, Dict[str, stype]],
+) -> Dict[str, getml.data.DataFrame]:
+    df_dict: Dict[str, getml.data.DataFrame] = {}
 
     for table_name, table in db.table_dict.items():
-        df_dict[table_name] = getml.data.DataFrame.from_pandas(table.df, name=table_name)
+        df = table.df
+        if table_name == task.entity_table:
+            if task.target_col in df.columns:
+                df = df.drop(columns=[task.target_col])
+
+        df_dict[table_name] = getml.data.DataFrame.from_pandas(df, name=table_name)
 
     # add proper roles based on schema
     for table_name, table in db.table_dict.items():
         assert table_name in df_dict
-        src_df = df_dict[table_name]
-
-        for col, st in col_to_stype_dict[table_name].items():
-            if col == table.pkey_col or col in table.fkey_col_to_pkey_table:
-                role = getml.data.roles.join_key
-            elif is_temporal and col == table.time_col and st == stype.timestamp:
-                role = getml.data.roles.time_stamp
-            elif st == stype.categorical:
-                role = getml.data.roles.categorical
-            elif st == stype.numerical or st == stype.timestamp:
-                role = getml.data.roles.numerical
-            elif st == stype.text_embedded:
-                role = getml.data.roles.text
-            else:
-                role = None
-
-            if role is not None:
-                src_df.set_role(col, role)
+        df = df_dict[table_name]
+        col_to_stype = col_to_stype_dict[table_name]
+        df = set_getml_roles(df, table, col_to_stype)
 
     return df_dict
 
@@ -89,40 +144,34 @@ def max_multiplicity(df: pd.DataFrame, fk_col: str):
 
 def build_getml_datamodel(
     db: Database,
-    df_dict: dict[str, getml.data.DataFrame],
+    df_dict: Dict[str, getml.data.DataFrame],
     task: EntityTaskMixin,
 ) -> getml.data.DataModel:
-    dm = getml.data.DataModel(df_dict[task.entity_table].to_placeholder(task.entity_table))
-
-    links = defaultdict(list)
-    for table_name, table in db.table_dict.items():
-        for fk, ref_table in db.table_dict[table_name].fkey_col_to_pkey_table.items():
-            rel = (
-                getml.data.relationship.one_to_one
-                if max_multiplicity(table.df, fk) == 1
-                else getml.data.relationship.many_to_one
-            )
-            rev_rel = (
-                getml.data.relationship.propositionalization
-                if rel == getml.data.relationship.many_to_one
-                else getml.data.relationship.one_to_one
-            )
-
-            links[table_name].append(
-                (table_name, (fk, rel, db.table_dict[ref_table].pkey_col), ref_table)
-            )
-            links[ref_table].append(
-                (
-                    ref_table,
-                    (db.table_dict[ref_table].pkey_col, rev_rel, fk),
-                    table_name,
-                )
-            )
-        if table_name == task.entity_table:
-            continue
+    train_df, train_table = build_task_df(task, "train", return_task_table=True)
+    task_table_name = "__task_table__"
+    dm = getml.data.DataModel(train_df.to_placeholder(task_table_name))
+    for table_name, df in df_dict.items():
         dm.add(df_dict[table_name].to_placeholder(table_name))
 
-    open = [task.entity_table]
+    table_dict: Dict[str, Table] = {task_table_name: train_table, **db.table_dict}
+    links = defaultdict(list)
+    for table_name, table in table_dict.items():
+        for fk, ref_table in table.fkey_col_to_pkey_table.items():
+            ref_pk = table_dict[ref_table].pkey_col
+
+            mltp = max_multiplicity(table.df, fk)
+            if mltp <= 1:
+                rel = getml.data.relationship.one_to_one
+                rev_rel = getml.data.relationship.one_to_many
+            else:
+                rel = getml.data.relationship.many_to_one
+                rev_rel = getml.data.relationship.propositionalization
+
+            links[table_name].append((table_name, (fk, rel, ref_pk), ref_table))
+            links[ref_table].append((ref_table, (ref_pk, rev_rel, fk), table_name))
+
+    is_temporal = is_temporal_task(task)
+    open = [task_table_name]
     closed = []
     while len(open) > 0:
         src_table = open.pop()
@@ -139,54 +188,21 @@ def build_getml_datamodel(
 
             p_left: getml.data.Placeholder = getattr(dm, src_table)
             p_right: getml.data.Placeholder = getattr(dm, dst_table)
-            p_left.join(p_right, on=(l_col, r_col), relationship=rel)
+
+            time_cols = None
+            if (
+                is_temporal
+                and table_dict[src_table].time_col is not None
+                and table_dict[dst_table].time_col is not None
+            ):
+                time_cols = (
+                    table_dict[src_table].time_col,
+                    table_dict[dst_table].time_col,
+                )
+
+            p_left.join(p_right, on=(l_col, r_col), time_stamps=time_cols, relationship=rel)
 
     return dm
-
-
-def target_getml_df(entity_df: getml.data.DataFrame, task: EntityTaskMixin, split: str):
-    target_df = entity_df.copy(f"{task.entity_table}_{split}")
-    target_table = task.get_table(split, mask_input_cols=False)
-
-    _target_df = getml.data.DataFrame.from_pandas(target_table.df, name=f"_target_{split}")
-    target_df = target_df.read_pandas(
-        target_df.to_pandas().loc[target_table.df[task.entity_col]]
-    )
-
-    if task.task_type in [
-        TaskType.MULTICLASS_CLASSIFICATION,
-        TaskType.BINARY_CLASSIFICATION,
-    ]:
-        unique_values = _target_df[task.target_col].unique()
-        if task.task_type == TaskType.BINARY_CLASSIFICATION:
-            assert len(unique_values) == 2
-            col = (_target_df[task.target_col] == unique_values[0]).as_num()
-            target_df = target_df.with_column(
-                col=col, name=task.target_col, role=getml.data.roles.target
-            )
-
-        else:
-            for label in unique_values:
-                col = (_target_df[task.target_col] == label).as_num()
-                name = task.target_col + "=" + str(label)
-                target_df = target_df.with_column(
-                    col=col, name=name, role=getml.data.roles.target
-                )
-    else:
-        target_df = target_df.with_column(
-            col=_target_df[task.target_col],
-            name=task.target_col,
-            role=getml.data.roles.target,
-        )
-
-    if target_table.time_col is not None:
-        target_df = target_df.with_column(
-            col=_target_df[target_table.time_col],
-            name=target_table.time_col,
-            role=getml.data.roles.time_stamp,
-        )
-
-    return target_df
 
 
 def run_experiment(
@@ -207,19 +223,20 @@ def run_experiment(
     print(f"Resources: {resources}")
 
     getml.engine.launch()
-    getml.engine.set_project(f"xgboost_{dataset_name}_{task_name}")
+    getml.engine.set_project(f"xgboost_{dataset_name}_{task_name}_{random_seed}")
 
     task = get_task(dataset_name, task_name)
 
-    df_dict = build_getml_dfs(db, task, col_to_stype_dict)
-
+    df_dict = build_getml_task_data(db, task, col_to_stype_dict)
     datamodel = build_getml_datamodel(db, df_dict, task)
 
-    train_df = target_getml_df(df_dict[task.entity_table], task, "train")
-    val_df = target_getml_df(df_dict[task.entity_table], task, "val")
-    test_df = target_getml_df(df_dict[task.entity_table], task, "test")
-    container = getml.data.Container(train=train_df, validation=val_df, test=test_df)
-    container.add(**{k: v for k, v in df_dict.items() if k != task.entity_table})
+    val_df = build_task_df(task, "val")
+    test_df = build_task_df(task, "test")
+    train_df = build_task_df(task, "train")
+
+    container = getml.data.Container(
+        train=train_df, validation=val_df, test=test_df, peripheral=df_dict
+    )
     container.freeze()
 
     if task.task_type in [
@@ -246,6 +263,7 @@ def run_experiment(
         # feature_selectors=[feature_selector],
         predictors=[predictor],
         share_selected_features=0.5,
+        include_categorical=True,
     )
 
     metrics = get_metrics(dataset_name, task_name)
