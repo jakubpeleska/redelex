@@ -69,4 +69,4 @@ class ImputeEntityTaskMixin(ModifyDBTaskMixin, EntityTaskMixin):
         return table
 
 
-_all__ = ["ImputeEntityMixinTask"]
+__all__ = ["ImputeEntityTaskMixin"]
