@@ -13,7 +13,7 @@ class ImputeEntityTaskMixin(ModifyDBTaskMixin, EntityTaskMixin):
     Attributes:
         removed_entity_cols: list of entity columns to be removed from the
             entity table.
-        Other attributes are inherited from ModifyDBTaskMixin and EntityTask.
+        Other attributes are inherited from ModifyDBTaskMixin and EntityTaskMixin.
     """
 
     removed_entity_cols: list[str] = []
