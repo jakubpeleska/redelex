@@ -20,6 +20,7 @@ dependencies = [
     "inflect>=7.5.0",
     "tqdm>=4.67.1",
     "attrs>=25.3.0",
+    "einops>=0.8.1",
 ]
 
 [dependency-groups]

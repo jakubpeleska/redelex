@@ -1,4 +1,5 @@
 # This file includes code originally from relgt (MIT licensed):
+# https://github.com/snap-stanford/relgt/blob/19e423ca3e7cac761130aba790857f2dc3a46ef7/model.py
 # https://github.com/snap-stanford/relgt/blob/19e423ca3e7cac761130aba790857f2dc3a46ef7/codebook.py
 
 # Original copyright:
@@ -24,11 +25,98 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import math
+
 import torch
-from torch import nn
+import torch.nn.functional as F
+
+from torch_geometric.nn.dense.linear import Linear
+
+from einops import rearrange
 
 
-class VectorQuantizerEMA(nn.Module):
+class GlobalRelGTModule(torch.nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        global_dim,
+        num_nodes,
+        heads=1,
+        attn_dropout=0.0,
+        num_centroids=None,
+        **kwargs,
+    ):
+        super(GlobalRelGTModule, self).__init__()
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.heads = heads
+        self.attn_dropout = attn_dropout
+        self.num_centroids = num_centroids
+
+        self.vq = VectorQuantizerEMA(num_centroids, global_dim, decay=0.99)
+        c = torch.randint(0, num_centroids, (num_nodes,), dtype=torch.long)
+        self.register_buffer("c_idx", c)
+        self.attn_fn = F.softmax
+
+        attn_channels = out_channels // heads
+
+        self.lin_proj_g = Linear(in_channels, global_dim)
+        self.lin_key_g = Linear(global_dim, heads * attn_channels)
+        self.lin_query_g = Linear(global_dim, heads * attn_channels)
+        self.lin_value_g = Linear(global_dim, heads * attn_channels)
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        # Reinitialize global attention layers
+        self.lin_proj_g.reset_parameters()
+        self.lin_key_g.reset_parameters()
+        self.lin_query_g.reset_parameters()
+        self.lin_value_g.reset_parameters()
+        self.vq.reset_parameters()
+
+    def forward(self, x, batch_idx):
+        d, h = self.out_channels, self.heads
+        scale = 1.0 / math.sqrt(d)
+
+        q_x = self.lin_proj_g(x)
+
+        k_buf = self.vq.get_k()
+        k_x = k_buf.detach().clone()
+        v_buf = self.vq.get_v()
+        v_x = v_buf.detach().clone()
+
+        q = self.lin_query_g(q_x)
+        k = self.lin_key_g(k_x)
+        v = self.lin_value_g(v_x)
+
+        q, k, v = map(lambda t: rearrange(t, "n (h d) -> h n d", h=h), (q, k, v))
+        dots = torch.einsum("h i d, h j d -> h i j", q, k) * scale
+
+        c, c_count = self.c_idx.unique(return_counts=True)
+
+        centroid_count = torch.zeros(self.num_centroids, dtype=torch.long).to(x.device)
+        centroid_count[c.to(torch.long)] = c_count
+
+        dots = dots + torch.log(centroid_count.view(1, 1, -1))
+
+        attn = self.attn_fn(dots, dim=-1)
+        attn = F.dropout(attn, p=self.attn_dropout, training=self.training)
+
+        out = torch.einsum("h i j, h j d -> h i d", attn, v)
+        out = rearrange(out, "h n d -> n (h d)")
+
+        # Update the centroids
+        if self.training:
+            x_idx = self.vq.update(q_x)
+            self.c_idx[batch_idx] = x_idx.squeeze().to(torch.long)
+
+        return out
+
+
+class VectorQuantizerEMA(torch.nn.Module):
     """
     Vector Quantizer with Exponential Moving Average (EMA) for the codebook.
     Adapted from https://github.com/devnkong/GOAT
@@ -42,7 +130,7 @@ class VectorQuantizerEMA(nn.Module):
         _embedding_dim (int): The dimensionality of each embedding.
         _num_embeddings (int): The number of embeddings in the codebook.
         _decay (float): The decay rate for the EMA.
-        _embedding (nn.Embedding): The embedding matrix.
+        _embedding (torch.nn.Embedding): The embedding matrix.
         _ema_cluster_size (torch.Tensor): The exponential moving average of the cluster sizes.
         _ema_w (torch.Tensor): The exponential moving average of the embedding updates.
     """
@@ -69,10 +157,10 @@ class VectorQuantizerEMA(nn.Module):
         self.bn = torch.nn.BatchNorm1d(self._embedding_dim, affine=False)
 
     def reset_parameters(self):
-        nn.init.normal_(self._embedding, mean=0.0, std=1.0)
-        nn.init.normal_(self._embedding_output, mean=0.0, std=1.0)
-        nn.init.zeros_(self._ema_cluster_size)
-        nn.init.normal_(self._ema_w, mean=0.0, std=1.0)
+        torch.nn.init.normal_(self._embedding, mean=0.0, std=1.0)
+        torch.nn.init.normal_(self._embedding_output, mean=0.0, std=1.0)
+        torch.nn.init.zeros_(self._ema_cluster_size)
+        torch.nn.init.normal_(self._ema_w, mean=0.0, std=1.0)
 
         self.bn.reset_parameters()
 

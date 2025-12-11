@@ -25,11 +25,10 @@
 # SOFTWARE.
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 
-class LocalModule(nn.Module):
+class LocalRelGTModule(torch.nn.Module):
     def __init__(
         self,
         seq_len,
@@ -55,10 +54,10 @@ class LocalModule(nn.Module):
         self.dropout_rate = dropout_rate
         self.attention_dropout_rate = attention_dropout_rate
 
-        self.att_embeddings_nope = nn.Linear(self.input_dim, self.hidden_dim)
+        self.att_embeddings_nope = torch.nn.Linear(self.input_dim, self.hidden_dim)
 
         encoders = [
-            EncoderLayer(
+            TransformerEncoderLayer(
                 self.hidden_dim,
                 self.ffn_dim,
                 self.dropout_rate,
@@ -67,10 +66,10 @@ class LocalModule(nn.Module):
             )
             for _ in range(self.n_layers)
         ]
-        self.layers = nn.ModuleList(encoders)
-        self.final_ln = nn.LayerNorm(hidden_dim)
+        self.layers = torch.nn.ModuleList(encoders)
+        self.final_ln = torch.nn.LayerNorm(hidden_dim)
 
-        self.attn_layer = nn.Linear(2 * hidden_dim, 1)
+        self.attn_layer = torch.nn.Linear(2 * hidden_dim, 1)
 
     def reset_parameters(self):
         self.att_embeddings_nope.reset_parameters()
@@ -116,19 +115,19 @@ class LocalModule(nn.Module):
         return output
 
 
-class FeedForwardNetwork(nn.Module):
+class FeedForwardNetwork(torch.nn.Module):
     def __init__(self, hidden_size, ffn_size, dropout_rate):
         super(FeedForwardNetwork, self).__init__()
 
-        self.bn_in = nn.BatchNorm1d(hidden_size)
-        self.bn_out = nn.BatchNorm1d(hidden_size)
+        self.bn_in = torch.nn.BatchNorm1d(hidden_size)
+        self.bn_out = torch.nn.BatchNorm1d(hidden_size)
 
-        self.ffn_net = nn.Sequential(
-            nn.Linear(hidden_size, ffn_size),
-            nn.GELU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(ffn_size, hidden_size),
-            nn.Dropout(dropout_rate),
+        self.ffn_net = torch.nn.Sequential(
+            torch.nn.Linear(hidden_size, ffn_size),
+            torch.nn.GELU(),
+            torch.nn.Dropout(dropout_rate),
+            torch.nn.Linear(ffn_size, hidden_size),
+            torch.nn.Dropout(dropout_rate),
         )
 
     def reset_parameters(self):
@@ -150,34 +149,34 @@ class FeedForwardNetwork(nn.Module):
         return x
 
 
-class EncoderLayer(nn.Module):
+class TransformerEncoderLayer(torch.nn.Module):
     def __init__(
         self, hidden_size, ffn_size, dropout_rate, attention_dropout_rate, num_heads
     ):
-        super(EncoderLayer, self).__init__()
+        super(TransformerEncoderLayer, self).__init__()
         self.hidden_size = hidden_size
         self.num_heads = num_heads
         self.attention_dropout_rate = attention_dropout_rate
 
-        self.self_attention_norm = nn.LayerNorm(hidden_size)
+        self.self_attention_norm = torch.nn.LayerNorm(hidden_size)
 
-        self.q_proj = nn.Linear(hidden_size, hidden_size)
-        self.k_proj = nn.Linear(hidden_size, hidden_size)
-        self.v_proj = nn.Linear(hidden_size, hidden_size)
-        self.out_proj = nn.Linear(hidden_size, hidden_size)
+        self.q_proj = torch.nn.Linear(hidden_size, hidden_size)
+        self.k_proj = torch.nn.Linear(hidden_size, hidden_size)
+        self.v_proj = torch.nn.Linear(hidden_size, hidden_size)
+        self.out_proj = torch.nn.Linear(hidden_size, hidden_size)
 
-        self.self_attention_dropout = nn.Dropout(dropout_rate)
+        self.self_attention_dropout = torch.nn.Dropout(dropout_rate)
 
-        self.ffn_norm = nn.LayerNorm(hidden_size)
+        self.ffn_norm = torch.nn.LayerNorm(hidden_size)
         self.ffn = FeedForwardNetwork(hidden_size, ffn_size, dropout_rate)
 
     def reset_parameters(self):
         self.self_attention_norm.reset_parameters()
 
         for proj in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
-            nn.init.xavier_uniform_(proj.weight)
+            torch.nn.init.xavier_uniform_(proj.weight)
             if proj.bias is not None:
-                nn.init.zeros_(proj.bias)
+                torch.nn.init.zeros_(proj.bias)
         self.ffn_norm.reset_parameters()
         self.ffn.reset_parameters()
 
