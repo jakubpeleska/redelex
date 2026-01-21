@@ -41,7 +41,7 @@ from relbench.metrics import (
     roc_auc,
 )
 
-from redelex.data import get_node_train_table_input
+from redelex.nn.train import get_node_train_table_input
 from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
 
 from experiments.utils import (

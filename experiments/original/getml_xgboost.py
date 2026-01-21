@@ -32,7 +32,6 @@ import getml
 from getml.feature_learning import loss_functions
 
 from relbench.base import Database, EntityTask, TaskType, Table
-from relbench.modeling.utils import to_unix_time
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 

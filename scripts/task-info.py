@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, Union
 
 import json
 
@@ -7,7 +7,6 @@ import pandas as pd
 import networkx as nx
 
 import torch
-from sentence_transformers import SentenceTransformer
 
 from torch_frame import stype
 from torch_frame.config import TextEmbedderConfig
@@ -20,21 +19,11 @@ from relbench.base import Database, Dataset, EntityTask, TaskType
 from relbench.datasets import get_dataset_names, get_dataset
 from relbench.tasks import get_task_names, get_task
 
-from redelex.data import make_pkey_fkey_graph, get_node_train_table_input
+from redelex.data import GloveTextEmbedder, make_pkey_fkey_graph
 from redelex.datasets import CTUDataset, DBDataset
+from redelex.nn.train import get_node_train_table_input
 from redelex.tasks import CTUBaseEntityTask
 from redelex.utils import convert_timedelta, guess_schema
-
-
-class GloveTextEmbedding:
-    def __init__(self, device: Optional[torch.device] = None):
-        self.model = SentenceTransformer(
-            "sentence-transformers/average_word_embeddings_glove.6B.300d",
-            device=device,
-        )
-
-    def __call__(self, sentences: List[str]) -> torch.Tensor:
-        return self.model.encode(sentences, convert_to_tensor=True)
 
 
 def max_multiplicity(df: pd.DataFrame, fk_col: str):
@@ -176,8 +165,8 @@ for dataset_name in all_datasets:
         data, col_stats_dict = make_pkey_fkey_graph(
             db,
             col_to_stype_dict=col_to_stype_dict,
-            text_embedder_cfg=TextEmbedderConfig(
-                text_embedder=GloveTextEmbedding(device=torch.device("cpu")),
+            text_embedder=TextEmbedderConfig(
+                text_embedder=GloveTextEmbedder(device=torch.device("cpu")),
                 batch_size=256,
             ),
             cache_dir=f"{cache_path}/materialized",

@@ -32,8 +32,8 @@ from torch_geometric.loader import NeighborLoader
 from relbench.base import BaseTask, EntityTask, TaskType
 from relbench.tasks import get_task
 
-from redelex.data import get_node_train_table_input
 from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
+from redelex.nn.train import get_node_train_table_input
 from redelex.nn.models.sagegnn import SAGEModel
 from redelex.nn.models.dbformer import DBFormerModel
 
