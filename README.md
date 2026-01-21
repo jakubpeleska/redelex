@@ -141,6 +141,12 @@ uv sync --no-group cpu --group cu124
 uv pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.4.0+cu124.html
 ```
 
+CUDA 12.1 (RCI Setup):
+```bash
+uv sync --no-group cpu --group cu121
+uv pip install pyg_lib==0.3.1 torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.1.2+cu121.html
+```
+
 ### Enable and run `pre-commit`
 
 ```bash
