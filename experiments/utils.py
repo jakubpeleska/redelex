@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, Optional, Any, Union
 
 import json
 
@@ -9,7 +9,6 @@ import sqlalchemy as sa
 import torch
 from torch.nn import BCEWithLogitsLoss, L1Loss, CrossEntropyLoss
 
-from sentence_transformers import SentenceTransformer
 from torch_frame import stype
 from torch_frame.data import StatType
 from torch_frame.config.text_embedder import TextEmbedderConfig
@@ -18,7 +17,6 @@ from torch_geometric.data import HeteroData
 
 from relbench.base import Database, EntityTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.modeling.graph import make_pkey_fkey_graph
 from relbench.tasks import get_task
 from relbench.metrics import (
     accuracy,
@@ -32,31 +30,36 @@ from relbench.metrics import (
     roc_auc,
 )
 
+from redelex.data import (
+    make_pkey_fkey_graph,
+    TextEmbedder,
+    GloveTextEmbedder,
+    PotionTextEmbedder,
+)
 from redelex.datasets import DBDataset
 from redelex.tasks import CTUBaseEntityTask
-from redelex.utils import (
-    guess_schema,
-    convert_timedelta,
-    standardize_db_dt,
-    merge_tf,
-)
+from redelex.utils import guess_schema, convert_timedelta, merge_tf
 
 
-class GloveTextEmbedding:
-    def __init__(self, device: Optional[torch.device] = None):
-        self.model = SentenceTransformer(
-            "sentence-transformers/average_word_embeddings_glove.6B.300d",
-            device=device,
-        )
+def get_text_embedder(
+    emebdder_name: str, device: Optional[torch.device] = None
+) -> TextEmbedder:
+    if emebdder_name == "glove":
+        return GloveTextEmbedder(device=device)
+    elif emebdder_name == "potion":
+        return PotionTextEmbedder(device=device)
+    else:
+        raise ValueError(f"Text embedder {emebdder_name} is not supported")
 
-    def __call__(self, sentences: List[str]) -> torch.Tensor:
-        return self.model.encode(sentences, convert_to_tensor=True)
 
-
-def get_text_embedder():
-    return TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=torch.device("cpu")), batch_size=256
-    )
+def get_hyperparams_logging(
+    config: dict[str, Any],
+) -> dict[str, Union[str, int, float, bool]]:
+    hyperparams_logging = {}
+    for key, value in config.items():
+        if type(value) in [str, int, float, bool]:
+            hyperparams_logging[key] = value
+    return hyperparams_logging
 
 
 def get_cache_path(dataset_name: str, task_name: str, cache_dir: str):
@@ -147,6 +150,7 @@ def get_data(
     cache_path: str,
     entity_table_only: bool = False,
     aggregate_neighbors: bool = False,
+    text_embedder_name: str = "glove",
 ):
     dataset = get_dataset(dataset_name)
     task = get_task(dataset_name, task_name)
@@ -161,13 +165,12 @@ def get_data(
         db,
         sql_schema=dataset.get_schema() if isinstance(dataset, DBDataset) else None,
     )
-    standardize_db_dt(db, attribute_schema)
 
     data, col_stats_dict = make_pkey_fkey_graph(
         db,
         col_to_stype_dict=attribute_schema,
-        text_embedder_cfg=TextEmbedderConfig(
-            text_embedder=GloveTextEmbedding(device=torch.device("cpu")), batch_size=256
+        text_embedder=TextEmbedderConfig(
+            text_embedder=get_text_embedder(text_embedder_name), batch_size=256
         ),
         cache_dir=f"{cache_path}/materialized",
     )
@@ -205,6 +208,7 @@ def get_data(
 
 __all__ = [
     "get_text_embedder",
+    "get_hyperparams_logging",
     "get_cache_path",
     "get_metrics",
     "get_tune_metric",

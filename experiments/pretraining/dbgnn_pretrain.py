@@ -2,7 +2,6 @@ from typing import Any, Dict, Literal, Optional
 
 import os
 import random
-import sys
 from datetime import datetime, timedelta
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -29,22 +28,18 @@ from torch_geometric.nn import MLP
 from relbench.base import TaskType
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task, get_task_names
-from relbench.modeling.graph import make_pkey_fkey_graph, get_node_train_table_input
 
-sys.path.append(".")
+from redelex.data import make_pkey_fkey_graph, get_node_train_table_input
 from redelex.datasets import get_dataset_info
 from redelex.nn.models.rdl_model import RDLModel
-from redelex.nn.corruptors import DBResampleCorruptor
-from redelex.nn.models.pretrain_wrappers import (
-    PretrainingModel,
-    LightningPretraining,
-    LightningEntityTaskModel,
+from redelex.utils.corruptors import DBResampleCorruptor
+from redelex.nn.train.pretrain_wrappers import (
+    PretrainingWrapper,
+    LightningPretrainingWrapper,
+    LightningPretrainedModel,
 )
 
-from experiments.utils import (
-    get_attribute_schema,
-    get_text_embedder,
-)
+from experiments.utils import get_attribute_schema, get_text_embedder
 
 
 def get_backbone(
@@ -149,7 +144,7 @@ def run_task_experiment(
     else:
         optimizer = torch.optim.Adam(task_head.parameters(), lr=lr)
 
-    ligtning_model = LightningEntityTaskModel(
+    ligtning_model = LightningPretrainedModel(
         backbone,
         task_head,
         optimizer,
@@ -342,17 +337,17 @@ def run_pretraining_experiment(
         rgnn_aggr=rgnn_aggr,
     )
 
-    pretrain_model = PretrainingModel(backbone, channels, temperature=temperature)
+    pretrain_model = PretrainingWrapper(backbone, channels, temperature=temperature)
 
     optimizer = torch.optim.Adam(pretrain_model.parameters(), lr=lr)
 
     backbone_model_path = os.path.join(experiment_dir, f"best_{trial_name}.pt")
 
-    ligtning_pretrain = LightningPretraining(
+    ligtning_pretrain = LightningPretrainingWrapper(
         pretrain_model,
         optimizer,
         model_save_path=backbone_model_path,
-        with_neightbor_loader=with_neighbor_pretrain,
+        with_neighbor_loader=with_neighbor_pretrain,
     )
 
     if with_mlflow:
@@ -534,13 +529,13 @@ def run_ray_tuner(
     full_data, col_stats_dict = make_pkey_fkey_graph(
         db,
         attribute_schema,
-        text_embedder_cfg=get_text_embedder(),
+        text_embedder=get_text_embedder("glove"),
         cache_dir=materialized_cache_dir + "/full",
     )
     train_data, _ = make_pkey_fkey_graph(
         train_db,
         attribute_schema,
-        text_embedder_cfg=get_text_embedder(),
+        text_embedder=get_text_embedder("glove"),
         cache_dir=materialized_cache_dir + "/train",
     )
 

@@ -617,6 +617,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/b4/3d80bff1dec219b73ccd0772b65ff30feffaf880bb9e13306e4421bb16ff/getml-1.5.1-2-py3-none-any.whl", hash = "sha256:e92c0015fb80687f74d147162e3d0bef372958fb233bb3f08c92ca84f089ca57", size = 376447 },
     { url = "https://files.pythonhosted.org/packages/de/cc/bccd3e7694b8d5b44b7692d2d04988b454539196efc7cb3dcff8f66db1c8/getml-1.5.1-2-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:2d3c49357f1dd3c93606b108e8bbae431dd98e2c69977c07370ea408fd326b5f", size = 16321402 },
     { url = "https://files.pythonhosted.org/packages/6c/27/45e883e4a78628256e95572f98397d306111b23759ce424d1296c4821052/getml-1.5.1-2-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:a4e9958ac9cd8110388f4cbbb3ae5c591cc37673140b121fbcdd1aa2e0e02a8d", size = 17067018 },
+    { url = "https://files.pythonhosted.org/packages/78/a4/7d30bf5f5e7291b3dbd4f28d57d24815975aa8a99d62e13a1235885ddf00/getml-1.5.1-3-py3-none-any.whl", hash = "sha256:f40f50f107d82cfc185822c320869aeaf4715e940b0c1994b9e2686a393b71c6", size = 377026 },
+    { url = "https://files.pythonhosted.org/packages/ed/67/8e36f28bec2f07da865e01db5b856fd74511af84973750961b01b8e597ca/getml-1.5.1-3-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:cdd316df5bc2cdd5e81dfa2b05d7d4175578b8df31a9d54b6a9c93ec550aa825", size = 16321981 },
+    { url = "https://files.pythonhosted.org/packages/f8/87/607ccdb8426428d2e2dadbcf2ad16c7af13a4cfc9a7626ca98e29a7db90f/getml-1.5.1-3-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:bd36b173c83065f93dc52f67e6343bdf5ca716439d29880d48c8815903aa7ac0", size = 17067596 },
+    { url = "https://files.pythonhosted.org/packages/3f/8f/243c3020df81628f4a21eda20658874923f7e4751a1988b4cad2cc143bf5/getml-1.5.1-4-py3-none-any.whl", hash = "sha256:d963bb52224cfa6a7d35f9fd0006180f51852b745ce4f53c3b245d761b0df925", size = 377054 },
+    { url = "https://files.pythonhosted.org/packages/ba/c2/88122ae55f740190a54526b1abc28dbb58aa13ee8fbf4c26fa9bd86a664c/getml-1.5.1-4-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:29ba6dbc4133865dbbe7691b2a0d603328bbff2a704c87a8323a8958d6b7231e", size = 16322011 },
+    { url = "https://files.pythonhosted.org/packages/f9/73/0dcb69ca2ea4f0d8572e7b93e625d3bb67c88487376ab5df864c64e8103d/getml-1.5.1-4-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:da75a93ed2c2aa044ee4428c57c726ef6a46668c92900c851e7f001e929705ee", size = 17067627 },
+    { url = "https://files.pythonhosted.org/packages/c5/f7/690538489f59ca904c34d4ad415e6bcd0c7c166895128eceabafe27c0a50/getml-1.5.1-5-py3-none-any.whl", hash = "sha256:513d9e848e6b55ada5c3a1ba810114d35631121688b30851526f4cb818bf96f7", size = 377907 },
+    { url = "https://files.pythonhosted.org/packages/31/41/a59d6269bde50fce53c8595ee45fc0272897937795263c454edf6ebc6d5a/getml-1.5.1-5-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:2456b4515021bcc977c0e920b1f15c133b2bdf8071ff38927ddf2b83d9f5423f", size = 16322861 },
+    { url = "https://files.pythonhosted.org/packages/eb/2c/ce00e0e634cae38a53cab2283c6458000496663d27f36223f2896bf9c6b4/getml-1.5.1-5-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:18bbc7c19fde65fb4c2293132090396da6fef13c0b2777f81da3988bde32d561", size = 17068474 },
     { url = "https://files.pythonhosted.org/packages/b9/ec/6b46f8e2988cf5e21d6e57dbc5860f467ecc2aed916e5882b12f1f5a9d41/getml-1.5.1-py3-none-any.whl", hash = "sha256:a4649425b8f74b6388f904b4671d18290f11aa0767348deaaafb06c3579c28c7", size = 376434 },
     { url = "https://files.pythonhosted.org/packages/61/dc/c5d60509247ba723fb5e0a173b0ecfacc0ff1ee796e89adc0eaec57cde34/getml-1.5.1-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:97c156cc3223916a60b395ade6b8d536354ea111dbcb696a3cfeb298c39d873a", size = 16321389 },
     { url = "https://files.pythonhosted.org/packages/a8/b2/d561f6360f818869a899be87b53902dc4d2ec51f745d7bff46bae63ce680/getml-1.5.1-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:cfcfc5586515ba082ba829241743fb3610c568959de4b32f538b5031abcdac6c", size = 17067007 },
@@ -947,6 +956,22 @@ wheels = [
 ]
 
 [[package]]
+name = "ipywidgets"
+version = "8.1.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "comm" },
+    { name = "ipython" },
+    { name = "jupyterlab-widgets" },
+    { name = "traitlets" },
+    { name = "widgetsnbextension" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4c/ae/c5ce1edc1afe042eadb445e95b0671b03cee61895264357956e61c0d2ac0/ipywidgets-8.1.8.tar.gz", hash = "sha256:61f969306b95f85fba6b6986b7fe45d73124d1d9e3023a8068710d47a22ea668", size = 116739 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/56/6d/0d9848617b9f753b87f214f1c682592f7ca42de085f564352f10f0843026/ipywidgets-8.1.8-py3-none-any.whl", hash = "sha256:ecaca67aed704a338f88f67b1181b58f821ab5dc89c1f0f5ef99db43c1c2921e", size = 139808 },
+]
+
+[[package]]
 name = "itsdangerous"
 version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1043,6 +1068,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/99/1b/72906d554acfeb588332eaaa6f61577705e9ec752ddb486f302dafa292d9/jupyter_core-5.8.1.tar.gz", hash = "sha256:0a5f9706f70e64786b75acba995988915ebd4601c8a52e534a40b51c95f59941", size = 88923 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2f/57/6bffd4b20b88da3800c5d691e0337761576ee688eb01299eae865689d2df/jupyter_core-5.8.1-py3-none-any.whl", hash = "sha256:c28d268fc90fb53f1338ded2eb410704c5449a358406e8a948b75706e24863d0", size = 28880 },
+]
+
+[[package]]
+name = "jupyterlab-widgets"
+version = "3.0.16"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/26/2d/ef58fed122b268c69c0aa099da20bc67657cdfb2e222688d5731bd5b971d/jupyterlab_widgets-3.0.16.tar.gz", hash = "sha256:423da05071d55cf27a9e602216d35a3a65a3e41cdf9c5d3b643b814ce38c19e0", size = 897423 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ab/b5/36c712098e6191d1b4e349304ef73a8d06aed77e56ceaac8c0a306c7bda1/jupyterlab_widgets-3.0.16-py3-none-any.whl", hash = "sha256:45fa36d9c6422cf2559198e4db481aa243c7a32d9926b500781c830c80f7ecf8", size = 914926 },
 ]
 
 [[package]]
@@ -1587,6 +1621,15 @@ wheels = [
 ]
 
 [[package]]
+name = "nvidia-ml-py"
+version = "13.590.44"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1b/23/3871537f204aee823c574ba25cbeb08cae779979d4d43c01adddda00bab9/nvidia_ml_py-13.590.44.tar.gz", hash = "sha256:b358c7614b0fdeea4b95f046f1c90123bfe25d148ab93bb1c00248b834703373", size = 49737 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e4/47/4c822bd37a008e72fd5a0eae33524ae3ac97b13f7030f63bae1728b8957e/nvidia_ml_py-13.590.44-py3-none-any.whl", hash = "sha256:18feb54eca7d0e3cdc8d1a040a771eda72d9ec3148e5443087970dbfd7377ecc", size = 50683 },
+]
+
+[[package]]
 name = "nvidia-nccl-cu12"
 version = "2.20.5"
 source = { registry = "https://pypi.org/simple" }
@@ -2127,6 +2170,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pydot"
+version = "4.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyparsing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/50/35/b17cb89ff865484c6a20ef46bf9d95a5f07328292578de0b295f4a6beec2/pydot-4.0.1.tar.gz", hash = "sha256:c2148f681c4a33e08bf0e26a9e5f8e4099a82e0e2a068098f32ce86577364ad5", size = 162594 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/32/a7125fb28c4261a627f999d5fb4afff25b523800faed2c30979949d6facd/pydot-4.0.1-py3-none-any.whl", hash = "sha256:869c0efadd2708c0be1f916eb669f3d664ca684bc57ffb7ecc08e70d5e93fee6", size = 37087 },
+]
+
+[[package]]
 name = "pygments"
 version = "2.19.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2142,6 +2197,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/ce59b5e5ed4ce8512f879ff1fa5ab699d211ae2495f1adaa5fbba2a1eada/pymysql-1.1.1.tar.gz", hash = "sha256:e127611aaf2b417403c60bf4dc570124aeb4a57f5f37b8e95ae399a42f904cd0", size = 47678 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0c/94/e4181a1f6286f545507528c78016e00065ea913276888db2262507693ce5/PyMySQL-1.1.1-py3-none-any.whl", hash = "sha256:4de15da4c61dc132f4fb9ab763063e693d521a80fd0e87943b9a453dd4c19d6c", size = 44972 },
+]
+
+[[package]]
+name = "pynvml"
+version = "13.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nvidia-ml-py" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5c/57/da7dc63a79f59e082e26a66ac02d87d69ea316b35b35b7a00d82f3ce3d2f/pynvml-13.0.1.tar.gz", hash = "sha256:1245991d9db786b4d2f277ce66869bd58f38ac654e38c9397d18f243c8f6e48f", size = 35226 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/4a/cac76c174bb439a0c46c9a4413fcbea5c6cabfb01879f7bbdb9fdfaed76c/pynvml-13.0.1-py3-none-any.whl", hash = "sha256:e2b20e0a501eeec951e2455b7ab444759cf048e0e13a57b08049fa2775266aa8", size = 28810 },
 ]
 
 [[package]]
@@ -2402,6 +2469,7 @@ cu124 = [
 ]
 dev = [
     { name = "ipykernel" },
+    { name = "ipywidgets" },
     { name = "matplotlib" },
     { name = "pre-commit" },
 ]
@@ -2409,7 +2477,12 @@ experiments = [
     { name = "getml" },
     { name = "lightning" },
     { name = "mlflow" },
+    { name = "pynvml" },
     { name = "ray", extra = ["data", "serve", "train", "tune"] },
+]
+visualization = [
+    { name = "jinja2" },
+    { name = "pydot" },
 ]
 
 [package.metadata]
@@ -2442,6 +2515,7 @@ cu124 = [
 ]
 dev = [
     { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "ipywidgets", specifier = ">=8.1.8" },
     { name = "matplotlib", specifier = ">=3.10.1" },
     { name = "pre-commit", specifier = ">=4.2.0" },
 ]
@@ -2449,7 +2523,12 @@ experiments = [
     { name = "getml", specifier = ">=1.5.1" },
     { name = "lightning", specifier = ">=2.5.1.post0" },
     { name = "mlflow", specifier = ">=2.22.1" },
+    { name = "pynvml", specifier = ">=13.0.1" },
     { name = "ray", extras = ["data", "serve", "train", "tune"], specifier = ">=2.46.0" },
+]
+visualization = [
+    { name = "jinja2", specifier = ">=3.1.6" },
+    { name = "pydot", specifier = ">=4.0.1" },
 ]
 
 [[package]]
@@ -3468,6 +3547,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/9f/69/83029f1f6300c5fb2471d621ab06f6ec6b3324685a2ce0f9777fd4a8b71e/werkzeug-3.1.3.tar.gz", hash = "sha256:60723ce945c19328679790e3282cc758aa4a6040e4bb330f53d30fa546d44746", size = 806925 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/52/24/ab44c871b0f07f491e5d2ad12c9bd7358e527510618cb1b803a88e986db1/werkzeug-3.1.3-py3-none-any.whl", hash = "sha256:54b78bf3716d19a65be4fceccc0d1d7b89e608834989dfae50ea87564639213e", size = 224498 },
+]
+
+[[package]]
+name = "widgetsnbextension"
+version = "4.0.15"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bd/f4/c67440c7fb409a71b7404b7aefcd7569a9c0d6bd071299bf4198ae7a5d95/widgetsnbextension-4.0.15.tar.gz", hash = "sha256:de8610639996f1567952d763a5a41af8af37f2575a41f9852a38f947eb82a3b9", size = 1097402 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3f/0e/fa3b193432cfc60c93b42f3be03365f5f909d2b3ea410295cf36df739e31/widgetsnbextension-4.0.15-py3-none-any.whl", hash = "sha256:8156704e4346a571d9ce73b84bee86a29906c9abfd7223b7228a28899ccf3366", size = 2196503 },
 ]
 
 [[package]]

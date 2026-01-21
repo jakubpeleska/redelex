@@ -1,7 +1,4 @@
 from attrs import field, define
-from typing import List
-
-__all__ = ["ForeignKey"]
 
 
 @define
@@ -10,7 +7,7 @@ class ForeignKey:
     Represents one foreign key.
     """
 
-    src_columns: List[str] = field(converter=list)
+    src_columns: list[str] = field(converter=list)
     """
     The referencing columns (in this table)
     """
@@ -20,7 +17,7 @@ class ForeignKey:
     The referenced table name
     """
 
-    ref_columns: List[str] = field(converter=list)
+    ref_columns: list[str] = field(converter=list)
     """
     The referenced columns (in the referenced table)
     """

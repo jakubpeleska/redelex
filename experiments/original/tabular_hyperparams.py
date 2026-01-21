@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 import math
 import os
 import random
-import sys
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["RAY_memory_monitor_refresh_ms"] = "0"
@@ -31,13 +30,10 @@ from torch_geometric.loader import NeighborLoader
 
 
 from relbench.base import BaseTask, EntityTask, TaskType
-from relbench.modeling.graph import get_node_train_table_input
 from relbench.tasks import get_task
 
-sys.path.append(".")
-
 from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
-from redelex.utils import standardize_table_dt
+from redelex.nn.train import get_node_train_table_input
 from redelex.nn.models.tabular import TabularModel
 
 from experiments.utils import (
@@ -97,7 +93,6 @@ def run_experiment(
 
     for split in ["train", "val", "test"]:
         table = task.get_table(split, mask_input_cols=False)
-        standardize_table_dt(table)
         table_input = get_node_train_table_input(table=table, task=task)
         loader_dict[split] = NeighborLoader(
             data,

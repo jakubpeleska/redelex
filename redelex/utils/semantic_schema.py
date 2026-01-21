@@ -55,11 +55,6 @@ POSSIBLE_TIME_FORMATS = [
     "%Y-%m-%d",
     "%Y/%m/%d",
 ]
-"""
-
-"""
-
-pd.to_datetime
 
 
 def check_predetermined_types(

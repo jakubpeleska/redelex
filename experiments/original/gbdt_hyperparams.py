@@ -3,7 +3,6 @@ from typing import Dict, Optional
 import copy
 import os
 import random
-import sys
 
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -32,7 +31,6 @@ from torch_frame.gbdt import LightGBM
 from torch_geometric.data import HeteroData
 
 from relbench.base import BaseTask, EntityTask, TaskType
-from relbench.modeling.graph import get_node_train_table_input
 from relbench.tasks import get_task
 from relbench.metrics import (
     average_precision,
@@ -43,12 +41,8 @@ from relbench.metrics import (
     roc_auc,
 )
 
-
-sys.path.append(".")
-
+from redelex.nn.train import get_node_train_table_input
 from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
-from redelex.utils import standardize_table_dt
-
 
 from experiments.utils import (
     get_cache_path,
@@ -139,7 +133,6 @@ def run_experiment(
 
     for split in ["train", "val", "test"]:
         table = task.get_table(split, mask_input_cols=False)
-        standardize_table_dt(table)
         table_input = get_node_train_table_input(table=table, task=task)
         tf: TensorFrame = copy.deepcopy(data[task.entity_table].tf[table_input.nodes[1]])
         time_feat = tf.feat_dict.pop(stype.timestamp, None)

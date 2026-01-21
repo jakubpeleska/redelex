@@ -1,9 +1,7 @@
-from typing import Dict, List, Set, Tuple
-
-from sqlalchemy import Connection, Engine, inspect
+from sqlalchemy import Connection, Engine, inspect, Table, MetaData
 from sqlalchemy.types import TypeEngine
 
-from .column_types import ForeignKey
+from .foreign_key import ForeignKey
 
 __all__ = ["DBInspector"]
 
@@ -35,17 +33,17 @@ class DBInspector:
     def engine(self) -> Engine:
         return self._connection.engine
 
-    def get_tables(self) -> Set[str]:
+    def get_tables(self) -> set[str]:
         """
         Retrieves the names of all tables in the database.
 
         Returns:
-            Set[str]: A set of table names.
+            set[str]: A set of table names.
         """
         out = self._inspect.get_table_names()
         return set(out)
 
-    def get_columns(self, table: str) -> Dict[str, TypeEngine]:
+    def get_columns(self, table: str) -> dict[str, TypeEngine]:
         """
         Retrieves the columns of a specific table in the database.
 
@@ -53,26 +51,12 @@ class DBInspector:
             table (str): The name of the table.
 
         Returns:
-            Dict[str, TypeEngine]: A dictionary mapping column names to their SQLAlchemy types.
+            dict[str, TypeEngine]: A dictionary mapping column names to their SQLAlchemy types.
         """
         out = {col["name"]: col["type"] for col in self._inspect.get_columns(table)}
         return out
 
-    def get_table_column_pairs(self) -> Set[Tuple[str, str]]:
-        """
-        Retrieves all table-column pairs in the database.
-
-        Returns:
-            Set[Tuple[str, str]]: A set of tuples representing table-column pairs.
-        """
-        out = set()
-
-        for tbl in self.get_tables():
-            out |= {(tbl, col) for col in self.get_columns(tbl).keys()}
-
-        return out
-
-    def get_primary_key(self, table: str) -> Set[str]:
+    def get_primary_key(self, table: str) -> set[str]:
         """
         Retrieves the primary key columns of a specific table in the database.
 
@@ -80,11 +64,11 @@ class DBInspector:
             table (str): The name of the table.
 
         Returns:
-            Set[str]: A set of primary key column names.
+            set[str]: A set of primary key column names.
         """
         return set(self._inspect.get_pk_constraint(table)["constrained_columns"])
 
-    def get_foreign_keys(self, table: str) -> List[ForeignKey]:
+    def get_foreign_keys(self, table: str) -> list[ForeignKey]:
         """
         Retrieves the foreign key constraints of a specific table in the database.
 
@@ -92,7 +76,7 @@ class DBInspector:
             table (str): The name of the table.
 
         Returns:
-            List[ForeignKey]: A dictionary mapping sets of constrained columns to their corresponding ForeignKey objects.
+            list[ForeignKey]: A dictionary mapping sets of constrained columns to their corresponding ForeignKey objects.
         """
         return [
             ForeignKey(
@@ -102,3 +86,24 @@ class DBInspector:
             )
             for fk in self._inspect.get_foreign_keys(table)
         ]
+
+    def get_schema(self) -> dict[str, dict[str, TypeEngine]]:
+        """Get the type schema of the remote database.
+
+        Returns:
+            dict[str, dict[str, TypeEngine]]: A dictionary mapping table names to column names and their types.
+        """
+
+        remote_md = MetaData()
+        remote_md.reflect(bind=self.engine)
+
+        table_names = self.get_tables()
+
+        schema = {}
+
+        for t_name in table_names:
+            sql_table = Table(t_name, remote_md)
+
+            schema[t_name] = {c.name: c.type for c in sql_table.columns}
+
+        return schema
