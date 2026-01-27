@@ -35,7 +35,7 @@ class NeighborTimeEncoder(nn.Module):
     Two-stage time encoder using positional encoding followed by a linear layer.
     """
 
-    def __init__(self, embedding_dim):
+    def __init__(self, embedding_dim: int):
         """
         Args:
             embedding_dim (int): Dimension of the output embedding.
@@ -49,7 +49,7 @@ class NeighborTimeEncoder(nn.Module):
         self.linear.reset_parameters()
         nn.init.normal_(self.mask_vector, mean=0.0, std=0.02)
 
-    def forward(self, rel_time):
+    def forward(self, rel_time: torch.Tensor) -> torch.Tensor:
         """
         Args:
             rel_time (Tensor): Tensor of shape [B, K] containing time values in seconds.

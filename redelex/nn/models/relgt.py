@@ -39,7 +39,7 @@ from redelex.nn.encoders import (
     NeighborHopEncoder,
     NeighborTimeEncoder,
     NeighborTfsEncoder,
-    GNNPEEncoder,
+    GNNPostionalEncoder,
 )
 
 
@@ -85,7 +85,7 @@ class RelGT(torch.nn.Module):
             col_names_dict=col_names_dict,
             col_stats_dict=col_stats_dict,
         )
-        self.pe_encoder = GNNPEEncoder(embedding_dim=channels, pe_dim=gnn_pe_dim)
+        self.pe_encoder = GNNPostionalEncoder(embedding_dim=channels, pe_dim=gnn_pe_dim)
 
         self.layer_norm_type = nn.LayerNorm(channels)
         self.layer_norm_hop = nn.LayerNorm(channels)

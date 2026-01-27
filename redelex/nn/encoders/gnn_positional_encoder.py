@@ -34,7 +34,7 @@ from torch_geometric.data import Data
 from torch_geometric.nn import GINConv
 
 
-class GNNPEEncoder(nn.Module):
+class GNNPostionalEncoder(nn.Module):
     """
     A GNN-based positional encoder that:
       1) Assigns each node a random scalar feature from a Normal(0,1).

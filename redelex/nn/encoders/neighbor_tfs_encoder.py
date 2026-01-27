@@ -30,6 +30,8 @@ from typing import Any
 import torch
 import torch.nn as nn
 
+from torch_geometric.typing import NodeType
+
 import torch_frame
 from torch_frame.nn.models import (
     ResNet,
@@ -47,9 +49,11 @@ class NeighborTfsEncoder(nn.Module):
     def __init__(
         self,
         channels: int,
-        node_type_map,  # Mapping from node type to index (if needed externally)
-        col_names_dict,
-        col_stats_dict,
+        node_type_map: dict[
+            NodeType, int
+        ],  # Mapping from node type to index (if needed externally)
+        col_names_dict: dict[NodeType, dict[torch_frame.stype, list[str]]],
+        col_stats_dict: dict[NodeType, dict[torch_frame.data.StatType, Any]],
         torch_frame_model_cls=ResNet,
         torch_frame_model_kwargs: dict[str, Any] = {
             "channels": 128,
@@ -105,7 +109,7 @@ class NeighborTfsEncoder(nn.Module):
         for encoder in self.encoders.values():
             encoder.reset_parameters()
 
-    def forward(self, batch_dict, neighbor_types):
+    def forward(self, batch_dict: dict, neighbor_types: torch.Tensor) -> torch.Tensor:
         """
         Args:
             batch_dict (dict): A dictionary containing:

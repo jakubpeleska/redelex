@@ -34,7 +34,7 @@ class NeighborNodeTypeEncoder(nn.Module):
     Uses an embedding layer to convert integer type indices into dense vectors.
     """
 
-    def __init__(self, node_type_map, embedding_dim):
+    def __init__(self, node_type_map: dict[str, int], embedding_dim: int):
         """
         Args:
             node_type_map (dict): A mapping from node type strings to integer indices.

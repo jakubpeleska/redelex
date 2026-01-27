@@ -4,7 +4,7 @@ from .neighbor_node_type_encoder import NeighborNodeTypeEncoder
 from .neighbor_hop_encoder import NeighborHopEncoder
 from .neighbor_time_encoder import NeighborTimeEncoder
 from .neighbor_tfs_encoder import NeighborTfsEncoder
-from .gnn_positional_encoder import GNNPEEncoder
+from .gnn_positional_encoder import GNNPostionalEncoder
 
 __all__ = [
     "LinearRowEncoder",
@@ -13,5 +13,5 @@ __all__ = [
     "NeighborHopEncoder",
     "NeighborTimeEncoder",
     "NeighborTfsEncoder",
-    "GNNPEEncoder",
+    "GNNPostionalEncoder",
 ]
