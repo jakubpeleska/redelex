@@ -54,7 +54,7 @@ class BaseTask:
 
         raise NotImplementedError
 
-    def make_split_range(self, split: str) -> Union[pd.Series, pd.DataFrame]:
+    def make_split_range(self, db: Database, split: str) -> Union[pd.Series, pd.DataFrame]:
         r"""Make a data range for a split.
 
         Args:

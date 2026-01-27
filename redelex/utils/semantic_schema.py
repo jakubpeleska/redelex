@@ -204,7 +204,7 @@ def guess_table_stypes(
 
 
 def guess_schema(
-    db: Database, db_schema: Optional[DBSchema] = {}
+    db: Database, db_schema: Optional[DBSchema] = None
 ) -> Dict[str, Dict[str, stype]]:
     """Locate all database tables and all columns and run :py:method:`guess_column_type` for all of them.
 
@@ -214,7 +214,10 @@ def guess_schema(
 
     for table_name, table in db.table_dict.items():
         schema[table_name] = guess_table_stypes(
-            table, table_schema=db_schema.table_schemas.get(table_name, None)
+            table,
+            table_schema=db_schema.table_schemas.get(table_name, None)
+            if db_schema
+            else None,
         )
 
     return schema
