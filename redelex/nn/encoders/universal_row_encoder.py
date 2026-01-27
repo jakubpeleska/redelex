@@ -5,17 +5,11 @@ from enum import Enum
 import torch
 import torch.nn.functional as F
 
-from torch_geometric.typing import NodeType, EdgeType
-from torch_geometric.data import HeteroData
-from torch_geometric.nn import MLP
-
 import torch_frame
 from torch_frame import stype
 from torch_frame.data import MultiNestedTensor, MultiEmbeddingTensor
 from torch_frame.data.mapper import TimestampTensorMapper
 from torch_frame.nn.encoding import CyclicEncoding, PositionalEncoding
-
-from relbench.modeling.nn import HeteroTemporalEncoder, HeteroGraphSAGE
 
 from redelex.data import TextEmbedder, TensorStatType
 
@@ -661,101 +655,6 @@ class UniversalRowEncoder(torch.nn.Module):
 
         x = self.out_transform(x)  # [batch_size, out_channels]
         return x
-
-
-class UniversalSAGEModel(torch.nn.Module):
-    def __init__(
-        self,
-        col_channels: int,
-        gnn_channels: int,
-        out_channels: int,
-        text_embedder: TextEmbedder,
-        node_types: list[NodeType],
-        edge_types: list[EdgeType],
-        tabular_encoder_heads: int = 4,
-        tabular_encoder_layers: int = 2,
-        tabular_encoder_dropout: float = 0.1,
-        gnn_layers: int = 2,
-        gnn_aggr: str = "mean",
-        head_norm: str = "batch_norm",
-    ):
-        super().__init__()
-
-        self.text_embedder = text_embedder
-
-        self.tabular_encoder = UniversalRowEncoder(
-            out_channels=gnn_channels,
-            text_embedder=text_embedder,
-            data_channels=col_channels // 2,
-            type_channels=col_channels // 32,
-            name_channels=col_channels * 3 // 8,
-            stats_channels=col_channels * 3 // 32,
-            encoder_heads=tabular_encoder_heads,
-            encoder_layers=tabular_encoder_layers,
-            encoder_dropout=tabular_encoder_dropout,
-        )
-
-        self.temporal_encoder = HeteroTemporalEncoder(
-            node_types=node_types, channels=gnn_channels
-        )
-        self.gnn = HeteroGraphSAGE(
-            node_types=node_types,
-            edge_types=edge_types,
-            channels=gnn_channels,
-            aggr=gnn_aggr,
-            num_layers=gnn_layers,
-        )
-        self.head = MLP(
-            in_channels=gnn_channels,
-            out_channels=out_channels,
-            norm=head_norm,
-            num_layers=1,
-        )
-
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        pass
-
-    def forward(self, batch: HeteroData, entity_table: NodeType) -> torch.Tensor:
-        tensor_stats_dict: dict[str, dict[stype, dict[TensorStatType, torch.Tensor]]] = (
-            batch.tensor_stats_dict
-        )
-        name_embeddings_dict: dict[str, dict[str, torch.Tensor]] = (
-            batch.name_embeddings_dict
-        )
-
-        tf_dict: dict[str, torch_frame.TensorFrame] = batch.tf_dict
-
-        x_dict: dict[str, torch.Tensor] = {}
-        for tname, tf in tf_dict.items():
-            x_dict[tname] = self.tabular_encoder(
-                tname,
-                tf,
-                tensor_stats_dict[tname],
-                name_embeddings_dict[tname],
-            )
-
-        if hasattr(batch[entity_table], "seed_time"):
-            seed_time = batch[entity_table].seed_time
-            rel_time_dict = self.temporal_encoder(
-                seed_time, batch.time_dict, batch.batch_dict
-            )
-
-            for node_type, rel_time in rel_time_dict.items():
-                x_dict[node_type] = x_dict[node_type] + rel_time
-
-        x_dict = self.gnn(
-            x_dict,
-            batch.edge_index_dict,
-            batch.num_sampled_nodes_dict,
-            batch.num_sampled_edges_dict,
-        )
-
-        if hasattr(batch[entity_table], "seed_time"):
-            return self.head(x_dict[entity_table][: seed_time.size(0)])
-
-        return self.head(x_dict[entity_table])
 
 
 STYPE_TOKEN_TYPE_MAP = {
