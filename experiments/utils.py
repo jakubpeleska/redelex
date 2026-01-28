@@ -4,7 +4,6 @@ import json
 
 from pathlib import Path
 
-import sqlalchemy as sa
 
 import torch
 from torch.nn import BCEWithLogitsLoss, L1Loss, CrossEntropyLoss
@@ -15,7 +14,7 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 
 from torch_geometric.data import HeteroData
 
-from relbench.base import Database, EntityTask, TaskType
+from relbench.base import Database, BaseTask as RelbenchTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 from relbench.metrics import (
@@ -37,7 +36,8 @@ from redelex.data import (
     PotionTextEmbedder,
 )
 from redelex.datasets import DBDataset
-from redelex.tasks import CTUBaseEntityTask
+from redelex.db import RemoteDBInterface, RelbenchDBInterface, DBSchema
+from redelex.tasks.mixins import ModifyDBTaskMixin
 from redelex.utils import guess_schema, convert_timedelta, merge_tf
 
 
@@ -64,10 +64,10 @@ def get_hyperparams_logging(
 
 def get_cache_path(dataset_name: str, task_name: str, cache_dir: str):
     task = get_task(dataset_name, task_name)
-    if isinstance(task, CTUBaseEntityTask):
+    if isinstance(task, ModifyDBTaskMixin):
         return Path(f"{cache_dir}/{dataset_name}/{task_name}")
 
-    elif isinstance(task, EntityTask):
+    elif isinstance(task, RelbenchTask):
         return Path(f"{cache_dir}/{dataset_name}")
 
     else:
@@ -123,7 +123,7 @@ def get_loss(dataset_name: str, task_name: str):
 def get_attribute_schema(
     schema_cache_path: str,
     db: Database,
-    sql_schema: Optional[Dict[str, Dict[str, sa.types.TypeEngine]]] = None,
+    db_schema: Optional[DBSchema] = None,
 ) -> Dict[str, Dict[str, stype]]:
     try:
         with open(schema_cache_path, "r") as f:
@@ -133,8 +133,8 @@ def get_attribute_schema(
                 if isinstance(stype_str, str):
                     table_attribute_schema[col] = stype(stype_str)
     except FileNotFoundError:
-        if sql_schema is not None:
-            attribute_schema = guess_schema(db, sql_schema)
+        if db_schema is not None:
+            attribute_schema = guess_schema(db, db_schema)
         else:
             attribute_schema = guess_schema(db)
         Path(schema_cache_path).parent.mkdir(parents=True, exist_ok=True)
@@ -154,17 +154,22 @@ def get_data(
 ):
     dataset = get_dataset(dataset_name)
     task = get_task(dataset_name, task_name)
-    if isinstance(task, CTUBaseEntityTask):
-        db = task.get_sanitized_db(upto_test_timestamp=False)
+    if isinstance(task, ModifyDBTaskMixin):
+        db = task.make_modified_db(inplace=False)
     else:
         db = dataset.get_db(upto_test_timestamp=False)
 
     convert_timedelta(db)
-    attribute_schema = get_attribute_schema(
-        f"{cache_path}/attribute_schema.json",
-        db,
-        sql_schema=dataset.get_schema() if isinstance(dataset, DBDataset) else None,
+    db_interface = (
+        RemoteDBInterface(dataset.remote_url)
+        if isinstance(dataset, DBDataset)
+        else RelbenchDBInterface(dataset)
     )
+    db_interface.connect()
+    attribute_schema = get_attribute_schema(
+        f"{cache_path}/attribute_schema.json", db, db_schema=db_interface.get_schema()
+    )
+    db_interface.close()
 
     data, col_stats_dict = make_pkey_fkey_graph(
         db,

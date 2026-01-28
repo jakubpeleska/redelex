@@ -2,7 +2,6 @@ from typing import Dict, Optional, Union
 
 import os
 import random
-import sys
 import json
 from pathlib import Path
 from collections import defaultdict
@@ -31,14 +30,14 @@ from torch_frame.data import StatType
 import getml
 from getml.feature_learning import loss_functions
 
-from relbench.base import Database, EntityTask, TaskType, Table
+from relbench.base import Database, Table, TaskType
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
 
-sys.path.append(".")
 
-from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
 from redelex.datasets import DBDataset
+from redelex.tasks.mixins import ModifyDBTaskMixin, EntityTaskMixin
+from redelex.tasks.utils import is_temporal_task
 from redelex.utils import guess_schema, convert_timedelta, to_unix_time
 
 
@@ -73,7 +72,7 @@ def set_getml_roles(df: getml.data.DataFrame, table: Table, col_to_stype: Dict[s
 
 
 def build_task_df(
-    task: EntityTask, split: str, return_task_table: bool = False
+    task: EntityTaskMixin, split: str, return_task_table: bool = False
 ) -> Union[getml.data.DataFrame, tuple[getml.data.DataFrame, Table]]:
     task_table = task.get_table(split, mask_input_cols=False)
     task_df = task_table.df
@@ -115,7 +114,7 @@ def build_task_df(
 
 def build_getml_task_data(
     db: Database,
-    task: Union[CTUBaseEntityTask, EntityTask],
+    task: EntityTaskMixin,
     col_to_stype_dict: Dict[str, Dict[str, stype]],
 ) -> Dict[str, getml.data.DataFrame]:
     df_dict: Dict[str, getml.data.DataFrame] = {}
@@ -146,7 +145,7 @@ def max_multiplicity(df: pd.DataFrame, fk_col: str):
 def build_getml_datamodel(
     db: Database,
     df_dict: Dict[str, getml.data.DataFrame],
-    task: Union[CTUBaseEntityTask, EntityTask],
+    task: EntityTaskMixin,
 ) -> getml.data.DataModel:
     train_df, train_table = build_task_df(task, "train", return_task_table=True)
     task_table_name = "__task_table__"
@@ -171,7 +170,7 @@ def build_getml_datamodel(
             links[table_name].append((table_name, (fk, rel, ref_pk), ref_table))
             links[ref_table].append((ref_table, (ref_pk, rev_rel, fk), table_name))
 
-    is_temporal = isinstance(task, (CTUEntityTaskTemporal, EntityTask))
+    is_temporal = is_temporal_task(task)
     open = [task_table_name]
     closed = []
     while len(open) > 0:
@@ -379,8 +378,8 @@ def run_ray_tuner(
 
     dataset = get_dataset(dataset_name)
     task = get_task(dataset_name, task_name)
-    if isinstance(task, CTUBaseEntityTask):
-        db = task.get_sanitized_db(upto_test_timestamp=False)
+    if isinstance(task, ModifyDBTaskMixin):
+        db = task.make_modified_db(inplace=False)
     else:
         db = dataset.get_db(upto_test_timestamp=False)
 
@@ -463,7 +462,7 @@ if __name__ == "__main__":
     dataset_name = args.dataset
     task_name = args.task
 
-    task: CTUBaseEntityTask = get_task(dataset_name, task_name)
+    task = get_task(dataset_name, task_name)
     if task.task_type in [
         TaskType.LINK_PREDICTION,
         TaskType.MULTILABEL_CLASSIFICATION,

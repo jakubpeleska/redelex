@@ -30,7 +30,7 @@ from torch_frame.gbdt import LightGBM
 
 from torch_geometric.data import HeteroData
 
-from relbench.base import BaseTask, EntityTask, TaskType
+from relbench.base import TaskType
 from relbench.tasks import get_task
 from relbench.metrics import (
     average_precision,
@@ -42,7 +42,9 @@ from relbench.metrics import (
 )
 
 from redelex.nn.train import get_node_train_table_input
-from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
+
+from redelex.tasks.mixins import BaseTask
+from redelex.tasks.utils import is_temporal_task
 
 from experiments.utils import (
     get_cache_path,
@@ -125,9 +127,7 @@ def run_experiment(
     else:
         raise ValueError(f"Task type {task.task_type} is unsupported")
 
-    is_temporal = (
-        isinstance(task, CTUEntityTaskTemporal) or isinstance(task, EntityTask)
-    ) and hasattr(data[task.entity_table], "time")
+    is_temporal = is_temporal_task(task) and hasattr(data[task.entity_table], "time")
 
     tf_dict: Dict[str, TensorFrame] = {}
 
@@ -347,7 +347,7 @@ if __name__ == "__main__":
     dataset_name = args.dataset
     task_name = args.task
 
-    task: CTUBaseEntityTask = get_task(dataset_name, task_name)
+    task = get_task(dataset_name, task_name)
     if task.task_type in [
         TaskType.LINK_PREDICTION,
         TaskType.MULTILABEL_CLASSIFICATION,
