@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 from collections import defaultdict
 import copy
@@ -10,15 +10,7 @@ from torch_geometric.typing import NodeType
 
 import lightning as L
 
-from torchmetrics import Metric
 from torchmetrics.aggregation import MaxMetric, MinMetric, MeanMetric
-from torchmetrics.classification import (
-    BinaryAccuracy,
-    BinaryAUROC,
-    BinaryF1Score,
-    BinaryPrecision,
-)
-from torchmetrics.regression import MeanAbsoluteError, MeanSquaredError, R2Score
 
 
 from relbench.tasks import get_task
@@ -32,46 +24,10 @@ from redelex.nn.loss import (
     ContextContrastiveLoss,
 )
 
-
-def get_metrics(dataset_name: str, task_name: str) -> Tuple[Dict[str, Metric], str, bool]:
-    task = get_task(dataset_name, task_name)
-
-    if task.task_type == TaskType.REGRESSION:
-        return (
-            {"mae": MeanAbsoluteError(), "mse": MeanSquaredError(), "r2": R2Score()},
-            "mae",
-            False,
-        )
-
-    elif task.task_type == TaskType.BINARY_CLASSIFICATION:
-        return (
-            {
-                "accuracy": BinaryAccuracy(),
-                "precision": BinaryPrecision(),
-                "f1": BinaryF1Score(),
-                "roc_auc": BinaryAUROC(),
-            },
-            "roc_auc",
-            True,
-        )
-    else:
-        raise ValueError(f"Task type {task.task_type} is unsupported")
+from .utils import get_loss, get_metrics
 
 
-def get_loss(dataset_name: str, task_name: str):
-    task = get_task(dataset_name, task_name)
-
-    if task.task_type == TaskType.BINARY_CLASSIFICATION:
-        return torch.nn.BCEWithLogitsLoss(), 1
-
-    elif task.task_type == TaskType.REGRESSION:
-        return torch.nn.MSELoss(), 1
-
-    else:
-        raise ValueError(f"Task type {task.task_type} is unsupported")
-
-
-class PretrainingModel(torch.nn.Module):
+class PretrainingWrapper(torch.nn.Module):
     def __init__(self, backbone: RDLModel, channels: int, temperature: float = 1.0):
         super().__init__()
         self.backbone = backbone
@@ -91,7 +47,7 @@ class PretrainingModel(torch.nn.Module):
             temperature=temperature,
         )
 
-    def forward(self, batch: HeteroData) -> Dict[str, torch.Tensor]:
+    def forward(self, batch: HeteroData) -> dict[str, torch.Tensor]:
         x_dict = self.backbone(batch)
         cor_dict = self.backbone(batch, tf_attr="cor_tf")
 
@@ -105,19 +61,19 @@ class PretrainingModel(torch.nn.Module):
         }
 
 
-class LightningPretraining(L.LightningModule):
+class LightningPretrainingWrapper(L.LightningModule):
     def __init__(
         self,
-        model: PretrainingModel,
+        model: PretrainingWrapper,
         optimizer: torch.optim.Optimizer,
         model_save_path: str,
-        with_neightbor_loader: bool = False,
+        with_neighbor_loader: bool = False,
     ):
         super().__init__()
         self.model = model
         self.optimizer = optimizer
         self.model_save_path = model_save_path
-        self.with_neightbor_loader = with_neightbor_loader
+        self.with_neighbor_loader = with_neighbor_loader
 
         self.train_loss_dict = defaultdict(MeanMetric)
         self.val_loss_dict = defaultdict(MeanMetric)
@@ -128,7 +84,7 @@ class LightningPretraining(L.LightningModule):
         return self.model(batch)
 
     def training_step(self, batch, batch_idx):
-        if self.with_neightbor_loader:
+        if self.with_neighbor_loader:
             batch_hgt, batch_neighbor = batch
             _, losses_hgt = self.model(batch_hgt)
             _, losses_neighbor = self.model(batch_neighbor)
@@ -197,21 +153,7 @@ class LightningPretraining(L.LightningModule):
         return self.optimizer
 
 
-class LightningBackboneModel(L.LightningModule):
-    def __init__(self, backbone: RDLModel):
-        super().__init__()
-        self.backbone = backbone
-
-    def forward(
-        self,
-        batch: HeteroData,
-        entity_table: Optional[NodeType] = None,
-        tf_attr: Optional[str] = "tf",
-    ) -> Dict[NodeType, torch.Tensor]:
-        return self.backbone(batch, entity_table, tf_attr)
-
-
-class LightningEntityTaskModel(L.LightningModule):
+class LightningPretrainedModel(L.LightningModule):
     def __init__(
         self,
         backbone: RDLModel,
@@ -222,7 +164,7 @@ class LightningEntityTaskModel(L.LightningModule):
         finetune_backbone: bool = False,
     ):
         super().__init__()
-        self.backbone = LightningBackboneModel(backbone)
+        self.backbone = _LightningBackboneWrapper(backbone)
         if finetune_backbone:
             self.backbone.unfreeze()
         else:
@@ -231,9 +173,9 @@ class LightningEntityTaskModel(L.LightningModule):
         self.head = head
 
         self.task = get_task(dataset_name, task_name)
-        self.loss_fn, _ = get_loss(dataset_name, task_name)
+        self.loss_fn = get_loss(self.task.task_type)
         self.val_metrics, self.tune_metric, self.higher_is_better = get_metrics(
-            dataset_name, task_name
+            self.task.task_type
         )
         self.test_metrics = copy.deepcopy(self.val_metrics)
         self.optimizer = optimizer
@@ -328,3 +270,17 @@ class LightningEntityTaskModel(L.LightningModule):
 
     def configure_optimizers(self):
         return self.optimizer
+
+
+class _LightningBackboneWrapper(L.LightningModule):
+    def __init__(self, backbone: RDLModel):
+        super().__init__()
+        self.backbone = backbone
+
+    def forward(
+        self,
+        batch: HeteroData,
+        entity_table: Optional[NodeType] = None,
+        tf_attr: Optional[str] = "tf",
+    ) -> dict[NodeType, torch.Tensor]:
+        return self.backbone(batch, entity_table, tf_attr)
