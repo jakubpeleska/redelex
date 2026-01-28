@@ -28,11 +28,10 @@ from torch_frame.data import StatType
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 
-
 from relbench.base import TaskType
 from relbench.tasks import get_task
+from relbench.modeling.graph import get_node_train_table_input
 
-from redelex.data import get_node_train_table_input
 from redelex.tasks.mixins import BaseTask
 from redelex.tasks.utils import is_temporal_task
 from redelex.nn.models.sagegnn import SAGEModel

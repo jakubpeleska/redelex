@@ -2,6 +2,8 @@ from relbench.tasks import register_task
 
 from .task_impute import ImputeEntityStaticTask, ImputeEntityTemporalTask
 
+from .ctu_tasks import CTUEntityTask, CTUEntityTaskTemporal
+
 # fmt: off
 from .ctu_tasks import (
     AccidentsOriginalTask, AccidentsTemporalTask, AdventureWorksOriginalTask, 
@@ -197,6 +199,7 @@ register_task("ctu-world", "world-original", WorldOriginalTask)
 # fmt: off
 __all__ = [
     "ImputeEntityStaticTask", "ImputeEntityTemporalTask",
+    "CTUEntityTask", "CTUEntityTaskTemporal",
     
     "AccidentsOriginalTask", "AccidentsTemporalTask", "AdventureWorksOriginalTask", 
     "AdventureWorksTemporalTask", "AirlineOriginalTask", "AirlineTemporalTask", 

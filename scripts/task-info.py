@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, Union
 
 import json
 
@@ -7,10 +7,8 @@ import pandas as pd
 import networkx as nx
 
 import torch
-from sentence_transformers import SentenceTransformer
 
 from torch_frame import stype
-from torch_frame.config import TextEmbedderConfig
 
 from torch_geometric.data import HeteroData
 from torch_geometric.utils import to_networkx
@@ -19,22 +17,12 @@ from torch_geometric.loader import NeighborLoader
 from relbench.base import Database, Dataset, EntityTask, TaskType
 from relbench.datasets import get_dataset_names, get_dataset
 from relbench.tasks import get_task_names, get_task
+from relbench.modeling.graph import get_node_train_table_input
 
-from redelex.data import make_pkey_fkey_graph, get_node_train_table_input
+from redelex.data import GloveTextEmbedder, make_pkey_fkey_graph, guess_schema
 from redelex.datasets import CTUDataset, DBDataset
-from redelex.tasks import CTUBaseEntityTask
-from redelex.utils import convert_timedelta, guess_schema
-
-
-class GloveTextEmbedding:
-    def __init__(self, device: Optional[torch.device] = None):
-        self.model = SentenceTransformer(
-            "sentence-transformers/average_word_embeddings_glove.6B.300d",
-            device=device,
-        )
-
-    def __call__(self, sentences: List[str]) -> torch.Tensor:
-        return self.model.encode(sentences, convert_to_tensor=True)
+from redelex.tasks import CTUEntityTask, CTUEntityTaskTemporal
+from redelex.utils import convert_timedelta
 
 
 def max_multiplicity(df: pd.DataFrame, fk_col: str):
@@ -118,7 +106,9 @@ for dataset_name in all_datasets:
         if task_name in info:
             info[task_name]["task"] = task_name
             continue
-        task: Union[EntityTask, CTUBaseEntityTask] = get_task(dataset_name, task_name)
+        task: Union[EntityTask, CTUEntityTask, CTUEntityTaskTemporal] = get_task(
+            dataset_name, task_name
+        )
         if task.task_type == TaskType.LINK_PREDICTION:
             continue
 
@@ -176,10 +166,7 @@ for dataset_name in all_datasets:
         data, col_stats_dict = make_pkey_fkey_graph(
             db,
             col_to_stype_dict=col_to_stype_dict,
-            text_embedder_cfg=TextEmbedderConfig(
-                text_embedder=GloveTextEmbedding(device=torch.device("cpu")),
-                batch_size=256,
-            ),
+            text_embedder=GloveTextEmbedder(device=torch.device("cpu")),
             cache_dir=f"{cache_path}/materialized",
         )
 
