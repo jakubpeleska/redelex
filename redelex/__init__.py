@@ -1,7 +1,10 @@
-from redelex import data
-from redelex import datasets
-from redelex import tasks
-from redelex import utils
+import redelex.data
+import redelex.datasets
+import redelex.nn
+import redelex.tasks
+import redelex.transforms
+import redelex.utils
 
+__version__ = "0.5.1"
 
-__all__ = ["data", "datasets", "tasks", "utils"]
+__all__ = ["redelex", "__version__"]
