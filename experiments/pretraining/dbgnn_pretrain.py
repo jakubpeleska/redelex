@@ -529,13 +529,13 @@ def run_ray_tuner(
     full_data, col_stats_dict = make_pkey_fkey_graph(
         db,
         attribute_schema,
-        text_embedder_cfg=get_text_embedder(),
+        text_embedder=get_text_embedder("glove"),
         cache_dir=materialized_cache_dir + "/full",
     )
     train_data, _ = make_pkey_fkey_graph(
         train_db,
         attribute_schema,
-        text_embedder_cfg=get_text_embedder(),
+        text_embedder=get_text_embedder("glove"),
         cache_dir=materialized_cache_dir + "/train",
     )
 

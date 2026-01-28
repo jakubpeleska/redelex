@@ -13,8 +13,8 @@ from torch_frame import stype
 from relbench.base import Database, Dataset
 from relbench.datasets import get_dataset_names, get_dataset
 
+from redelex.data import guess_schema
 from redelex.datasets import CTUDataset, DBDataset
-from redelex.utils import guess_schema
 
 
 def get_info(dataset: CTUDataset):
