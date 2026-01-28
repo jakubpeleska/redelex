@@ -10,7 +10,6 @@ from torch.nn import BCEWithLogitsLoss, L1Loss, CrossEntropyLoss
 
 from torch_frame import stype
 from torch_frame.data import StatType
-from torch_frame.config.text_embedder import TextEmbedderConfig
 
 from torch_geometric.data import HeteroData
 
@@ -43,14 +42,14 @@ from redelex.utils import convert_timedelta, merge_tf
 
 
 def get_text_embedder(
-    emebdder_name: str, device: Optional[torch.device] = None
+    embedder_name: str, device: Optional[torch.device] = None
 ) -> TextEmbedder:
-    if emebdder_name == "glove":
+    if embedder_name == "glove":
         return GloveTextEmbedder(device=device)
-    elif emebdder_name == "potion":
+    elif embedder_name == "potion":
         return PotionTextEmbedder(device=device)
     else:
-        raise ValueError(f"Text embedder {emebdder_name} is not supported")
+        raise ValueError(f"Text embedder {embedder_name} is not supported")
 
 
 def get_hyperparams_logging(
@@ -175,9 +174,7 @@ def get_data(
     data, col_stats_dict = make_pkey_fkey_graph(
         db,
         col_to_stype_dict=attribute_schema,
-        text_embedder=TextEmbedderConfig(
-            text_embedder=get_text_embedder(text_embedder_name), batch_size=256
-        ),
+        text_embedder=get_text_embedder(text_embedder_name),
         cache_dir=f"{cache_path}/materialized",
     )
 

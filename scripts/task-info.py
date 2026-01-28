@@ -9,7 +9,6 @@ import networkx as nx
 import torch
 
 from torch_frame import stype
-from torch_frame.config import TextEmbedderConfig
 
 from torch_geometric.data import HeteroData
 from torch_geometric.utils import to_networkx
@@ -167,10 +166,7 @@ for dataset_name in all_datasets:
         data, col_stats_dict = make_pkey_fkey_graph(
             db,
             col_to_stype_dict=col_to_stype_dict,
-            text_embedder=TextEmbedderConfig(
-                text_embedder=GloveTextEmbedder(device=torch.device("cpu")),
-                batch_size=256,
-            ),
+            text_embedder=GloveTextEmbedder(device=torch.device("cpu")),
             cache_dir=f"{cache_path}/materialized",
         )
 

@@ -73,37 +73,37 @@ def make_tensor_stats_dict(
                     [col_stats_dict[col][StatType.MEAN] for col in cols],
                     device=device,
                 )
-            if stat == TensorStatType.STD:
+            elif stat == TensorStatType.STD:
                 stype_stats[st][stat] = torch.tensor(
                     [col_stats_dict[col][StatType.STD] for col in cols],
                     device=device,
                 )
-            if stat == TensorStatType.MIN:
+            elif stat == TensorStatType.MIN:
                 stype_stats[st][stat] = torch.tensor(
                     [col_stats_dict[col][StatType.QUANTILES][0] for col in cols],
                     device=device,
                 )
-            if stat == TensorStatType.MAX:
+            elif stat == TensorStatType.MAX:
                 stype_stats[st][stat] = torch.tensor(
                     [col_stats_dict[col][StatType.QUANTILES][4] for col in cols],
                     device=device,
                 )
-            if stat == TensorStatType.MEDIAN:
+            elif stat == TensorStatType.MEDIAN:
                 stype_stats[st][stat] = torch.tensor(
                     [col_stats_dict[col][StatType.QUANTILES][2] for col in cols],
                     device=device,
                 )
-            if stat == TensorStatType.Q1:
+            elif stat == TensorStatType.Q1:
                 stype_stats[st][stat] = torch.tensor(
                     [col_stats_dict[col][StatType.QUANTILES][1] for col in cols],
                     device=device,
                 )
-            if stat == TensorStatType.Q3:
+            elif stat == TensorStatType.Q3:
                 stype_stats[st][stat] = torch.tensor(
                     [col_stats_dict[col][StatType.QUANTILES][3] for col in cols],
                     device=device,
                 )
-            if stat == TensorStatType.CARDINALITY:
+            elif stat == TensorStatType.CARDINALITY:
                 stat_type = StatType.COUNT
                 if st == torch_frame.stype.multicategorical:
                     stat_type = StatType.MULTI_COUNT
@@ -111,7 +111,7 @@ def make_tensor_stats_dict(
                     [len(col_stats_dict[col][stat_type][0]) for col in cols],
                     device=device,
                 )
-            if stat == TensorStatType.VALUE_EMBEDDINGS:
+            elif stat == TensorStatType.VALUE_EMBEDDINGS:
                 stat_type = StatType.COUNT
                 if st == torch_frame.stype.multicategorical:
                     stat_type = StatType.MULTI_COUNT
@@ -124,19 +124,19 @@ def make_tensor_stats_dict(
                         embeddings_list, batch_first=True, padding_value=0.0
                     )
                 )
-            if stat == TensorStatType.EARLIEST_DATE:
+            elif stat == TensorStatType.EARLIEST_DATE:
                 stype_stats[st][stat] = torch.stack(
                     [col_stats_dict[col][StatType.OLDEST_TIME] for col in cols],
                 ).to(device)
-            if stat == TensorStatType.LATEST_DATE:
+            elif stat == TensorStatType.LATEST_DATE:
                 stype_stats[st][stat] = torch.stack(
                     [col_stats_dict[col][StatType.NEWEST_TIME] for col in cols]
                 ).to(device)
-            if stat == TensorStatType.MIN_YEAR:
+            elif stat == TensorStatType.MIN_YEAR:
                 stype_stats[st][stat] = torch.tensor(
                     [col_stats_dict[col][StatType.YEAR_RANGE][0] for col in cols]
                 ).to(device)
-            if stat == TensorStatType.MAX_YEAR:
+            elif stat == TensorStatType.MAX_YEAR:
                 stype_stats[st][stat] = torch.tensor(
                     [col_stats_dict[col][StatType.YEAR_RANGE][1] for col in cols]
                 ).to(device)
