@@ -6,13 +6,14 @@ import torch
 
 from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
+from torch_geometric.transforms import BaseTransform
 
 from torch_frame import TensorFrame, stype
 from torch_frame.data import StatType, MultiEmbeddingTensor, MultiNestedTensor
 from torch_frame.typing import TensorData
 
 
-class DBResampleCorruptor:
+class ResampleCorruptor(BaseTransform):
     def __init__(
         self,
         data: HeteroData,
@@ -22,7 +23,7 @@ class DBResampleCorruptor:
         self.corrupt_prob = corrupt_prob
         self.distribution = distribution
         self.corruptors = {
-            tname: ResampleCorruptor(tf, p=corrupt_prob, distribution=distribution)
+            tname: TFCorruptor(tf, p=corrupt_prob, distribution=distribution)
             for tname, tf in data.collect("tf").items()
         }
 
@@ -39,20 +40,15 @@ class DBResampleCorruptor:
     def corrupt_data(
         self, data: HeteroData
     ) -> Tuple[HeteroData, Dict[NodeType, TensorFrame]]:
-        tf: TensorFrame
         for node_type, tf in data.collect("tf").items():
             cor_tf, mask = self.corruptors[node_type](tf)
             data[node_type]["cor_tf"] = cor_tf
             data[node_type]["cor_col_mask"] = mask
-            # data[node_type]["cor_mask"] = torch.stack(
-            #     [mask[col] for col in tf._col_to_stype_idx],
-            #     dim=1,
-            # )
 
         return data
 
 
-class ResampleCorruptor:
+class TFCorruptor:
     """
     A class to resample and corrupt features of a TensorFrame.
     """
@@ -64,7 +60,7 @@ class ResampleCorruptor:
         distribution: Literal["empirical", "uniform"] = "empirical",
     ):
         """
-        Initialize the ResampleCorruptor with a TensorFrame and corruption probability.
+        Initialize the TFCorruptor with a TensorFrame and corruption probability.
         Args:
             tf (TensorFrame): The TensorFrame to corrupt.
             p (float): The probability of corruption.

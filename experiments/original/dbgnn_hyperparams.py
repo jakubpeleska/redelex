@@ -28,12 +28,12 @@ from torch_frame.data import StatType
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 
-
-from relbench.base import BaseTask, EntityTask, TaskType
+from relbench.base import TaskType
 from relbench.tasks import get_task
+from relbench.modeling.graph import get_node_train_table_input
 
-from redelex.tasks import CTUBaseEntityTask, CTUEntityTaskTemporal
-from redelex.nn.train import get_node_train_table_input
+from redelex.tasks.mixins import BaseTask
+from redelex.tasks.utils import is_temporal_task
 from redelex.nn.models.sagegnn import SAGEModel
 from redelex.nn.models.dbformer import DBFormerModel
 
@@ -99,7 +99,7 @@ def run_experiment(
     tune_metric, higher_is_better = get_tune_metric(dataset_name, task_name)
     metrics = get_metrics(dataset_name, task_name)
 
-    is_temporal = isinstance(task, CTUEntityTaskTemporal) or isinstance(task, EntityTask)
+    is_temporal = is_temporal_task(task)
 
     loader_dict: Dict[str, NeighborLoader] = {}
 
@@ -413,7 +413,7 @@ if __name__ == "__main__":
     dataset_name = args.dataset
     task_name = args.task
 
-    task: CTUBaseEntityTask = get_task(dataset_name, task_name)
+    task = get_task(dataset_name, task_name)
     if task.task_type in [
         TaskType.LINK_PREDICTION,
         TaskType.MULTILABEL_CLASSIFICATION,

@@ -18,7 +18,7 @@ class TextEmbedder:
         self.model = SentenceTransformer(model_name, device=device)
         self.always_use_cache = always_use_cache
 
-    def __call__(self, sentences: list[str], use_cache=False) -> torch.Tensor:
+    def __call__(self, sentences: list[str], use_cache: bool = False) -> torch.Tensor:
         if use_cache or self.always_use_cache:
             return torch.stack([self.cached_call(s) for s in sentences])
         return self.model.encode(sentences, convert_to_tensor=True)
