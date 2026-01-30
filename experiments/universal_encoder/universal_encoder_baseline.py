@@ -156,12 +156,16 @@ def run_task_experiment(
         )
 
     val_check_interval = min(
-        500,
         len(loader_dict["val"]) + len(loader_dict["test"]),
         len(loader_dict["train"]),
     )
+    if val_check_interval < 500:
+        val_check_interval = 500
     if val_check_interval > len(loader_dict["train"]) // 2:
         val_check_interval = len(loader_dict["train"])
+
+    if val_check_interval < len(loader_dict["train"]) // 3:
+        val_check_interval = len(loader_dict["train"]) // 3
 
     config["val_check_interval"] = val_check_interval
 
@@ -269,9 +273,6 @@ def run_ray_tuner(
 
     db = dataset.get_db(upto_test_timestamp=False)
 
-    train_db = db.upto(dataset.val_timestamp)
-    dataset.validate_and_correct_db(train_db)
-
     schema_cache_path = f"{cache_path}/attribute-schema.json"
     attribute_schema = get_attribute_schema(schema_cache_path, db)
 
@@ -285,6 +286,7 @@ def run_ray_tuner(
         text_embedder=text_embedder,
         cache_dir=materialized_cache_dir,
     )
+    del db
 
     tensor_stats_dict = {}
     name_embeddings_dict = {}
@@ -305,14 +307,7 @@ def run_ray_tuner(
     gpus_used = 0
     cpus_used = 2
     if "GPU" in resources:
-        batch_model_size = 8e9
-        gpu_memory = max(
-            [
-                torch.cuda.get_device_properties(i).total_memory
-                for i in range(torch.cuda.device_count())
-            ]
-        )
-        gpus_used = batch_model_size / gpu_memory
+        gpus_used = 1
 
     tuner = tune.Tuner(
         tune.with_resources(
@@ -345,7 +340,7 @@ def run_ray_tuner(
             "text_embedder_name": text_embedder_name,
             # training config
             "max_training_steps": 4000,
-            "lr": 0.001 if dataset_name != "rel-trial" else 0.0001,
+            "lr": 0.0001,
             # sampling config
             "batch_size": 128,
             "num_neighbors": tune.grid_search([16, 32, 64]),
