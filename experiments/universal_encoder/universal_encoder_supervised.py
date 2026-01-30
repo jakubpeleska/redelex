@@ -21,33 +21,29 @@ import torch
 
 import lightning as L
 from lightning.pytorch import callbacks, loggers
+from lightning.pytorch.utilities.model_summary import ModelSummary
 
 import torch_geometric.transforms as T
-import torch_geometric.nn.aggr as geo_aggr
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
-from torch_geometric.nn import MLP
-from torch_geometric.typing import NodeType, EdgeType
+from torch_geometric.typing import NodeType
 
-
-from torch_frame import stype, TensorFrame
+from torch_frame import stype
 from torch_frame.data import StatType
 
 from relbench.base import EntityTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.modeling.nn import HeteroTemporalEncoder, HeteroGraphSAGE
+from relbench.modeling.graph import get_node_train_table_input
 from relbench.tasks import get_task
 
 sys.path.append(".")
 
 from redelex.data import (
-    TextEmbedder,
     TensorStatType,
     make_pkey_fkey_graph,
     make_tensor_stats_dict,
 )
-from redelex.nn.train import LightningEntityTaskWrapper, get_node_train_table_input
-from redelex.nn.encoders import UniversalRowEncoder
+from redelex.nn.train import LightningEntityTaskWrapper
 from redelex.transforms import AttachDictTransform
 
 from experiments.utils import (
@@ -56,111 +52,68 @@ from experiments.utils import (
     get_text_embedder,
 )
 
+from .models import HeteroSAGEModel, UniversalSAGEModel, UniversalHomogeneousSAGEModel
 
-class UniversalSAGEModel(torch.nn.Module):
-    def __init__(
-        self,
-        col_channels: int,
-        gnn_channels: int,
-        out_channels: int,
-        text_embedder: TextEmbedder,
-        node_types: list[NodeType],
-        edge_types: list[EdgeType],
-        tabular_encoder_heads: int = 4,
-        tabular_encoder_layers: int = 2,
-        tabular_encoder_dropout: float = 0.1,
-        gnn_layers: int = 2,
-        gnn_aggr: str = "mean",
-        head_norm: str = "batch_norm",
-    ):
-        super().__init__()
 
-        self.text_embedder = text_embedder
-
-        self.tabular_encoder = UniversalRowEncoder(
-            out_channels=gnn_channels,
-            text_embedder=text_embedder,
-            data_channels=col_channels // 2,
-            type_channels=col_channels // 32,
-            name_channels=col_channels * 3 // 8,
-            stats_channels=col_channels * 3 // 32,
-            encoder_heads=tabular_encoder_heads,
-            encoder_layers=tabular_encoder_layers,
-            encoder_dropout=tabular_encoder_dropout,
+def get_model(model_name: str, config: dict[str, Any], data: HeteroData) -> torch.nn.Module:
+    if model_name == "hetero_sage":
+        return HeteroSAGEModel(
+            col_channels=config["col_channels"],
+            gnn_channels=config["gnn_channels"],
+            out_channels=config["out_channels"],
+            col_names_dict={nt: tf.col_names_dict for nt, tf in data.tf_dict.items()},
+            col_stats_dict=config["col_stats_dict"],
+            node_types=data.node_types,
+            edge_types=data.edge_types,
+            tabular_encoder_model=config["tabular_encoder_model"],
+            tabular_encoder_layers=config["tabular_encoder_layers"],
+            gnn_layers=config["gnn_layers"],
+            gnn_aggr=config["gnn_aggr"],
+            head_norm=config["head_norm"],
+        )
+    if model_name == "universal_sage":
+        return UniversalSAGEModel(
+            gnn_channels=config["gnn_channels"],
+            col_channels=config["col_channels"],
+            out_channels=config["out_channels"],
+            text_embedder=get_text_embedder(
+                config["text_embedder_name"], device=torch.device("cpu")
+            ),
+            node_types=data.node_types,
+            edge_types=data.edge_types,
+            tabular_encoder_layers=config["tabular_encoder_layers"],
+            tabular_encoder_heads=config["tabular_encoder_heads"],
+            tabular_encoder_dropout=config["tabular_encoder_dropout"],
+            gnn_layers=config["gnn_layers"],
+            gnn_aggr=config["gnn_aggr"],
+            head_norm=config["head_norm"],
+        )
+    elif model_name == "universal_homogeneous_sage":
+        return UniversalHomogeneousSAGEModel(
+            gnn_channels=config["gnn_channels"],
+            col_channels=config["col_channels"],
+            out_channels=config["out_channels"],
+            text_embedder=get_text_embedder(
+                config["text_embedder_name"], device=torch.device("cpu")
+            ),
+            tabular_encoder_layers=config["tabular_encoder_layers"],
+            tabular_encoder_heads=config["tabular_encoder_heads"],
+            tabular_encoder_dropout=config["tabular_encoder_dropout"],
+            gnn_layers=config["gnn_layers"],
+            gnn_aggr=config["gnn_aggr"],
+            head_norm=config["head_norm"],
         )
 
-        self.temporal_encoder = HeteroTemporalEncoder(
-            node_types=node_types, channels=gnn_channels
-        )
-        if gnn_aggr == "attn":
-            gnn_aggr = geo_aggr.SetTransformerAggregation(
-                channels=gnn_channels, concat=False
-            )
-        self.gnn = HeteroGraphSAGE(
-            node_types=node_types,
-            edge_types=edge_types,
-            channels=gnn_channels,
-            aggr=gnn_aggr,
-            num_layers=gnn_layers,
-        )
-        self.head = MLP(
-            in_channels=gnn_channels,
-            out_channels=out_channels,
-            norm=head_norm,
-            num_layers=1,
-        )
-
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        pass
-
-    def forward(self, batch: HeteroData, entity_table: NodeType) -> torch.Tensor:
-        tensor_stats_dict: dict[str, dict[stype, dict[TensorStatType, torch.Tensor]]] = (
-            batch.tensor_stats_dict
-        )
-        name_embeddings_dict: dict[str, dict[str, torch.Tensor]] = (
-            batch.name_embeddings_dict
-        )
-
-        tf_dict: dict[str, TensorFrame] = batch.tf_dict
-
-        x_dict: dict[str, torch.Tensor] = {}
-        for tname, tf in tf_dict.items():
-            x_dict[tname] = self.tabular_encoder(
-                tname,
-                tf,
-                tensor_stats_dict[tname],
-                name_embeddings_dict[tname],
-            )
-
-        if hasattr(batch[entity_table], "seed_time"):
-            seed_time = batch[entity_table].seed_time
-            rel_time_dict = self.temporal_encoder(
-                seed_time, batch.time_dict, batch.batch_dict
-            )
-
-            for node_type, rel_time in rel_time_dict.items():
-                x_dict[node_type] = x_dict[node_type] + rel_time
-
-        x_dict = self.gnn(
-            x_dict,
-            batch.edge_index_dict,
-            batch.num_sampled_nodes_dict,
-            batch.num_sampled_edges_dict,
-        )
-
-        if hasattr(batch[entity_table], "seed_time"):
-            return self.head(x_dict[entity_table][: seed_time.size(0)])
-
-        return self.head(x_dict[entity_table])
+    else:
+        raise ValueError(f"Unknown model name: {model_name}")
 
 
 def run_task_experiment(
     config: dict[str, Any],
     data: HeteroData,
-    tensor_stats_dict: dict[str, dict[stype, dict[TensorStatType, torch.Tensor]]],
-    name_embeddings_dict: dict[str, dict[str, torch.Tensor]],
+    col_stats_dict: dict[NodeType, dict[str, dict[StatType, Any]]],
+    tensor_stats_dict: dict[NodeType, dict[stype, dict[TensorStatType, torch.Tensor]]],
+    name_embeddings_dict: dict[NodeType, dict[str, torch.Tensor]],
     with_ray: bool = True,
     with_mlflow: bool = True,
 ):
@@ -176,6 +129,8 @@ def run_task_experiment(
 
     tensor_stats_dict = copy.deepcopy(tensor_stats_dict)
     name_embeddings_dict = copy.deepcopy(name_embeddings_dict)
+
+    config["col_stats_dict"] = col_stats_dict
 
     random.seed(random_seed)
     np.random.seed(random_seed)
@@ -216,31 +171,20 @@ def run_task_experiment(
     elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
         out_channels = len(task.stats()[StatType.COUNT][0])
 
-    text_embedder = get_text_embedder(
-        config["text_embedder_name"], device=torch.device("cpu")
-    )
-
-    model = UniversalSAGEModel(
-        gnn_channels=config["gnn_channels"],
-        col_channels=config["col_channels"],
-        out_channels=out_channels,
-        text_embedder=text_embedder,
-        node_types=data.node_types,
-        edge_types=data.edge_types,
-        tabular_encoder_layers=config.get("tabular_encoder_layers"),
-        tabular_encoder_heads=config.get("tabular_encoder_heads"),
-        tabular_encoder_dropout=config.get("tabular_encoder_dropout"),
-        gnn_layers=config.get("gnn_layers"),
-        gnn_aggr=config.get("gnn_aggr"),
-        head_norm=config.get("head_norm"),
-    )
+    config["out_channels"] = out_channels
+    model = get_model(config["model_name"], config, data)
     model = model.to(device)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.1)
 
     lightning_model = LightningEntityTaskWrapper(
         model=model, optimizer=optimizer, task=task
     )
+
+    model_summary = ModelSummary(lightning_model, max_depth=2)
+
+    config["model_parameters"] = model_summary.total_parameters
+    config["model_size_MB"] = model_summary.model_size
 
     loader_dict: dict[str, NeighborLoader] = {}
 
@@ -268,8 +212,8 @@ def run_task_experiment(
         len(loader_dict["val"]) + len(loader_dict["test"]),
         len(loader_dict["train"]),
     )
-    if val_check_interval < 500:
-        val_check_interval = 500
+    if val_check_interval < 100:
+        val_check_interval = 100
     if val_check_interval > len(loader_dict["train"]) // 2:
         val_check_interval = len(loader_dict["train"])
 
@@ -316,7 +260,7 @@ def run_task_experiment(
         num_sanity_val_steps=0,
         val_check_interval=val_check_interval,
         enable_checkpointing=False,
-        max_time=timedelta(hours=2),
+        max_time=timedelta(hours=4),
         use_distributed_sampler=False,
     )
     try:
@@ -337,6 +281,7 @@ def run_task_experiment(
 def run_ray_tuner(
     dataset_name: str,
     task_name: str,
+    model_name: str,
     ray_address: Optional[str] = None,
     ray_storage_path: Optional[str] = None,
     ray_experiment_name: Optional[str] = None,
@@ -418,11 +363,25 @@ def run_ray_tuner(
     if "GPU" in resources:
         gpus_used = 1
 
+    def get_model_specific_params(model_name: str) -> int:
+        if model_name == "hetero_sage":
+            return {
+                "tabular_encoder_model": "resnet",
+            }
+        elif model_name in ["universal_sage", "universal_homogeneous_sage"]:
+            return {
+                "tabular_encoder_heads": 8,
+                "tabular_encoder_dropout": 0.1,
+            }
+        else:
+            raise ValueError(f"Unknown model name: {model_name}")
+
     tuner = tune.Tuner(
         tune.with_resources(
             tune.with_parameters(
                 run_task_experiment,
                 data=data,
+                col_stats_dict=col_stats_dict,
                 tensor_stats_dict=tensor_stats_dict,
                 name_embeddings_dict=name_embeddings_dict,
             ),
@@ -443,25 +402,26 @@ def run_ray_tuner(
         param_space={
             "dataset_name": dataset_name,
             "task_name": task_name,
-            "mlflow_experiment": mlflow_experiment,
-            "mlflow_uri": mlflow_uri,
+            "model_name": model_name,
             "seed": tune.randint(0, 1000),
             "text_embedder_name": text_embedder_name,
+            # logging config
+            "mlflow_experiment": mlflow_experiment,
+            "mlflow_uri": mlflow_uri,
             # training config
-            "max_training_steps": 4000,
+            "max_training_steps": 30000,
             "lr": 0.0001,
             # sampling config
             "batch_size": 128,
-            "num_neighbors": tune.grid_search([16, 32, 64]),
+            "num_neighbors": 16,
             # model config
             "col_channels": 512,
             "gnn_channels": 128,
             "tabular_encoder_layers": 2,
-            "tabular_encoder_heads": 8,
-            "tabular_encoder_dropout": 0.1,
-            "gnn_layers": tune.grid_search([2, 3]),
+            "gnn_layers": 2,
             "gnn_aggr": "sum",
             "head_norm": "batch_norm",
+            **get_model_specific_params(model_name),
         },
     )
     tuner.fit()
@@ -471,6 +431,11 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--dataset", type=str)
     parser.add_argument("--task", type=str)
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        choices=["hetero_sage", "universal_sage", "universal_homogeneous_sage"],
+    )
     parser.add_argument("--ray_address", type=str, default="local")
     parser.add_argument("--ray_storage", type=str, default=None)
     parser.add_argument("--run_name", type=str, default=None)
@@ -485,10 +450,12 @@ if __name__ == "__main__":
     print(args)
     dataset_name = args.dataset
     task_name = args.task
+    model_name = args.model_name
 
     run_ray_tuner(
         dataset_name,
         task_name,
+        model_name,
         ray_address=args.ray_address,
         ray_storage_path=(
             os.path.realpath(args.ray_storage)

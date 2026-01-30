@@ -65,7 +65,7 @@ def get_loss(task_type: TaskType, **loss_kwargs) -> torch.nn.Module:
         return torch.nn.CrossEntropyLoss(**loss_kwargs)
 
     elif task_type == TaskType.REGRESSION:
-        return torch.nn.MSELoss(**loss_kwargs)
+        return torch.nn.L1Loss(**loss_kwargs)
 
     else:
         raise ValueError(f"Task type {task_type} is unsupported")
