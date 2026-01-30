@@ -5,6 +5,7 @@ import copy
 import os
 import random
 from datetime import datetime, timedelta
+import sys
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["RAY_memory_monitor_refresh_ms"] = "0"
@@ -36,6 +37,8 @@ from relbench.base import EntityTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.modeling.nn import HeteroTemporalEncoder, HeteroGraphSAGE
 from relbench.tasks import get_task
+
+sys.path.append(".")
 
 from redelex.data import (
     TextEmbedder,
@@ -213,7 +216,9 @@ def run_task_experiment(
     elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
         out_channels = len(task.stats()[StatType.COUNT][0])
 
-    text_embedder = get_text_embedder(config["text_embedder_name"])
+    text_embedder = get_text_embedder(
+        config["text_embedder_name"], device=torch.device("cpu")
+    )
 
     model = UniversalSAGEModel(
         gnn_channels=config["gnn_channels"],
@@ -260,18 +265,22 @@ def run_task_experiment(
         )
 
     val_check_interval = min(
-        500,
         len(loader_dict["val"]) + len(loader_dict["test"]),
         len(loader_dict["train"]),
     )
+    if val_check_interval < 500:
+        val_check_interval = 500
     if val_check_interval > len(loader_dict["train"]) // 2:
         val_check_interval = len(loader_dict["train"])
+
+    if val_check_interval < len(loader_dict["train"]) // 3:
+        val_check_interval = len(loader_dict["train"]) // 3
 
     config["val_check_interval"] = val_check_interval
 
     max_training_steps: int = config["max_training_steps"]
     max_training_steps = max(
-        max_training_steps, len(loader_dict["train"]), val_check_interval * 10
+        max_training_steps, len(loader_dict["train"]), val_check_interval * 30
     )
     config["max_training_steps"] = max_training_steps
 
@@ -301,7 +310,7 @@ def run_task_experiment(
             callbacks.EarlyStopping(
                 monitor=f"val_{lightning_model.tune_metric}",
                 mode="max" if lightning_model.higher_is_better else "min",
-                patience=5,
+                patience=10,
             ),
         ],
         num_sanity_val_steps=0,
@@ -373,9 +382,6 @@ def run_ray_tuner(
 
     db = dataset.get_db(upto_test_timestamp=False)
 
-    train_db = db.upto(dataset.val_timestamp)
-    dataset.validate_and_correct_db(train_db)
-
     schema_cache_path = f"{cache_path}/attribute-schema.json"
     attribute_schema = get_attribute_schema(schema_cache_path, db)
 
@@ -389,6 +395,7 @@ def run_ray_tuner(
         text_embedder=text_embedder,
         cache_dir=materialized_cache_dir,
     )
+    del db
 
     tensor_stats_dict = {}
     name_embeddings_dict = {}
@@ -409,20 +416,7 @@ def run_ray_tuner(
     gpus_used = 0
     cpus_used = 2
     if "GPU" in resources:
-        batch_model_size = 4e9
-        gpu_memory = max(
-            [
-                torch.cuda.get_device_properties(i).total_memory
-                for i in range(torch.cuda.device_count())
-            ]
-        )
-        gpus_used = batch_model_size / gpu_memory
-
-    print(f"GPUs used: {gpus_used}")
-    print(f"CPUs used: {cpus_used}")
-    print(data["races"].tf.device)
-    print(tensor_stats_dict["races"])
-    print(name_embeddings_dict["races"])
+        gpus_used = 1
 
     tuner = tune.Tuner(
         tune.with_resources(
@@ -455,9 +449,9 @@ def run_ray_tuner(
             "text_embedder_name": text_embedder_name,
             # training config
             "max_training_steps": 4000,
-            "lr": 0.001 if dataset_name != "rel-trial" else 0.0001,
+            "lr": 0.0001,
             # sampling config
-            "batch_size": 512,
+            "batch_size": 128,
             "num_neighbors": tune.grid_search([16, 32, 64]),
             # model config
             "col_channels": 512,
