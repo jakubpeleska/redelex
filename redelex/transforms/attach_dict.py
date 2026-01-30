@@ -14,11 +14,11 @@ class AttachDictTransform(BaseTransform):
     ):
         super().__init__()
         self.attach_data = attach_data
-        if type(attach_data) is not list:
+        if not isinstance(attach_data, list):
             self.attach_data = [attach_data]
         for t in self.attach_data:
             assert isinstance(t, tuple) and len(t) == 2
-            assert type(t[0]) is str and type(t[1]) is dict
+            assert isinstance(t[0], str) and isinstance(t[1], dict)
 
     def __call__(self, batch: HeteroData) -> HeteroData:
         for nt in batch.node_types:

@@ -40,8 +40,7 @@ from relbench.metrics import (
     r2,
     roc_auc,
 )
-
-from redelex.nn.train import get_node_train_table_input
+from relbench.modeling.graph import get_node_train_table_input
 
 from redelex.tasks.mixins import BaseTask
 from redelex.tasks.utils import is_temporal_task

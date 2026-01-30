@@ -1,12 +1,4 @@
-from typing import NamedTuple, Optional, Tuple
-
-import numpy as np
-
 import torch
-
-from torch_geometric.transforms import BaseTransform
-from torch_geometric.typing import NodeType
-
 from torchmetrics import Metric
 from torchmetrics.classification import (
     BinaryAccuracy,
@@ -19,57 +11,7 @@ from torchmetrics.classification import (
 )
 from torchmetrics.regression import MeanAbsoluteError, MeanSquaredError, R2Score
 
-from relbench.base import TaskType, EntityTask, Table
-
-from redelex.transforms import AttachTargetTransform
-from redelex.utils import to_unix_time
-
-
-class NodeTrainTableInput(NamedTuple):
-    r"""Training table input for node prediction.
-
-    - nodes is a Tensor of node indices.
-    - time is a Tensor of node timestamps.
-    - target is a Tensor of node labels.
-    - transform attaches the target to the batch.
-    """
-
-    nodes: Tuple[NodeType, torch.Tensor]
-    time: Optional[torch.Tensor]
-    target: Optional[torch.Tensor]
-    transform: Optional[BaseTransform]
-
-
-def get_node_train_table_input(
-    table: Table,
-    task: EntityTask,
-) -> NodeTrainTableInput:
-    r"""Get the training table input for node prediction."""
-
-    nodes = torch.from_numpy(table.df[task.entity_col].astype(int).values)
-
-    time: Optional[torch.Tensor] = None
-    if table.time_col is not None:
-        time = torch.from_numpy(to_unix_time(table.df[table.time_col]))
-
-    target: Optional[torch.Tensor] = None
-    transform: Optional[AttachTargetTransform] = None
-    if task.target_col in table.df:
-        target_type = float
-        if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-            target_type = int
-        if task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
-            target = torch.from_numpy(np.stack(table.df[task.target_col].values))
-        else:
-            target = torch.from_numpy(table.df[task.target_col].values.astype(target_type))
-        transform = AttachTargetTransform(task.entity_table, target)
-
-    return NodeTrainTableInput(
-        nodes=(task.entity_table, nodes),
-        time=time,
-        target=target,
-        transform=transform,
-    )
+from relbench.base import TaskType
 
 
 def get_metrics(

@@ -59,7 +59,7 @@ def remove_pkey_fkey(col_to_stype: Dict[str, Any], table: Table) -> dict:
 def make_pkey_fkey_graph(
     db: Database,
     col_to_stype_dict: Dict[str, Dict[str, stype]],
-    text_embedder: TextEmbedder = None,
+    text_embedder: Optional[TextEmbedder] = None,
     cache_dir: Optional[str] = None,
 ) -> Tuple[HeteroData, Dict[str, Dict[str, Dict[StatType, Any]]]]:
     r"""Given a :class:`Database` object, construct a heterogeneous graph with primary-

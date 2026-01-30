@@ -4,7 +4,7 @@ from .pretrain_wrappers import (
     LightningPretrainedModel,
 )
 from .train_wrappers import LightningEntityTaskWrapper
-from .utils import get_loss, get_metrics, get_node_train_table_input
+from .utils import get_loss, get_metrics
 
 
 __all__ = [
@@ -14,5 +14,4 @@ __all__ = [
     "LightningEntityTaskWrapper",
     "get_loss",
     "get_metrics",
-    "get_node_train_table_input",
 ]

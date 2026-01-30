@@ -28,11 +28,12 @@ from torch_geometric.nn import MLP
 from relbench.base import TaskType
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task, get_task_names
+from relbench.modeling.graph import get_node_train_table_input
 
-from redelex.data import make_pkey_fkey_graph, get_node_train_table_input
+from redelex.data import make_pkey_fkey_graph
 from redelex.datasets import get_dataset_info
 from redelex.nn.models.rdl_model import RDLModel
-from redelex.utils.corruptors import DBResampleCorruptor
+from redelex.transforms import ResampleCorruptor
 from redelex.nn.train.pretrain_wrappers import (
     PretrainingWrapper,
     LightningPretrainingWrapper,
@@ -279,7 +280,7 @@ def run_pretraining_experiment(
 
     print("Device:", device)
 
-    corruptor = DBResampleCorruptor(
+    corruptor = ResampleCorruptor(
         train_data, corrupt_prob=corrupt_prob, distribution="uniform"
     )
 
