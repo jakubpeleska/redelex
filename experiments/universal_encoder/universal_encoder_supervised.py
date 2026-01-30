@@ -417,7 +417,7 @@ def run_ray_tuner(
             # model config
             "col_channels": 512,
             "gnn_channels": 128,
-            "tabular_encoder_layers": 2,
+            "tabular_encoder_layers": tune.grid_search([1, 2, 4, 8]),
             "gnn_layers": 2,
             "gnn_aggr": "sum",
             "head_norm": "batch_norm",
