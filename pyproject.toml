@@ -10,27 +10,38 @@ authors = [{ name = "Jakub Peleška", email = "jakub.peleska@fel.cvut.cz" }]
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: MIT License"]
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 keywords = []
 dependencies = [
-    "relbench>=1.1.0",
-    "pandas>=2.2.3",
-    "pymysql>=1.1.1",
-    "sqlalchemy>=2.0.40",
+    "relbench==1.1.0",
+    "pandas>=2.3.3",
+    "pymysql>=1.1.2",
+    "sqlalchemy>=2.0.46",
     "inflect>=7.5.0",
     "tqdm>=4.67.1",
-    "attrs>=25.3.0",
+    "attrs>=25.4.0",
 ]
 
 [dependency-groups]
 cpu = [
-    "torch==2.4.1",
-    "torchvision==0.19.1",
-    "torchaudio==2.4.1",
-    "pytorch-frame>=0.2.5",
-    "torch-geometric>=2.6.1",
+    "torch==2.8.0",
+    "torchvision==0.23.0",
+    "torchaudio==2.8.0",
+    "pytorch-frame>=0.3.0",
+    "torch-geometric>=2.7.0",
     "sentence-transformers>=4.0.1",
 ]
+cu121 = [
+    "torch==2.1.2",
+    "torchvision==0.16.2",
+    "torchaudio==2.1.2",
+    "pytorch-frame>=0.2.5",
+    "torch-geometric==2.4.0",
+    "numpy==1.26.4",
+    "huggingface-hub==0.21.2",
+    "transformers==4.37.2",
+    "sentence-transformers==2.2.2"
+]   
 cu124 = [
     "torch==2.4.1",
     "torchvision==0.19.1",
@@ -39,33 +50,53 @@ cu124 = [
     "torch-geometric>=2.6.1",
     "sentence-transformers>=4.0.1",
 ]
+cu128 = [
+    "torch==2.8.0",
+    "torchvision==0.23.0",
+    "torchaudio==2.8.0",
+    "pytorch-frame>=0.3.0",
+    "torch-geometric>=2.7.0",
+    "sentence-transformers>=4.0.1",
+]
 
-dev = ["ipykernel>=6.29.5", "matplotlib>=3.10.1", "pre-commit>=4.2.0"]
+dev = [
+    "ipykernel>=7.1.0",
+    "ipywidgets>=8.1.8",
+    "matplotlib>=3.10.8",
+    "pre-commit>=4.5.1",
+]
 experiments = [
-    "lightning>=2.5.1.post0",
-    "mlflow>=2.22.1",
-    "ray[data,serve,train,tune]>=2.46.0",
-    "getml>=1.5.1",
+    "lightning>=2.6.0",
+    "mlflow==2.22.1",
+    "ray[data,serve,train,tune]==2.46.0",
+    "getml>=1.5.0",
+    "pynvml>=13.0.1",
 ]
 visualization = ["jinja2>=3.1.6", "pydot>=4.0.1"]
 
 
 [tool.uv]
 default-groups = ["dev", "cpu", "experiments", "visualization"]
-conflicts = [[{ group = "cpu" }, { group = "cu124" }]]
+conflicts = [[{ group = "cpu" }, { group = "cu121" }, { group = "cu124" }, { group = "cu128" }]]
 
 [tool.uv.sources]
 torch = [
     { index = "torch-cpu", group = "cpu" },
+    { index = "torch-cu121", group = "cu121" },
     { index = "torch-cu124", group = "cu124" },
+    { index = "torch-cu128", group = "cu128" },
 ]
 torchvision = [
     { index = "torch-cpu", group = "cpu" },
+    { index = "torch-cu121", group = "cu121" },
     { index = "torch-cu124", group = "cu124" },
+    { index = "torch-cu128", group = "cu128" },
 ]
 torchaudio = [
     { index = "torch-cpu", group = "cpu" },
+    { index = "torch-cu121", group = "cu121" },
     { index = "torch-cu124", group = "cu124" },
+    { index = "torch-cu128", group = "cu128" },
 ]
 
 
@@ -75,10 +106,20 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [[tool.uv.index]]
+name = "torch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[[tool.uv.index]]
 name = "torch-cu124"
 url = "https://download.pytorch.org/whl/cu124"
 explicit = true
 
+
+[[tool.uv.index]]
+name = "torch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
 
 [project.urls]
 Homepage = "https://github.com/jakubpeleska/redelex"
