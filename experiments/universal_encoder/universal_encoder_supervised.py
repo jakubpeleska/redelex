@@ -52,7 +52,11 @@ from experiments.utils import (
     get_text_embedder,
 )
 
-from .models import HeteroSAGEModel, UniversalSAGEModel, UniversalHomogeneousSAGEModel
+from experiments.universal_encoder.models import (
+    HeteroSAGEModel,
+    UniversalSAGEModel,
+    UniversalHomogeneousSAGEModel,
+)
 
 
 def get_model(model_name: str, config: dict[str, Any], data: HeteroData) -> torch.nn.Module:
@@ -219,6 +223,9 @@ def run_task_experiment(
 
     if val_check_interval < len(loader_dict["train"]) // 3:
         val_check_interval = len(loader_dict["train"]) // 3
+
+    if val_check_interval > 1000:
+        val_check_interval = 1000
 
     config["val_check_interval"] = val_check_interval
 

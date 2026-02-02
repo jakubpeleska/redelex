@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=cpulong
-#SBATCH --job-name=hetero_sage
+#SBATCH --job-name=universal_sage
 #SBATCH --cpus-per-task=3
 #SBATCH --mem-per-cpu=80G
 #SBATCH --time=72:00:00
@@ -18,7 +18,7 @@ VENV_PATH="/home/pelesjak/git/ctu-relational-py/.venv"
 # Activate the local virtual environment
 source "${VENV_PATH}/bin/activate"
 
-EXPERIMENT_NAME="hetero_sage"
+EXPERIMENT_NAME="universal_sage"
 
 echo $SLURM_ARRAY_JOB_ID
 

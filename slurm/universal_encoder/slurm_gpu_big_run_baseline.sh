@@ -1,9 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=universal_encoder_baseline
-#SBATCH --cpus-per-task=8
-#SBATCH --mem-per-cpu=16G
+#SBATCH --job-name=hetero_sage
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-gpu=3
+#SBATCH --mem-per-cpu=40G
 #SBATCH --time=24:00:00
-#SBATCH --array=0-16
+#SBATCH --array=0-11
 
 declare -a dataset_pairs=(
     'rel-f1 driver-position'
@@ -12,17 +14,12 @@ declare -a dataset_pairs=(
     'rel-stack user-engagement'
     'rel-stack post-votes'
     'rel-stack user-badge'
-    'rel-stack user-post-comment'
-    'rel-stack post-post-related'
     'rel-trial study-outcome'
     'rel-trial study-adverse'
     'rel-trial site-success'
-    'rel-trial condition-sponsor-run'
-    'rel-trial site-sponsor-run'
     'rel-avito ad-ctr'
     'rel-avito user-visits'
     'rel-avito user-clicks'
-    'rel-avito user-ad-visit'
 )
 
 VENV_PATH="/home/pelesjak/git/ctu-relational-py/.venv"
@@ -30,7 +27,7 @@ VENV_PATH="/home/pelesjak/git/ctu-relational-py/.venv"
 # Activate the local virtual environment
 source "${VENV_PATH}/bin/activate"
 
-EXPERIMENT_NAME="universal_encoder_baseline"
+EXPERIMENT_NAME="hetero_sage"
 
 echo $SLURM_ARRAY_JOB_ID
 
@@ -59,10 +56,11 @@ log_dir=${experiment_dir}/${dataset}_${task}
 mkdir -p $log_dir
 
 
-python -u experiments/universal_encoder/universal_encoder_baseline.py --dataset=${dataset} --task=${task}\
+python -u experiments/universal_encoder/universal_encoder_supervised.py \
+  --dataset=${dataset} --task=${task} --model_name=${EXPERIMENT_NAME} \
   --ray_address="local" --ray_storage=${log_dir} \
   --run_name=${EXPERIMENT_ID}_${dataset}_${task} --mlflow_uri=${MLFLOW_TRACKING_URI} \
-  --mlflow_experiment=pelesjak_${EXPERIMENT_NAME} --num_cpus=${SLURM_CPUS_PER_TASK} \
+  --mlflow_experiment=pelesjak_${EXPERIMENT_NAME} --num_cpus=${SLURM_CPUS_PER_GPU} --num_gpus=1 \
   --num_samples=${NUM_SAMPLES} &> "${log_dir}/run.log"
 
 
