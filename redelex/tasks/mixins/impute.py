@@ -48,6 +48,8 @@ class ImputeEntityTaskMixin(ModifyDBTaskMixin, EntityTaskMixin):
             self._target_dtype = float
         elif self.task_type in [TaskType.MULTICLASS_CLASSIFICATION]:
             self._target_dtype = int
+        else:
+            raise ValueError(f"Unsupported task type: {self.task_type}")
 
     def _make_modified_db(self, db: Database) -> Database:
         r"""
