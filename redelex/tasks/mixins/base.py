@@ -66,10 +66,11 @@ class BaseTask:
         """
         raise NotImplementedError
 
-    def _get_table(self, split: str) -> Table:
+    def _get_table(self, split: str, db: Optional[Database] = None) -> Table:
         r"""Helper function to get a table for a split."""
 
-        db = self.dataset.get_db(upto_test_timestamp=False)
+        if db is None:
+            db = self.dataset.get_db(upto_test_timestamp=False)
 
         split_range = self.make_split_range(db, split)
 
@@ -79,7 +80,7 @@ class BaseTask:
         return table
 
     @lru_cache(maxsize=None)
-    def get_table(self, split, mask_input_cols=None):
+    def get_table(self, split, mask_input_cols=None, db: Optional[Database] = None):
         r"""Get a table for a split.
 
         Args:
@@ -87,6 +88,7 @@ class BaseTask:
             mask_input_cols: If True, keep only the input columns in the table. If
                 None, mask the input columns only for the test split. This helps
                 prevent data leakage.
+            db: The database to use. If None, use the full database.
 
         Returns:
             The task table for the split.
@@ -107,7 +109,7 @@ class BaseTask:
                 "for tasks prepared by the RelBench team.)"
             )
             tic = time.time()
-            table = self._get_table(split)
+            table = self._get_table(split, db=db)
             toc = time.time()
             print(f"Done in {toc - tic:.2f} seconds.")
 
