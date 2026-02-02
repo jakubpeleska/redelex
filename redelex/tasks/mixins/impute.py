@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Callable
 
 import pandas as pd
 
-from relbench.base import Database, Dataset, Table, TaskType
+from relbench.base import Database, Table, TaskType
 
 from .db_modify import ModifyDBTaskMixin
 from .entity import EntityTaskMixin
@@ -22,11 +22,10 @@ class ImputeEntityTaskMixin(ModifyDBTaskMixin, EntityTaskMixin):
     target_col: str
     task_type: TaskType
 
-    def __init__(self, dataset: Dataset, cache_dir: Optional[str] = None):
-        super().__init__(dataset, cache_dir=cache_dir)
+    _target_mapping: Callable[[pd.Series], pd.Series] = None
+    _target_dtype: type = None
 
-        df = self.dataset.get_db().table_dict[self.entity_table].df
-
+    def _init_target_mapping(self, df: pd.DataFrame) -> None:
         if self.task_type in [
             TaskType.BINARY_CLASSIFICATION,
             TaskType.MULTICLASS_CLASSIFICATION,
@@ -41,14 +40,14 @@ class ImputeEntityTaskMixin(ModifyDBTaskMixin, EntityTaskMixin):
                 else:
                     return target_values.get_loc(x)
 
-            self.target_transform = target_map
+            self._target_mapping = target_map
         else:
-            self.target_transform = lambda x: x
+            self._target_mapping = lambda x: x
 
         if self.task_type in [TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION]:
-            self.target_dtype = float
+            self._target_dtype = float
         elif self.task_type in [TaskType.MULTICLASS_CLASSIFICATION]:
-            self.target_dtype = int
+            self._target_dtype = int
 
     def _make_modified_db(self, db: Database) -> Database:
         r"""
