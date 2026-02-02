@@ -11,7 +11,8 @@ class CTUEntityTaskTemporal(ImputeEntityTemporalTask):
     entity_col = "__PK__"
 
 
-class CTULinkTask:
+# TODO: implement link prediction tasks, currently they are placeholders
+class CTULinkTask(ImputeEntityStaticTask):
     pass
 
 
