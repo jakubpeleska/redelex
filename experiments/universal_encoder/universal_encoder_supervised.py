@@ -52,7 +52,12 @@ from experiments.utils import (
     get_text_embedder,
 )
 
-from .models import HeteroSAGEModel, UniversalSAGEModel, UniversalHomogeneousSAGEModel
+from .models import (
+    HeteroSAGEModel,
+    UniversalSAGEModel,
+    UniversalHomogeneousSAGEModel,
+    UniversalHomogeneousGANModel,
+)
 
 
 def get_model(model_name: str, config: dict[str, Any], data: HeteroData) -> torch.nn.Module:
@@ -101,6 +106,23 @@ def get_model(model_name: str, config: dict[str, Any], data: HeteroData) -> torc
             tabular_encoder_dropout=config["tabular_encoder_dropout"],
             gnn_layers=config["gnn_layers"],
             gnn_aggr=config["gnn_aggr"],
+            head_norm=config["head_norm"],
+        )
+
+    elif model_name == "universal_homogeneous_gan":
+        return UniversalHomogeneousGANModel(
+            gnn_channels=config["gnn_channels"],
+            col_channels=config["col_channels"],
+            out_channels=config["out_channels"],
+            text_embedder=get_text_embedder(
+                config["text_embedder_name"], device=torch.device("cpu")
+            ),
+            tabular_encoder_layers=config["tabular_encoder_layers"],
+            tabular_encoder_heads=config["tabular_encoder_heads"],
+            tabular_encoder_dropout=config["tabular_encoder_dropout"],
+            gnn_layers=config["gnn_layers"],
+            gnn_heads=config["gnn_heads"],
+            gnn_dropout=config["gnn_dropout"],
             head_norm=config["head_norm"],
         )
 
@@ -154,6 +176,7 @@ def run_task_experiment(
         trial_name = (
             f"{dataset_name}_{task_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         )
+
     print("Device:", device)
 
     # Move stats to device
@@ -255,7 +278,7 @@ def run_task_experiment(
                 monitor=f"val_{lightning_model.tune_metric}",
                 mode="max" if lightning_model.higher_is_better else "min",
                 patience=10,
-            ),
+            )
         ],
         num_sanity_val_steps=0,
         val_check_interval=val_check_interval,
@@ -367,11 +390,20 @@ def run_ray_tuner(
         if model_name == "hetero_sage":
             return {
                 "tabular_encoder_model": "resnet",
+                "gnn_aggr": "sum",
             }
         elif model_name in ["universal_sage", "universal_homogeneous_sage"]:
             return {
                 "tabular_encoder_heads": 8,
                 "tabular_encoder_dropout": 0.1,
+                "gnn_aggr": "sum",
+            }
+        elif model_name == "universal_homogeneous_gan":
+            return {
+                "tabular_encoder_heads": 8,
+                "tabular_encoder_dropout": 0.1,
+                "gnn_heads": 8,
+                "gnn_dropout": 0.1,
             }
         else:
             raise ValueError(f"Unknown model name: {model_name}")
@@ -419,7 +451,6 @@ def run_ray_tuner(
             "gnn_channels": 128,
             "tabular_encoder_layers": tune.grid_search([1, 2, 4, 8]),
             "gnn_layers": 2,
-            "gnn_aggr": "sum",
             "head_norm": "batch_norm",
             **get_model_specific_params(model_name),
         },
@@ -434,7 +465,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_name",
         type=str,
-        choices=["hetero_sage", "universal_sage", "universal_homogeneous_sage"],
+        choices=[
+            "hetero_sage",
+            "universal_sage",
+            "universal_homogeneous_sage",
+            "universal_homogeneous_gan",
+        ],
     )
     parser.add_argument("--ray_address", type=str, default="local")
     parser.add_argument("--ray_storage", type=str, default=None)
