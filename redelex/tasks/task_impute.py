@@ -36,11 +36,14 @@ class ImputeEntityStaticTask(StaticTaskMixin, ImputeEntityTaskMixin):
 
         entity_table = db.table_dict[self.entity_table]
 
+        if self._target_mapping is None or self._target_dtype is None:
+            self._init_target_mapping(entity_table.df)
+
         df = entity_table.df.loc[indices, [self.entity_col, self.target_col]].reset_index(
             drop=True
         )
         df[self.target_col] = (
-            df[self.target_col].map(self.target_transform).astype(self.target_dtype)
+            df[self.target_col].map(self._target_mapping).astype(self._target_dtype)
         )
 
         return Table(
@@ -84,6 +87,9 @@ class ImputeEntityTemporalTask(TemporalTaskMixin, ImputeEntityTaskMixin):
 
         df = entity_table.df
 
+        if self._target_mapping is None or self._target_dtype is None:
+            self._init_target_mapping(df)
+
         df = df[
             (df[time_col] >= min_timestamp) & (df[time_col] <= max_timestamp)
         ].reset_index(drop=True)
@@ -91,7 +97,7 @@ class ImputeEntityTemporalTask(TemporalTaskMixin, ImputeEntityTaskMixin):
         df = df[[self.entity_col, time_col, self.target_col]]
 
         df[self.target_col] = (
-            df[self.target_col].map(self.target_transform).astype(self.target_dtype)
+            df[self.target_col].map(self._target_mapping).astype(self._target_dtype)
         )
 
         return Table(

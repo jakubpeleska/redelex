@@ -16,6 +16,6 @@ class AttachTargetTransform(BaseTransform):
         self.entity = entity
         self.target = target
 
-    def __call__(self, batch: HeteroData) -> HeteroData:
+    def forward(self, batch: HeteroData) -> HeteroData:
         batch[self.entity].y = self.target[batch[self.entity].input_id]
         return batch

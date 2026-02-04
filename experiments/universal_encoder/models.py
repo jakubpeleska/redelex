@@ -4,7 +4,7 @@ import torch
 import torch_geometric.nn.aggr as geo_aggr
 from torch_geometric.data import HeteroData
 from torch_geometric.data.hetero_data import to_homogeneous_edge_index
-from torch_geometric.nn import SAGEConv, MLP
+from torch_geometric.nn import SAGEConv, MLP, GATv2Conv
 from torch_geometric.typing import NodeType, EdgeType
 
 from torch_frame import stype, TensorFrame
@@ -123,8 +123,6 @@ class UniversalSAGEModel(torch.nn.Module):
     ):
         super().__init__()
 
-        self.text_embedder = text_embedder
-
         self.tabular_encoder = UniversalRowEncoder(
             out_channels=gnn_channels,
             text_embedder=text_embedder,
@@ -223,8 +221,6 @@ class UniversalHomogeneousSAGEModel(torch.nn.Module):
     ):
         super().__init__()
 
-        self.text_embedder = text_embedder
-
         self.tabular_encoder = UniversalRowEncoder(
             out_channels=gnn_channels,
             text_embedder=text_embedder,
@@ -248,6 +244,117 @@ class UniversalHomogeneousSAGEModel(torch.nn.Module):
         for _ in range(gnn_layers):
             self.convs.append(
                 SAGEConv((gnn_channels, gnn_channels), gnn_channels, aggr=gnn_aggr)
+            )
+            self.norms.append(torch.nn.LayerNorm(gnn_channels))
+
+        self.head = MLP(
+            in_channels=gnn_channels,
+            out_channels=out_channels,
+            norm=head_norm,
+            num_layers=1,
+        )
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        self.tabular_encoder.reset_parameters()
+        self.temporal_encoder.reset_parameters()
+        for conv in self.convs:
+            conv.reset_parameters()
+        for norm in self.norms:
+            norm.reset_parameters()
+        self.head.reset_parameters()
+
+    def forward(self, batch: HeteroData, entity_table: NodeType) -> torch.Tensor:
+        tensor_stats_dict: dict[str, dict[stype, dict[TensorStatType, torch.Tensor]]] = (
+            batch.tensor_stats_dict
+        )
+        name_embeddings_dict: dict[str, dict[str, torch.Tensor]] = (
+            batch.name_embeddings_dict
+        )
+
+        tf_dict: dict[str, TensorFrame] = batch.tf_dict
+
+        x_dict: dict[str, torch.Tensor] = {}
+        for tname, tf in tf_dict.items():
+            x_dict[tname] = self.tabular_encoder(
+                tname,
+                tf,
+                tensor_stats_dict[tname],
+                name_embeddings_dict[tname],
+            )
+
+        if hasattr(batch[entity_table], "seed_time"):
+            seed_time = batch[entity_table].seed_time
+            for node_type, time in batch.time_dict.items():
+                rel_time = self.temporal_encoder(seed_time, time, batch[node_type].batch)
+                x_dict[node_type] = x_dict[node_type] + rel_time
+
+        edge_index, node_slices, edge_slices = to_homogeneous_edge_index(batch)
+        x_list = []
+        for nt in node_slices.keys():
+            x_list.append(x_dict[nt])
+
+        x = torch.cat(x_list, dim=0)
+
+        for conv, norm in zip(self.convs, self.norms):
+            x = conv(x, edge_index)
+            x = norm(x)
+            x = torch.relu(x)
+
+        if hasattr(batch[entity_table], "seed_time"):
+            return self.head(
+                x[node_slices[entity_table][0] : node_slices[entity_table][1]][
+                    : seed_time.size(0)
+                ]
+            )
+
+        return self.head(x[node_slices[entity_table][0] : node_slices[entity_table][1]])
+
+
+class UniversalHomogeneousGANModel(torch.nn.Module):
+    def __init__(
+        self,
+        col_channels: int,
+        gnn_channels: int,
+        out_channels: int,
+        text_embedder: TextEmbedder,
+        tabular_encoder_heads: int = 4,
+        tabular_encoder_layers: int = 2,
+        tabular_encoder_dropout: float = 0.1,
+        gnn_layers: int = 2,
+        gnn_heads: int = 4,
+        gnn_dropout: float = 0.1,
+        head_norm: str = "batch_norm",
+    ):
+        super().__init__()
+
+        self.tabular_encoder = UniversalRowEncoder(
+            out_channels=gnn_channels,
+            text_embedder=text_embedder,
+            data_channels=col_channels // 2,
+            type_channels=col_channels // 32,
+            name_channels=col_channels * 3 // 8,
+            stats_channels=col_channels * 3 // 32,
+            encoder_heads=tabular_encoder_heads,
+            encoder_layers=tabular_encoder_layers,
+            encoder_dropout=tabular_encoder_dropout,
+        )
+
+        self.temporal_encoder = RelativeTemporalEncoder(channels=gnn_channels)
+
+        self.convs = torch.nn.ModuleList()
+        self.norms = torch.nn.ModuleList()
+        for _ in range(gnn_layers):
+            self.convs.append(
+                GATv2Conv(
+                    (gnn_channels, gnn_channels),
+                    out_channels=gnn_channels // gnn_heads,
+                    heads=gnn_heads,
+                    dropout=gnn_dropout,
+                    residual=True,
+                    concat=True,
+                )
             )
             self.norms.append(torch.nn.LayerNorm(gnn_channels))
 
