@@ -146,12 +146,12 @@ class UniversalCategoricalEncoder(UniversalStypeEncoder):
         self,
         data_channels: int,
         stats_channels: int,
-        text_embedder: TextEmbedder,
+        embedding_dim: int,
         num_categories: int = 1000,
     ):
         self.data_channels = data_channels
         self.stats_channels = stats_channels
-        self.text_embedder = text_embedder
+        self.embedding_dim = embedding_dim
         self.num_categories = num_categories
 
         super().__init__(stats_channels=stats_channels)
@@ -165,7 +165,7 @@ class UniversalCategoricalEncoder(UniversalStypeEncoder):
         )
 
         self.text_transform = torch.nn.Linear(
-            self.text_embedder.embedding_dim, self.data_channels, bias=True
+            self.embedding_dim, self.data_channels, bias=True
         )
 
         self.reset_parameters()
@@ -228,7 +228,7 @@ class UniversalCategoricalEncoder(UniversalStypeEncoder):
                 return x
 
             flat_value_emb = value_emb.view(
-                -1, self.text_embedder.embedding_dim
+                -1, self.embedding_dim
             )  # [num_cols * max_cardinality, embed_dim]
 
             bag_shifts = torch.arange(feat.num_cols) * value_emb.size(1)  # [num_cols]
@@ -251,9 +251,7 @@ class UniversalCategoricalEncoder(UniversalStypeEncoder):
                 mode="sum",
             )  # [batch_size * num_cols, embed_dim]
 
-            x_val_emb = x_val_emb.view(
-                feat.num_rows, feat.num_cols, self.text_embedder.embedding_dim
-            )
+            x_val_emb = x_val_emb.view(feat.num_rows, feat.num_cols, self.embedding_dim)
         else:
             # feat: [batch_size, num_cols]
             indices = feat + 1  # +1 for NA
@@ -365,17 +363,15 @@ class UniversalTimestampEncoder(UniversalStypeEncoder):
 class UniversalEmbeddingEncoder(UniversalStypeEncoder):
     stats_list = []
 
-    def __init__(
-        self, text_embedder: TextEmbedder, data_channels: int, stats_channels: int
-    ):
-        self.text_embedder = text_embedder
+    def __init__(self, embedding_dim: int, data_channels: int, stats_channels: int):
+        self.embedding_dim = embedding_dim
         self.data_channels = data_channels
         self.stats_channels = stats_channels
 
         super().__init__(stats_channels=stats_channels)
 
         self.text_transform = torch.nn.Linear(
-            self.text_embedder.embedding_dim, self.data_channels, bias=True
+            self.embedding_dim, self.data_channels, bias=True
         )
 
         self.reset_parameters()
@@ -429,7 +425,6 @@ class TransformerEncoderLayer(torch.nn.Module):
         self.activation = F.relu
 
     def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
-        # src: [Batch, Num_Features, d_model]
         next_x, _ = self.self_attn(x, x, x, key_padding_mask=mask)
         x = x + self.dropout1(next_x)
         x = self.norm1(x)
@@ -522,7 +517,7 @@ class UniversalRowEncoder(torch.nn.Module):
 
         self.out_channels = out_channels
 
-        self.text_embedder = text_embedder
+        self.embedding_dim = text_embedder.embedding_dim
 
         self.attention_heads = encoder_heads
         self.attention_layers = encoder_layers
@@ -531,7 +526,7 @@ class UniversalRowEncoder(torch.nn.Module):
         super().__init__()
 
         self.name_transform = torch.nn.Linear(
-            text_embedder.embedding_dim, self.name_channels, bias=True
+            self.embedding_dim, self.name_channels, bias=True
         )
 
         self.token_type_encoder = TokenTypeEncoder(channels=self.type_channels)
@@ -539,7 +534,7 @@ class UniversalRowEncoder(torch.nn.Module):
         self.cat_encoder = UniversalCategoricalEncoder(
             data_channels=self.data_channels,
             stats_channels=self.stats_channels,
-            text_embedder=self.text_embedder,
+            embedding_dim=self.embedding_dim,
             num_categories=1000,
         )
 
@@ -552,7 +547,7 @@ class UniversalRowEncoder(torch.nn.Module):
         )
 
         self.text_encoder = UniversalEmbeddingEncoder(
-            text_embedder=self.text_embedder,
+            embedding_dim=self.embedding_dim,
             data_channels=self.data_channels,
             stats_channels=self.stats_channels,
         )
