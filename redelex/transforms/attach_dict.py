@@ -20,7 +20,7 @@ class AttachDictTransform(BaseTransform):
             assert isinstance(t, tuple) and len(t) == 2
             assert isinstance(t[0], str) and isinstance(t[1], dict)
 
-    def __call__(self, batch: HeteroData) -> HeteroData:
+    def forward(self, batch: HeteroData) -> HeteroData:
         for nt in batch.node_types:
             for name, data_dict in self.attach_data:
                 batch[nt][name] = data_dict[nt]
