@@ -1,8 +1,14 @@
+import os
+
+import pandas as pd
+
 from relbench.tasks import register_task
 
 from .task_impute import ImputeEntityStaticTask, ImputeEntityTemporalTask
 
 from .ctu_tasks import CTUEntityTask, CTUEntityTaskTemporal
+
+from .utils import is_temporal_task
 
 # fmt: off
 from .ctu_tasks import (
@@ -37,6 +43,19 @@ from .ctu_tasks import (
     WalmartOriginalTask, WalmartTemporalTask, WebKPOriginalTask, WorldOriginalTask
 )
 # fmt: on
+
+
+def get_task_info(dataset_name: str, task_name: str):
+    task_info_df = pd.read_csv(os.path.join(os.path.dirname(__file__), "task-info.csv"))
+    return task_info_df[
+        (task_info_df["dataset"] == dataset_name) & (task_info_df["task"] == task_name)
+    ].iloc[0]
+
+
+def get_all_tasks_info():
+    task_info_df = pd.read_csv(os.path.join(os.path.dirname(__file__), "task-info.csv"))
+    return task_info_df
+
 
 register_task("ctu-accidents", "accidents-original", AccidentsOriginalTask)
 
@@ -198,6 +217,8 @@ register_task("ctu-world", "world-original", WorldOriginalTask)
 
 # fmt: off
 __all__ = [
+    "get_task_info", "get_all_tasks_info", "is_temporal_task",
+    
     "ImputeEntityStaticTask", "ImputeEntityTemporalTask",
     "CTUEntityTask", "CTUEntityTaskTemporal",
     
