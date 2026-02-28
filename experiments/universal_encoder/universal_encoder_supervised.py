@@ -33,7 +33,6 @@ from torch_frame.data import StatType
 
 from relbench.base import EntityTask, TaskType
 from relbench.datasets import get_dataset
-from relbench.modeling.graph import get_node_train_table_input
 from relbench.tasks import get_task
 
 sys.path.append(".")
@@ -42,17 +41,18 @@ from redelex.data import (
     TensorStatType,
     make_pkey_fkey_graph,
     make_tensor_stats_dict,
+    get_node_train_table_input,
 )
-from redelex.nn.train import LightningEntityTaskWrapper
+from redelex.nn.train.lightning import LightningEntityTaskWrapper
 from redelex.transforms import AttachDictTransform
 
-from experiments.utils import (
+from experiments.universal_encoder.utils import (
     get_attribute_schema,
     get_hyperparams_logging,
     get_text_embedder,
 )
 
-from .models import (
+from experiments.universal_encoder.models import (
     HeteroSAGEModel,
     UniversalSAGEModel,
     UniversalHomogeneousSAGEModel,
@@ -139,6 +139,7 @@ def run_task_experiment(
     with_ray: bool = True,
     with_mlflow: bool = True,
 ):
+    pretrained_checkpoint: Optional[str] = config.get("pretrained_checkpoint", None)
     dataset_name: str = config["dataset_name"]
     task_name: str = config["task_name"]
     random_seed: int = config["seed"]
@@ -197,6 +198,41 @@ def run_task_experiment(
     config["out_channels"] = out_channels
     model = get_model(config["model_name"], config, data)
     model = model.to(device)
+
+    if pretrained_checkpoint:
+        print(f"Loading pretrained weights from {pretrained_checkpoint}")
+        checkpoint = torch.load(
+            pretrained_checkpoint, map_location=device, weights_only=False
+        )
+        # Check if saved using Lightning checkpoint or just raw state dict
+        state_dict = checkpoint["state_dict"] if "state_dict" in checkpoint else checkpoint
+
+        # We need to extract the backbone weights. If it was saved using LightningMultiTaskWrapper,
+        # the internal model is likely prefixed with 'backbone.'
+        encoder_state_dict = {}
+        for k, v in state_dict.items():
+            if k.startswith("backbone."):
+                encoder_state_dict[k.replace("backbone.", "")] = v
+            # alternatively, it might be saved directly as a torch module
+            elif (
+                k.startswith("tabular_encoder.")
+                or k.startswith("temporal_encoder.")
+                or k.startswith("convs.")
+                or k.startswith("norms.")
+            ):
+                encoder_state_dict[k] = v
+
+        if not encoder_state_dict:
+            print("Warning: No matching keys found for backbone in the checkpoint.")
+        else:
+            # We use strict=False because the supervised model might have a 'head' that the pretrained doesn't,
+            # or different GNN layers depending on settings.
+            missing_keys, unexpected_keys = model.load_state_dict(
+                encoder_state_dict, strict=False
+            )
+            print(
+                f"Loaded pretrained checkpoint. Missing keys: {len(missing_keys)}, Unexpected keys: {len(unexpected_keys)}"
+            )
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.1)
 
@@ -315,6 +351,7 @@ def run_ray_tuner(
     num_cpus: int = 1,
     random_seed: int = 42,
     cache_dir: str = ".cache",
+    pretrained_checkpoint: Optional[str] = None,
 ):
     random.seed(random_seed)
     np.random.seed(random_seed)
@@ -347,11 +384,12 @@ def run_ray_tuner(
     cache_path = f"{cache_dir}/{dataset_name}"
 
     dataset = get_dataset(dataset_name)
+    task = get_task(dataset_name, task_name)
 
     db = dataset.get_db(upto_test_timestamp=False)
 
     schema_cache_path = f"{cache_path}/attribute-schema.json"
-    attribute_schema = get_attribute_schema(schema_cache_path, db)
+    attribute_schema = get_attribute_schema(schema_cache_path, db, task=task)
 
     text_embedder_name = "glove"
     text_embedder = get_text_embedder(text_embedder_name, device=torch.device("cpu"))
@@ -446,6 +484,8 @@ def run_ray_tuner(
             # sampling config
             "batch_size": 128,
             "num_neighbors": 16,
+            # pretraining checkpoint
+            "pretrained_checkpoint": pretrained_checkpoint,
             # model config
             "col_channels": 512,
             "gnn_channels": 128,
@@ -481,6 +521,12 @@ if __name__ == "__main__":
     parser.add_argument("--num_samples", type=int, default=1)
     parser.add_argument("--num_gpus", type=int, default=0)
     parser.add_argument("--num_cpus", type=int, default=1)
+    parser.add_argument(
+        "--pretrained_checkpoint",
+        type=str,
+        default=None,
+        help="Path to pretrained model checkpoint",
+    )
 
     args = parser.parse_args()
     print(args)
@@ -505,4 +551,5 @@ if __name__ == "__main__":
         num_samples=args.num_samples,
         num_gpus=args.num_gpus,
         num_cpus=args.num_cpus,
+        pretrained_checkpoint=args.pretrained_checkpoint,
     )
