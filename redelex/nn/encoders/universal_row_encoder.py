@@ -1,5 +1,7 @@
 from typing import Optional, Union
 
+import warnings
+
 from enum import Enum
 
 import torch
@@ -110,8 +112,12 @@ class UniversalLinearEncoder(UniversalStypeEncoder):
         na_mask = torch.isnan(feat)
         if stats is None or stats.get(TensorStatType.MEAN) is None:
             fill_value = feat.nanmean(dim=0)
+            # If an entire column is NA, nanmean returns NaN. Fall back to 0.0
+            fill_value = torch.nan_to_num(fill_value, nan=0.0)
         else:
             fill_value = stats[TensorStatType.MEAN]
+        assert not torch.isnan(fill_value).any(), "NaN values in fill_value, cannot fill NA"
+        print("NA Mask:", na_mask.sum(), "out of", feat.numel())
         # fill_value: [num_cols]
         feat = torch.where(na_mask, fill_value, feat)
         return feat
@@ -123,7 +129,8 @@ class UniversalLinearEncoder(UniversalStypeEncoder):
     ) -> torch.Tensor:
         # feat: [batch_size, num_cols]
         # mean, std: [num_cols]
-        feat = (feat - stats[TensorStatType.MEAN]) / stats[TensorStatType.STD]
+        if stats is not None:
+            feat = (feat - stats[TensorStatType.MEAN]) / stats[TensorStatType.STD]
 
         x_lin = torch.einsum(
             "ij,k->ijk", feat, self.feat_weight
@@ -299,10 +306,12 @@ class UniversalTimestampEncoder(UniversalStypeEncoder):
         self.positional_encoding = PositionalEncoding(self.encoding_channels)
         self.cyclic_encoding = CyclicEncoding(self.encoding_channels)
 
+        self.datetime_len = len(TimestampTensorMapper.TIME_TO_INDEX)
+
         # Init linear function
         self.feat_weight = torch.nn.Parameter(
             torch.empty(
-                len(TimestampTensorMapper.TIME_TO_INDEX),
+                self.datetime_len,
                 self.encoding_channels,
                 self.data_channels,
             )
@@ -310,7 +319,7 @@ class UniversalTimestampEncoder(UniversalStypeEncoder):
         self.feat_bias = torch.nn.Parameter(torch.empty(self.data_channels))
 
         self.stats_transform = torch.nn.Linear(
-            len(self.stats_list) * len(TimestampTensorMapper.TIME_TO_INDEX),
+            len(self.stats_list) * self.datetime_len,
             self.stats_channels,
             bias=True,
         )
@@ -323,23 +332,30 @@ class UniversalTimestampEncoder(UniversalStypeEncoder):
     def fill_na(
         self, feat: torch.Tensor, stats: Optional[dict[TensorStatType, torch.Tensor]] = None
     ) -> torch.Tensor:
-        na_mask = torch.isnan(feat)
-        # Fill NA with earliest date
-        feat = torch.where(
-            na_mask,
-            stats[TensorStatType.EARLIEST_DATE],
-            feat,
-        )
+        na_mask = torch.isnan(feat) | (feat < 0)
+
+        if stats is None or stats.get(TensorStatType.EARLIEST_DATE) is None:
+            # Fallback when stats are ablated
+            fill_value = torch.zeros(
+                (1, 1, self.datetime_len), dtype=feat.dtype, device=feat.device
+            )
+        else:
+            fill_value = stats[TensorStatType.EARLIEST_DATE].view(1, -1, self.datetime_len)
+
+        feat = torch.where(na_mask, fill_value, feat)
         return feat
 
     def encode_features(
         self, feat: torch.Tensor, stats: dict[TensorStatType, torch.Tensor]
     ) -> torch.Tensor:
         feat = feat.to(torch.float32)
-        # [batch_size, num_cols, 1] - [1, num_cols, 1]
-        feat_year = feat[..., :1] - stats[TensorStatType.MIN_YEAR].view(1, -1, 1)
+        if stats is None:
+            feat_year = feat[..., :1]
+        else:
+            feat_year = feat[..., :1] - stats[TensorStatType.MIN_YEAR].view(1, -1, 1)
         # [batch_size, num_cols, num_rest] / [1, 1, num_rest]
         feat_rest = feat[..., 1:] / self.max_values.view(1, 1, -1)
+
         # [batch_size, num_cols, num_time_feats, out_size]
         x = torch.cat(
             [self.positional_encoding(feat_year), self.cyclic_encoding(feat_rest)], dim=2
@@ -503,11 +519,18 @@ class UniversalRowEncoder(torch.nn.Module):
         encoder_heads: int = 4,
         encoder_layers: int = 2,
         encoder_dropout: float = 0.1,
+        use_stype_emb: bool = True,
+        use_name_emb: bool = True,
+        use_stats_emb: bool = True,
     ):
-        self.type_channels = type_channels
-        self.name_channels = name_channels
+        self.use_stype_emb = use_stype_emb
+        self.use_name_emb = use_name_emb
+        self.use_stats_emb = use_stats_emb
+
+        self.type_channels = type_channels if self.use_stype_emb else 0
+        self.name_channels = name_channels if self.use_name_emb else 0
+        self.stats_channels = stats_channels if self.use_stats_emb else 0
         self.data_channels = data_channels
-        self.stats_channels = stats_channels
         self.encoder_channels = (
             self.type_channels
             + self.name_channels
@@ -525,11 +548,13 @@ class UniversalRowEncoder(torch.nn.Module):
 
         super().__init__()
 
-        self.name_transform = torch.nn.Linear(
-            self.embedding_dim, self.name_channels, bias=True
-        )
+        if self.use_name_emb:
+            self.name_transform = torch.nn.Linear(
+                self.embedding_dim, self.name_channels, bias=True
+            )
 
-        self.token_type_encoder = TokenTypeEncoder(channels=self.type_channels)
+        if self.use_stype_emb:
+            self.token_type_encoder = TokenTypeEncoder(channels=self.type_channels)
 
         self.cat_encoder = UniversalCategoricalEncoder(
             data_channels=self.data_channels,
@@ -575,8 +600,10 @@ class UniversalRowEncoder(torch.nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        self.token_type_encoder.reset_parameters()
-        self.name_transform.reset_parameters()
+        if self.use_stype_emb:
+            self.token_type_encoder.reset_parameters()
+        if self.use_name_emb:
+            self.name_transform.reset_parameters()
         for encoder in self.stype_encoders.values():
             encoder.reset_parameters()
 
@@ -584,10 +611,24 @@ class UniversalRowEncoder(torch.nn.Module):
         self,
         tname: str,
         tf: torch_frame.TensorFrame,
-        stype_stats: dict[stype, dict[TensorStatType, torch.Tensor]],
-        name_embeddings: dict[str, torch.Tensor],
+        stype_stats: Optional[dict[stype, dict[TensorStatType, torch.Tensor]]] = None,
+        name_embeddings: Optional[dict[str, torch.Tensor]] = None,
     ) -> dict[str, torch.Tensor]:
-        tname_emb = name_embeddings[tname]  # [text_channels]
+        if self.use_name_emb and name_embeddings is None:
+            warnings.warn(
+                f"use_name_emb is True, but name_embeddings is None for table {tname}."
+            )
+
+        if self.use_stats_emb and stype_stats is None:
+            warnings.warn(
+                f"use_stats_emb is True, but stype_stats is None for table {tname}."
+            )
+
+        tname_emb = (
+            name_embeddings[tname]
+            if self.use_name_emb and tname in name_embeddings
+            else None
+        )
 
         if tf.num_cols == 0 or tf.num_rows == 0:
             # Return zero tensor if there are no columns or rows
@@ -595,30 +636,47 @@ class UniversalRowEncoder(torch.nn.Module):
 
         cols_emb = []
         for st, cols in tf.col_names_dict.items():
-            st_emb = self.token_type_encoder(
-                torch.tensor([STYPE_TOKEN_TYPE_MAP[st].value], device=tf.device)
-            )  # [type_channels]
-            st_emb = st_emb.expand(len(cols), -1)  # [num_cols, type_channels]
+            meta_parts = []
 
-            col_names_emb = torch.stack(
-                [name_embeddings[col] + tname_emb for col in cols], dim=0
-            )  # [num_cols, embed_dim]
-            col_names_emb = self.name_transform(col_names_emb)  # [num_cols, text_channels]
+            if self.use_stype_emb:
+                st_emb = self.token_type_encoder(
+                    torch.tensor([STYPE_TOKEN_TYPE_MAP[st].value], device=tf.device)
+                )  # [type_channels]
+                st_emb = st_emb.expand(len(cols), -1)  # [num_cols, type_channels]
+                meta_parts.append(st_emb)
+
+            if self.use_name_emb:
+                col_names_emb = torch.stack(
+                    [name_embeddings[col] + tname_emb for col in cols], dim=0
+                )  # [num_cols, embed_dim]
+                col_names_emb = self.name_transform(
+                    col_names_emb
+                )  # [num_cols, text_channels]
+                meta_parts.append(col_names_emb)
 
             encoder = self.stype_encoders[st]
-            data_emb, stats_emb = encoder(tf.feat_dict[st], stype_stats.get(st, None))
-            # feat_emb: [batch_size, num_cols, data_channels]
+            data_emb, stats_emb = encoder(
+                tf.feat_dict[st], stype_stats.get(st, None) if self.use_stats_emb else None
+            )
+            # data_emb: [batch_size, num_cols, data_channels]
             # stats_emb: [num_cols, stats_channels]
-            meta_emb = torch.concat(
-                [st_emb, col_names_emb, stats_emb], dim=-1
-            )  # [num_cols, meta_channels]
-            meta_emb = meta_emb.unsqueeze(0).expand(
-                data_emb.size(0), -1, -1
-            )  # [batch_size, num_cols, meta_channels]
 
-            col_emb = torch.concat(
-                [meta_emb, data_emb], dim=-1
-            )  # [batch_size, num_cols, total_channels]
+            if self.use_stats_emb:
+                meta_parts.append(stats_emb)
+
+            if meta_parts:
+                meta_emb = torch.concat(meta_parts, dim=-1)  # [num_cols, meta_channels]
+                meta_emb = meta_emb.unsqueeze(0).expand(
+                    data_emb.size(0), -1, -1
+                )  # [batch_size, num_cols, meta_channels]
+                col_emb = torch.concat(
+                    [meta_emb, data_emb], dim=-1
+                )  # [batch_size, num_cols, total_channels]
+            else:
+                col_emb = data_emb
+            assert not torch.isnan(col_emb).any(), (
+                f"NaN values found in column embeddings for table {tname}, stype {st}"
+            )
             cols_emb.append(col_emb)
         cols_emb = torch.concat(cols_emb, dim=1)
         emb_dict = self.transformer(cols_emb)  # dict with 'sum', 'max', 'attn', 'attn_w'
@@ -627,6 +685,8 @@ class UniversalRowEncoder(torch.nn.Module):
         )  # [batch_size, num_channels * 3]
 
         x = self.out_transform(x)  # [batch_size, out_channels]
+
+        assert not torch.isnan(x).any(), f"NaN values found in output for table {tname}"
         return x
 
 
