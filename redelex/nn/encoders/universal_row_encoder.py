@@ -13,7 +13,7 @@ from torch_frame.data import MultiNestedTensor, MultiEmbeddingTensor
 from torch_frame.data.mapper import TimestampTensorMapper
 from torch_frame.nn.encoding import CyclicEncoding, PositionalEncoding
 
-from redelex.data import TextEmbedder, TensorStatType
+from redelex.data import TensorStatType
 
 
 class TokenType(Enum):
@@ -110,14 +110,13 @@ class UniversalLinearEncoder(UniversalStypeEncoder):
     ) -> torch.Tensor:
         # feat: [batch_size, num_cols]
         na_mask = torch.isnan(feat)
-        if stats is None or stats.get(TensorStatType.MEAN) is None:
+        if stats is None:
             fill_value = feat.nanmean(dim=0)
             # If an entire column is NA, nanmean returns NaN. Fall back to 0.0
             fill_value = torch.nan_to_num(fill_value, nan=0.0)
         else:
             fill_value = stats[TensorStatType.MEAN]
         assert not torch.isnan(fill_value).any(), "NaN values in fill_value, cannot fill NA"
-        print("NA Mask:", na_mask.sum(), "out of", feat.numel())
         # fill_value: [num_cols]
         feat = torch.where(na_mask, fill_value, feat)
         return feat
@@ -511,7 +510,7 @@ class UniversalRowEncoder(torch.nn.Module):
     def __init__(
         self,
         out_channels: int,
-        text_embedder: TextEmbedder,
+        embedding_dim: int,
         type_channels: int = 16,
         name_channels: int = 256,
         data_channels: int = 192,
@@ -540,7 +539,7 @@ class UniversalRowEncoder(torch.nn.Module):
 
         self.out_channels = out_channels
 
-        self.embedding_dim = text_embedder.embedding_dim
+        self.embedding_dim = embedding_dim
 
         self.attention_heads = encoder_heads
         self.attention_layers = encoder_layers
