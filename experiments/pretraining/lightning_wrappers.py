@@ -24,7 +24,7 @@ from redelex.nn.loss import (
     ContextContrastiveLoss,
 )
 
-from .utils import get_loss, get_metrics
+from redelex.nn.train.utils import get_loss, get_metrics
 
 
 class PretrainingWrapper(torch.nn.Module):

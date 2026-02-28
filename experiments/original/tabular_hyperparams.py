@@ -36,7 +36,7 @@ from redelex.tasks.mixins import BaseTask
 from redelex.tasks.utils import is_temporal_task
 from redelex.nn.models.tabular import TabularModel
 
-from experiments.utils import (
+from experiments.original.utils import (
     get_cache_path,
     get_data,
     get_loss,
@@ -54,8 +54,8 @@ def run_experiment(
     context = ray_train.get_context()
     # experiment_dir = context.get_trial_dir()
 
-    dataset_name: int = config["dataset_name"]
-    task_name: int = config["task_name"]
+    dataset_name: str = config["dataset_name"]
+    task_name: str = config["task_name"]
     random_seed: int = config["seed"]
     lr: float = config["lr"]
     min_epochs: int = config["min_epochs"]
