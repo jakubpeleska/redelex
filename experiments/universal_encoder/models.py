@@ -15,7 +15,7 @@ from redelex.data import TensorStatType
 from redelex.nn.encoders import UniversalRowEncoder, RelativeTemporalEncoder
 
 
-class TableEncoder(torch.nn.Module):
+class RowEncoder(torch.nn.Module):
     def __init__(
         self,
         col_channels: int,
@@ -29,13 +29,10 @@ class TableEncoder(torch.nn.Module):
         use_stats_emb: bool = True,
     ):
         super().__init__()
-        self.tabular_encoder = UniversalRowEncoder(
+        self.row_encoder = UniversalRowEncoder(
             out_channels=out_channels,
             embedding_dim=embedding_dim,
-            data_channels=col_channels // 2,
-            type_channels=col_channels // 32,
-            name_channels=col_channels * 3 // 8,
-            stats_channels=col_channels * 3 // 32,
+            col_channels=col_channels,
             encoder_heads=tabular_encoder_heads,
             encoder_layers=tabular_encoder_layers,
             encoder_dropout=tabular_encoder_dropout,
@@ -45,7 +42,7 @@ class TableEncoder(torch.nn.Module):
         )
 
     def reset_parameters(self):
-        self.tabular_encoder.reset_parameters()
+        self.row_encoder.reset_parameters()
 
     def forward(self, batch: HeteroData) -> dict[str, torch.Tensor]:
         tensor_stats_dict: dict[str, dict[stype, dict[TensorStatType, torch.Tensor]]] = (
@@ -59,9 +56,9 @@ class TableEncoder(torch.nn.Module):
 
         x_dict: dict[str, torch.Tensor] = {}
         for tname, tf in tf_dict.items():
-            x_dict[tname] = self.tabular_encoder(
-                tname,
+            x_dict[tname] = self.row_encoder(
                 tf,
+                tname,
                 tensor_stats_dict[tname],
                 name_embeddings_dict[tname],
             )
