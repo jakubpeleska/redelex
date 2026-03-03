@@ -62,7 +62,7 @@ PRETRAIN_TASKS = {
     "rel-f1": ["driver-dnf", "driver-top3", "driver-position"],
     "rel-stack": ["user-engagement", "user-badge", "post-votes"],
     "rel-trial": ["study-outcome", "study-adverse", "site-success"],
-    "ctu-adventureworks": ["adventureworks-temporal"],
+    # "ctu-adventureworks": ["adventureworks-temporal"],
     "ctu-employee": ["employee-temporal"],
     "ctu-ergastf1": ["ergastf1-original"],
     "ctu-expenditures": ["expenditures-original"],
@@ -134,7 +134,7 @@ def get_task_data(
     )
 
     loader_dict: dict[str, NeighborLoader] = {}
-    for split in ["train", "val", "test"]:
+    for split in ["train", "val"]:
         table = task.get_table.__wrapped__(task, split, mask_input_cols=False)
         if task.task_type == TaskType.REGRESSION:
             # normalize target for regression
@@ -162,9 +162,9 @@ def get_task_data(
             input_time=table_input.time if is_temporal else None,
             transform=T.Compose([values_transform, table_input.transform, dict_transform]),
             batch_size=config["batch_size"],
-            shuffle=split == "train",
+            shuffle=True,
             num_workers=0,
-            drop_last=split == "train",
+            drop_last=True,
         )
     return task, loader_dict
 
@@ -238,7 +238,6 @@ def run_task_experiment(
             )
             loaders["train"][name] = loader_dict["train"]
             loaders["val"][name] = loader_dict["val"]
-            loaders["test"][name] = loader_dict["test"]
 
             if task.task_type in [TaskType.REGRESSION, TaskType.BINARY_CLASSIFICATION]:
                 out_channels = 1
@@ -495,12 +494,16 @@ def run_ray_tuner(
             "mlflow_experiment": mlflow_experiment,
             "mlflow_uri": mlflow_uri,
             "max_training_steps": 30000,
+            "limit_train_batches": 1000,
+            "limit_val_batches": 500,
             "lr": 0.0001,
             "batch_size": 128,
             "num_neighbors": 16,
             "col_channels": 512,
-            "gnn_channels": 128,
-            "tabular_encoder_layers": tune.grid_search([1, 2, 4, 8]),
+            "gnn_channels": 512
+            if shared_gnn
+            else (64 if gnn_type == "heterogeneous" else 128),
+            "tabular_encoder_layers": tune.grid_search([1, 4, 2, 8]),
             "tabular_encoder_heads": 8,
             "tabular_encoder_dropout": 0.1,
             "gnn_layers": 2,
