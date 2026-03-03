@@ -164,4 +164,5 @@ cython_debug/
 logs/
 .tmp
 /notebooks/data
-/data
+results/
+/data/

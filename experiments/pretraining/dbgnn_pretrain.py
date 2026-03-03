@@ -34,13 +34,13 @@ from redelex.data import make_pkey_fkey_graph
 from redelex.datasets import get_dataset_info
 from redelex.nn.models.rdl_model import RDLModel
 from redelex.transforms import ResampleCorruptor
-from redelex.nn.train.pretrain_wrappers import (
+
+from experiments.pretraining.utils import get_attribute_schema, get_text_embedder
+from experiments.pretraining.lightning_wrappers import (
     PretrainingWrapper,
     LightningPretrainingWrapper,
     LightningPretrainedModel,
 )
-
-from experiments.utils import get_attribute_schema, get_text_embedder
 
 
 def get_backbone(

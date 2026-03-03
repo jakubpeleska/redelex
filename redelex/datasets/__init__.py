@@ -29,6 +29,11 @@ def get_dataset_info(dataset_name: str):
     return info_df[info_df["dataset"] == dataset_name].iloc[0]
 
 
+def get_all_datasets_info():
+    info_df = pd.read_csv(os.path.join(os.path.dirname(__file__), "dataset-info.csv"))
+    return info_df
+
+
 register_dataset("ctu-accidents", Accidents)
 register_dataset("ctu-adventureworks", AdventureWorks)
 register_dataset("ctu-airline", Airline)
@@ -104,7 +109,7 @@ register_dataset("ctu-world", World)
 
 # fmt: off
 __all__ = [
-    "get_dataset_info",
+    "get_dataset_info", "get_all_datasets_info",
     
     "DBDataset", "CTUDataset",
     
