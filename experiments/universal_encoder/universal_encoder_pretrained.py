@@ -3,7 +3,6 @@ from torch_geometric.data import HeteroData
 from typing import Optional, Any
 
 import traceback
-import copy
 import os
 import random
 from datetime import datetime, timedelta
@@ -31,7 +30,6 @@ from torch_frame.data import StatType
 from relbench.base import EntityTask, TaskType
 from relbench.datasets import get_dataset
 from relbench.tasks import get_task
-from relbench.modeling.graph import get_node_train_table_input
 
 from redelex.data import make_pkey_fkey_graph, make_tensor_stats_dict
 from redelex.transforms import AttachDictTransform
@@ -42,10 +40,11 @@ from experiments.universal_encoder.utils import (
     get_attribute_schema,
     get_hyperparams_logging,
     get_text_embedder,
+    get_table_input,
 )
 
 from experiments.universal_encoder.models import (
-    TableEncoder,
+    RowEncoder,
     HeterogeneousGNN,
     HomogeneousGNN,
     HeterogeneousTaskHead,
@@ -58,8 +57,25 @@ from experiments.universal_encoder.lightning_wrappers import (
 )
 
 PRETRAIN_TASKS = {
-    "rel-f1": ["driver-dnf", "driver-top3", "driver-position"],
-    "rel-stack": ["user-engagement", "user-badge", "post-votes"],
+    # "rel-amazon": ["user-churn", "user-ltv", "item-churn", "item-ltv"],
+    # "rel-avito": ["ad-ctr", "user-visits", "user-clicks"],
+    # "rel-f1": ["driver-dnf", "driver-top3", "driver-position"],
+    # "rel-stack": ["user-engagement", "user-badge", "post-votes"],
+    # "rel-trial": ["study-outcome", "study-adverse", "site-success"],
+    # "ctu-adventureworks": ["adventureworks-temporal"],
+    # "ctu-employee": ["employee-temporal"],
+    # "ctu-ergastf1": ["ergastf1-original"],
+    # "ctu-expenditures": ["expenditures-original"],
+    # "ctu-fnhk": ["fnhk-temporal"],
+    # "ctu-gosales": ["gosales-temporal"],
+    # "ctu-grants": ["grants-temporal"],
+    # "ctu-lahman": ["lahman-temporal"],
+    # "ctu-movielens": ["movielens-original"],
+    # "ctu-restbase": ["restbase-original"],
+    # "ctu-sakila": ["sakila-temporal"],
+    # "ctu-sales": ["sales-original"],
+    # "ctu-sap": ["sap-sales-temporal"],
+    "ctu-seznam": ["seznam-temporal"],
 }
 
 
@@ -67,7 +83,7 @@ def get_dataset_data(
     dataset_name: str, cache_path: str, text_embedder, device: torch.device
 ):
     dataset = get_dataset(dataset_name)
-    db = dataset.get_db(False)
+    db = dataset.get_db.__wrapped__(dataset, False)
 
     attribute_schema = get_attribute_schema(f"{cache_path}/attribute-schema.json", db)
     data, col_stats_dict = make_pkey_fkey_graph(
@@ -119,10 +135,9 @@ def get_task_data(
 
     loader_dict: dict[str, NeighborLoader] = {}
     for split in ["train", "val", "test"]:
-        table = task.get_table(split, mask_input_cols=False)
+        table = task.get_table.__wrapped__(task, split, mask_input_cols=False)
         if task.task_type == TaskType.REGRESSION:
             # normalize target for regression
-            table = copy.deepcopy(table)
             if isinstance(task, mixins.ImputeEntityTaskMixin):
                 minimum = col_stats_dict[task.entity_table][task.target_col][
                     StatType.QUANTILES
@@ -136,7 +151,7 @@ def get_task_data(
             table.df[task.target_col] = (table.df[task.target_col] - minimum) / (
                 maximum - minimum
             )
-        table_input = get_node_train_table_input(table=table, task=task)
+        table_input = get_table_input(table=table, task=task)
         loader_dict[split] = NeighborLoader(
             data,
             num_neighbors=[
@@ -194,8 +209,12 @@ def run_task_experiment(
     shared_gnn = config.get("shared_gnn", False)
     gnn_type = config.get("gnn_type", "heterogeneous")
 
+    leave_out_dataset = config.get("leave_out_dataset", [])
+    if not isinstance(leave_out_dataset, list):
+        leave_out_dataset = [leave_out_dataset]
+
     for dataset_name, task_names in PRETRAIN_TASKS.items():
-        if config.get("leave_out_dataset") == dataset_name:
+        if dataset_name in leave_out_dataset:
             continue
 
         data, col_stats_dict, tensor_stats_dict, name_embeddings_dict = get_dataset_data(
@@ -286,7 +305,7 @@ def run_task_experiment(
         "use_stats_emb": config.get("use_stats_emb", True),
     }
 
-    tabular_encoder = TableEncoder(**tabular_encoder_config)
+    tabular_encoder = RowEncoder(**tabular_encoder_config)
 
     if shared_gnn:
         if gnn_type == "heterogeneous":

@@ -15,13 +15,13 @@ from relbench.base import TaskType
 
 from redelex.nn.train.utils import get_loss
 
-from .models import TableEncoder
+from .models import RowEncoder
 
 
 class LightningMultiTaskWrapper(L.LightningModule):
     def __init__(
         self,
-        tabular_encoder: TableEncoder,
+        tabular_encoder: RowEncoder,
         gnn: Optional[torch.nn.Module],
         heads: torch.nn.ModuleDict,
         optimizer: torch.optim.Optimizer,
