@@ -1,6 +1,7 @@
 from redelex.transforms import AttachValuesTransform
 from torch_geometric.data import HeteroData
 from typing import Optional, Any
+from pathlib import Path
 
 import traceback
 import os
@@ -18,6 +19,7 @@ from ray import tune, train as ray_train
 import numpy as np
 
 import torch
+from torch.optim.lr_scheduler import LinearLR, CosineAnnealingLR, SequentialLR
 
 import lightning as L
 from lightning.pytorch import loggers
@@ -80,7 +82,11 @@ PRETRAIN_TASKS = {
 
 
 def get_dataset_data(
-    dataset_name: str, cache_path: str, text_embedder, device: torch.device
+    dataset_name: str,
+    cache_path: str,
+    text_embedder,
+    device: torch.device,
+    target: Optional[tuple[str, str]] = None,
 ):
     dataset = get_dataset(dataset_name)
     db = dataset.get_db.__wrapped__(dataset, False)
@@ -91,6 +97,7 @@ def get_dataset_data(
         col_to_stype_dict=attribute_schema,
         text_embedder=text_embedder,
         cache_dir=f"{cache_path}/materialized",
+        target=target,
     )
 
     tensor_stats_dict = {}
@@ -199,15 +206,23 @@ def run_task_experiment(
         trial_name = f"pretrain_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     print("Device:", device)
 
+    model_save_dir = Path(config["model_save_dir"])
+    model_save_dir = f"{model_save_dir}/{trial_name}"
+    config["model_save_dir"] = model_save_dir
+
     text_embedder = get_text_embedder(
         config["text_embedder_name"], device=torch.device("cpu")
     )
 
-    loaders = {"train": {}, "val": {}, "test": {}}
+    loaders = {"train": {}, "val": {}}
     heads = torch.nn.ModuleDict()
 
-    shared_gnn = config.get("shared_gnn", False)
-    gnn_type = config.get("gnn_type", "heterogeneous")
+    shared_gnn = config.get("shared_gnn", True)
+    config["shared_gnn"] = shared_gnn
+    if shared_gnn:
+        config["gnn_type"] = "homogeneous"
+
+    gnn_type = config.get("gnn_type", "homogeneous")
 
     leave_out_dataset = config.get("leave_out_dataset", [])
     if not isinstance(leave_out_dataset, list):
@@ -217,11 +232,24 @@ def run_task_experiment(
         if dataset_name in leave_out_dataset:
             continue
 
+        if "rel-all" in leave_out_dataset and dataset_name.startswith("rel-"):
+            continue
+
+        if "ctu-all" in leave_out_dataset and dataset_name.startswith("ctu-"):
+            continue
+
+        target = None
+        if len(task_names) == 1:
+            task = get_task(dataset_name, task_names[0])
+            if isinstance(task, mixins.ImputeEntityTaskMixin):
+                target = (task.entity_table, task.target_col)
+
         data, col_stats_dict, tensor_stats_dict, name_embeddings_dict = get_dataset_data(
             dataset_name,
             f"{config['cache_path']}/{dataset_name}",
             text_embedder,
             device,
+            target=target,
         )
 
         for task_name in task_names:
@@ -245,18 +273,11 @@ def run_task_experiment(
                 out_channels = len(task.stats()[StatType.COUNT][0])
 
             if shared_gnn:
-                if gnn_type == "heterogeneous":
-                    task_head = HeterogeneousTaskHead(
-                        in_channels=config["gnn_channels"],
-                        out_channels=out_channels,
-                        head_norm=config["head_norm"],
-                    )
-                else:
-                    task_head = HomogeneousTaskHead(
-                        in_channels=config["gnn_channels"],
-                        out_channels=out_channels,
-                        head_norm=config["head_norm"],
-                    )
+                task_head = HomogeneousTaskHead(
+                    in_channels=config["gnn_channels"],
+                    out_channels=out_channels,
+                    head_norm=config["head_norm"],
+                )
                 heads[name] = task_head
             else:
                 if gnn_type == "heterogeneous":
@@ -288,52 +309,54 @@ def run_task_experiment(
                 )
 
     loader_dict = {
-        split: ComposedLoader(loaders[split], mode="minimum")
-        for split in ["train", "val", "test"]
+        split: ComposedLoader(loaders[split], mode="minimum") for split in ["train", "val"]
     }
 
-    tabular_encoder_config = {
+    row_encoder_config = {
         "col_channels": config["col_channels"],
         "out_channels": config["gnn_channels"],
         "embedding_dim": text_embedder.embedding_dim,
-        "tabular_encoder_heads": config["tabular_encoder_heads"],
-        "tabular_encoder_layers": config["tabular_encoder_layers"],
-        "tabular_encoder_dropout": config["tabular_encoder_dropout"],
+        "encoder_heads": config["row_encoder_heads"],
+        "encoder_layers": config["row_encoder_layers"],
+        "encoder_dropout": config["row_encoder_dropout"],
         "use_stype_emb": config.get("use_stype_emb", True),
         "use_name_emb": config.get("use_name_emb", True),
         "use_stats_emb": config.get("use_stats_emb", True),
     }
 
-    tabular_encoder = RowEncoder(**tabular_encoder_config)
+    row_encoder = RowEncoder(**row_encoder_config)
 
     if shared_gnn:
-        if gnn_type == "heterogeneous":
-            global_gnn = HeterogeneousGNN(
-                node_types=data.node_types,  # Assumes node_types match or is handled (ideal for homogeneous, tricky for heterogeneous shared)
-                edge_types=data.edge_types,
-                gnn_channels=config["gnn_channels"],
-                gnn_layers=config["gnn_layers"],
-                gnn_aggr=config["gnn_aggr"],
-            )
-        else:
-            global_gnn = HomogeneousGNN(
-                gnn_channels=config["gnn_channels"],
-                gnn_layers=config["gnn_layers"],
-                gnn_aggr=config["gnn_aggr"],
-            )
+        global_gnn = HomogeneousGNN(
+            gnn_channels=config["gnn_channels"],
+            gnn_layers=config["gnn_layers"],
+            gnn_aggr=config["gnn_aggr"],
+        )
     else:
         global_gnn = None
 
-    tabular_encoder = tabular_encoder.to(device)
+    row_encoder = row_encoder.to(device)
     heads = heads.to(device)
     if global_gnn is not None:
         global_gnn = global_gnn.to(device)
 
-    optim_params = [*tabular_encoder.parameters(), *heads.parameters()]
+    optim_params = [*row_encoder.parameters(), *heads.parameters()]
     if global_gnn is not None:
         optim_params.extend(list(global_gnn.parameters()))
 
     optimizer = torch.optim.AdamW(optim_params, lr=lr, weight_decay=0.1)
+
+    max_training_steps: int = config["max_training_steps"]
+    # Linear warmup for 10% of training, then cosine decay
+    warmup_sch = LinearLR(
+        optimizer, start_factor=0.01, total_iters=max_training_steps // 10
+    )
+    decay_sch = CosineAnnealingLR(
+        optimizer, T_max=max_training_steps - max_training_steps // 10
+    )
+    scheduler = SequentialLR(
+        optimizer, schedulers=[warmup_sch, decay_sch], milestones=[max_training_steps // 10]
+    )
 
     gnn_config = None
     if global_gnn is not None:
@@ -345,22 +368,20 @@ def run_task_experiment(
         }
 
     lightning_model = LightningMultiTaskWrapper(
-        tabular_encoder=tabular_encoder,
+        row_encoder=row_encoder,
         gnn=global_gnn,
         heads=heads,
         optimizer=optimizer,
         gnn_type=gnn_type,
-        tabular_encoder_config=tabular_encoder_config,
+        row_encoder_config=row_encoder_config,
         gnn_config=gnn_config,
+        scheduler=scheduler,
     )
 
     model_summary = ModelSummary(lightning_model, max_depth=2)
 
     config["model_parameters"] = model_summary.total_parameters
     config["model_size_MB"] = model_summary.model_size
-
-    max_training_steps: int = config["max_training_steps"]
-    config["max_training_steps"] = max_training_steps
 
     hyperparams_logging = get_hyperparams_logging(config)
 
@@ -379,9 +400,10 @@ def run_task_experiment(
         logger.log_hyperparams(hyperparams_logging)
 
     save_pretrained_callback = SavePretrainedCallback(
-        save_path=config["model_save_path"],
+        save_dir=model_save_dir,
         monitor="val_loss_epoch",
         mode="min",
+        save_every_epoch=True,
     )
 
     trainer = L.Trainer(
@@ -408,8 +430,8 @@ def run_task_experiment(
         )
 
         # Fallback to make sure the latest model is saved if no validation happened yet
-        lightning_model.save_pretrained(config["model_save_path"])
-        print(f"Force saved pretrained checkpoint to: {config['model_save_path']}")
+        lightning_model.save_pretrained(f"{model_save_dir}/final_model.pt")
+        print(f"Force saved pretrained checkpoint to: {model_save_dir}/final_model.pt")
 
     except Exception as e:
         logger.log_hyperparams({"error": str(e)})
@@ -429,9 +451,9 @@ def run_ray_tuner(
     num_gpus: int = 0,
     num_cpus: int = 1,
     random_seed: int = 42,
-    model_save_path: str = "pretrained_model.pt",
+    model_save_dir: str = "./models",
     cache_dir: str = ".cache",
-    leave_out_dataset: Optional[str] = None,
+    leave_out_dataset: str = "none",
     use_stype_emb: bool = True,
     use_name_emb: bool = True,
     use_stats_emb: bool = True,
@@ -484,7 +506,9 @@ def run_ray_tuner(
         ),
         tune_config=tune.TuneConfig(
             num_samples=num_samples,
-            trial_name_creator=lambda trial: f"pretrain_{trial.trial_id}",
+            trial_name_creator=lambda trial: (
+                f"leaveout_{leave_out_dataset}_tablayers_{trial.config['row_encoder_layers']}_{trial.trial_id}"
+            ),
             trial_dirname_creator=lambda trial: trial.trial_id,
             max_concurrent_trials=num_cpus,
         ),
@@ -493,24 +517,24 @@ def run_ray_tuner(
             "text_embedder_name": "glove",
             "mlflow_experiment": mlflow_experiment,
             "mlflow_uri": mlflow_uri,
-            "max_training_steps": 30000,
-            "limit_train_batches": 1000,
+            "max_training_steps": 50000,
+            "limit_train_batches": 500,
             "limit_val_batches": 500,
-            "lr": 0.0001,
+            "lr": 0.001,
             "batch_size": 128,
             "num_neighbors": 16,
             "col_channels": 512,
             "gnn_channels": 512
             if shared_gnn
             else (64 if gnn_type == "heterogeneous" else 128),
-            "tabular_encoder_layers": tune.grid_search([1, 4, 2, 8]),
-            "tabular_encoder_heads": 8,
-            "tabular_encoder_dropout": 0.1,
+            "row_encoder_layers": tune.grid_search([1, 4, 2, 8]),
+            "row_encoder_heads": 8,
+            "row_encoder_dropout": 0.1,
             "gnn_layers": 2,
             "gnn_aggr": "sum",
             "head_norm": "batch_norm",
-            "cache_path": cache_dir,
-            "model_save_path": model_save_path,
+            "cache_path": Path(cache_dir).absolute(),
+            "model_save_dir": (Path(model_save_dir).absolute()),
             "leave_out_dataset": leave_out_dataset,
             "use_stype_emb": use_stype_emb,
             "use_name_emb": use_name_emb,
@@ -534,7 +558,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_gpus", type=int, default=0)
     parser.add_argument("--num_cpus", type=int, default=1)
     parser.add_argument("--cache_dir", type=str, default=".cache")
-    parser.add_argument("--model_save_path", type=str, default="pretrained_model.pt")
+    parser.add_argument("--model_save_dir", type=str, default="./models")
     parser.add_argument(
         "--leave_out_dataset",
         type=str,
@@ -581,7 +605,7 @@ if __name__ == "__main__":
         num_gpus=args.num_gpus,
         num_cpus=args.num_cpus,
         cache_dir=args.cache_dir,
-        model_save_path=args.model_save_path,
+        model_save_dir=args.model_save_dir,
         leave_out_dataset=args.leave_out_dataset,
         use_stype_emb=not args.no_stype_emb,
         use_name_emb=not args.no_name_emb,

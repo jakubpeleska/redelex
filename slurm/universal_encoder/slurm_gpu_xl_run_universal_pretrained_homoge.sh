@@ -3,11 +3,12 @@
 #SBATCH --job-name=universal_pretrained_homogeneous
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-gpu=3
-#SBATCH --mem-per-cpu=80G
+#SBATCH --mem-per-cpu=60G
 #SBATCH --time=24:00:00
-#SBATCH --array=0-4
+#SBATCH --array=0-5
 
 declare -a leave_out_datasets=(
+    'rel-all'
     'rel-amazon'
     'rel-avito'
     'rel-f1'
@@ -47,4 +48,4 @@ python -u experiments/universal_encoder/universal_encoder_pretrained.py \
   --run_name=${EXPERIMENT_ID}_leave_out_${dataset} --mlflow_uri=${MLFLOW_TRACKING_URI} \
   --mlflow_experiment=pelesjak_${EXPERIMENT_NAME} --num_cpus=${SLURM_CPUS_PER_GPU} --num_gpus=1 \
   --num_samples=${NUM_SAMPLES} \
-  --model_save_path="${log_dir}/${dataset}_pretrained.pt" &> "${log_dir}/run.log"
+  --model_save_dir="${log_dir}/models" &> "${log_dir}/run.log"
