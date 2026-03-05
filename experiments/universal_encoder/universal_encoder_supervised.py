@@ -41,8 +41,8 @@ from redelex.data import (
     TensorStatType,
     make_pkey_fkey_graph,
     make_tensor_stats_dict,
-    get_node_train_table_input,
 )
+from relbench.modeling.graph import get_node_train_table_input
 from redelex.nn.train.lightning import LightningEntityTaskWrapper
 from redelex.transforms import AttachDictTransform
 
@@ -53,81 +53,28 @@ from experiments.universal_encoder.utils import (
 )
 
 from experiments.universal_encoder.models import (
-    HeteroSAGEModel,
-    UniversalSAGEModel,
-    UniversalHomogeneousSAGEModel,
-    UniversalHomogeneousGANModel,
+    RowEncoder,
+    HomogeneousGNN,
+    HeterogeneousGNN,
+    HomogeneousTaskHead,
+    HeterogeneousTaskHead,
+    TaskGNNAndHead,
 )
 
 
-def get_model(model_name: str, config: dict[str, Any], data: HeteroData) -> torch.nn.Module:
-    if model_name == "hetero_sage":
-        return HeteroSAGEModel(
-            col_channels=config["col_channels"],
-            gnn_channels=config["gnn_channels"],
-            out_channels=config["out_channels"],
-            col_names_dict={nt: tf.col_names_dict for nt, tf in data.tf_dict.items()},
-            col_stats_dict=config["col_stats_dict"],
-            node_types=data.node_types,
-            edge_types=data.edge_types,
-            tabular_encoder_model=config["tabular_encoder_model"],
-            tabular_encoder_layers=config["tabular_encoder_layers"],
-            gnn_layers=config["gnn_layers"],
-            gnn_aggr=config["gnn_aggr"],
-            head_norm=config["head_norm"],
-        )
-    if model_name == "universal_sage":
-        return UniversalSAGEModel(
-            gnn_channels=config["gnn_channels"],
-            col_channels=config["col_channels"],
-            out_channels=config["out_channels"],
-            text_embedder=get_text_embedder(
-                config["text_embedder_name"], device=torch.device("cpu")
-            ),
-            node_types=data.node_types,
-            edge_types=data.edge_types,
-            tabular_encoder_layers=config["tabular_encoder_layers"],
-            tabular_encoder_heads=config["tabular_encoder_heads"],
-            tabular_encoder_dropout=config["tabular_encoder_dropout"],
-            gnn_layers=config["gnn_layers"],
-            gnn_aggr=config["gnn_aggr"],
-            head_norm=config["head_norm"],
-        )
-    elif model_name == "universal_homogeneous_sage":
-        return UniversalHomogeneousSAGEModel(
-            gnn_channels=config["gnn_channels"],
-            col_channels=config["col_channels"],
-            out_channels=config["out_channels"],
-            text_embedder=get_text_embedder(
-                config["text_embedder_name"], device=torch.device("cpu")
-            ),
-            tabular_encoder_layers=config["tabular_encoder_layers"],
-            tabular_encoder_heads=config["tabular_encoder_heads"],
-            tabular_encoder_dropout=config["tabular_encoder_dropout"],
-            gnn_layers=config["gnn_layers"],
-            gnn_aggr=config["gnn_aggr"],
-            head_norm=config["head_norm"],
-        )
+class SupervisedWrapper(torch.nn.Module):
+    def __init__(
+        self, row_encoder: RowEncoder, task_gnn_and_head: TaskGNNAndHead, entity_table: str
+    ):
+        super().__init__()
+        self.row_encoder = row_encoder
+        self.task_gnn_and_head = task_gnn_and_head
+        self.entity_table = entity_table
 
-    elif model_name == "universal_homogeneous_gan":
-        return UniversalHomogeneousGANModel(
-            gnn_channels=config["gnn_channels"],
-            col_channels=config["col_channels"],
-            out_channels=config["out_channels"],
-            text_embedder=get_text_embedder(
-                config["text_embedder_name"], device=torch.device("cpu")
-            ),
-            tabular_encoder_layers=config["tabular_encoder_layers"],
-            tabular_encoder_heads=config["tabular_encoder_heads"],
-            tabular_encoder_dropout=config["tabular_encoder_dropout"],
-            gnn_layers=config["gnn_layers"],
-            gnn_heads=config["gnn_heads"],
-            gnn_dropout=config["gnn_dropout"],
-            head_norm=config["head_norm"],
-        )
-
-    else:
-        raise ValueError(f"Unknown model name: {model_name}")
+    def forward(self, batch: HeteroData, entity_table: Optional[str] = None):
+        target_table = entity_table or self.entity_table
+        x_dict = self.row_encoder(batch)
+        return self.task_gnn_and_head(x_dict, batch, target_table)
 
 
 def run_task_experiment(
@@ -196,45 +143,111 @@ def run_task_experiment(
         out_channels = len(task.stats()[StatType.COUNT][0])
 
     config["out_channels"] = out_channels
-    model = get_model(config["model_name"], config, data)
-    model = model.to(device)
 
+    text_embedder = get_text_embedder(
+        config["text_embedder_name"], device=torch.device("cpu")
+    )
+
+    row_encoder = RowEncoder(
+        col_channels=config["col_channels"],
+        out_channels=config["gnn_channels"],
+        embedding_dim=text_embedder.embedding_dim,
+        encoder_heads=config.get("tabular_encoder_heads", 4),
+        encoder_layers=config.get("tabular_encoder_layers", 2),
+        encoder_dropout=config.get("tabular_encoder_dropout", 0.1),
+        use_stype_emb=config.get("use_stype_emb", True),
+        use_name_emb=config.get("use_name_emb", True),
+        use_stats_emb=config.get("use_stats_emb", True),
+    )
+
+    has_pretrained_gnn = False
     if pretrained_checkpoint:
         print(f"Loading pretrained weights from {pretrained_checkpoint}")
         checkpoint = torch.load(
             pretrained_checkpoint, map_location=device, weights_only=False
         )
-        # Check if saved using Lightning checkpoint or just raw state dict
         state_dict = checkpoint["state_dict"] if "state_dict" in checkpoint else checkpoint
 
-        # We need to extract the backbone weights. If it was saved using LightningMultiTaskWrapper,
-        # the internal model is likely prefixed with 'backbone.'
-        encoder_state_dict = {}
-        for k, v in state_dict.items():
-            if k.startswith("backbone."):
-                encoder_state_dict[k.replace("backbone.", "")] = v
-            # alternatively, it might be saved directly as a torch module
-            elif (
-                k.startswith("tabular_encoder.")
-                or k.startswith("temporal_encoder.")
-                or k.startswith("convs.")
-                or k.startswith("norms.")
-            ):
-                encoder_state_dict[k] = v
+        if "row_encoder_state_dict" in checkpoint:
+            has_pretrained_gnn = "gnn_state_dict" in checkpoint
+            encoder_state_dict = checkpoint["row_encoder_state_dict"]
+        else:
+            state_dict = (
+                checkpoint["state_dict"] if "state_dict" in checkpoint else checkpoint
+            )
+            has_pretrained_gnn = any(k.startswith("gnn.") for k in state_dict.keys())
+            encoder_state_dict = {
+                k.replace("row_encoder.", ""): v
+                for k, v in state_dict.items()
+                if k.startswith("row_encoder.")
+            }
 
         if not encoder_state_dict:
-            print("Warning: No matching keys found for backbone in the checkpoint.")
+            print("Warning: No matching keys found for row_encoder in the checkpoint.")
         else:
-            # We use strict=False because the supervised model might have a 'head' that the pretrained doesn't,
-            # or different GNN layers depending on settings.
-            missing_keys, unexpected_keys = model.load_state_dict(
+            missing_keys, unexpected_keys = row_encoder.load_state_dict(
                 encoder_state_dict, strict=False
             )
             print(
-                f"Loaded pretrained checkpoint. Missing keys: {len(missing_keys)}, Unexpected keys: {len(unexpected_keys)}"
+                f"Loaded row_encoder weights. Missing: {len(missing_keys)}, Unexpected: {len(unexpected_keys)}"
             )
+            for param in row_encoder.parameters():
+                param.requires_grad = False
+            row_encoder.eval()
+            print("RowEncoder weights are frozen.")
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.1)
+    if has_pretrained_gnn or config.get("shared_gnn", False):
+        gnn = HomogeneousGNN(
+            gnn_channels=config["gnn_channels"],
+            gnn_layers=config["gnn_layers"],
+            gnn_aggr=config["gnn_aggr"],
+        )
+        if pretrained_checkpoint and has_pretrained_gnn:
+            if "gnn_state_dict" in checkpoint:
+                gnn_state_dict = checkpoint["gnn_state_dict"]
+            else:
+                state_dict = (
+                    checkpoint["state_dict"] if "state_dict" in checkpoint else checkpoint
+                )
+                gnn_state_dict = {
+                    k.replace("gnn.", ""): v
+                    for k, v in state_dict.items()
+                    if k.startswith("gnn.")
+                }
+            gnn.load_state_dict(gnn_state_dict, strict=False)
+            for param in gnn.parameters():
+                param.requires_grad = False
+            gnn.eval()
+            print("HomogeneousGNN weights loaded and frozen.")
+
+        head = HomogeneousTaskHead(
+            in_channels=config["gnn_channels"],
+            out_channels=config["out_channels"],
+            head_norm=config["head_norm"],
+        )
+        task_gnn_and_head = TaskGNNAndHead(gnn=gnn, head=head, gnn_type="homogeneous")
+    else:
+        task_gnn = HeterogeneousGNN(
+            node_types=data.node_types,
+            edge_types=data.edge_types,
+            gnn_channels=config["gnn_channels"],
+            gnn_layers=config["gnn_layers"],
+            gnn_aggr=config["gnn_aggr"],
+        )
+        head = HeterogeneousTaskHead(
+            in_channels=config["gnn_channels"],
+            out_channels=config["out_channels"],
+            head_norm=config["head_norm"],
+        )
+        task_gnn_and_head = TaskGNNAndHead(
+            gnn=task_gnn, head=head, gnn_type="heterogeneous"
+        )
+
+    model = SupervisedWrapper(row_encoder, task_gnn_and_head, task.entity_table)
+    model = model.to(device)
+
+    optimizable_params = [p for p in model.parameters() if p.requires_grad]
+    optimizer = torch.optim.AdamW(optimizable_params, lr=lr, weight_decay=0.1)
 
     lightning_model = LightningEntityTaskWrapper(
         model=model, optimizer=optimizer, task=task
@@ -282,6 +295,10 @@ def run_task_experiment(
     if val_check_interval > 1000:
         val_check_interval = 1000
 
+    limit_train_batches = config.get("limit_train_batches", None)
+    if limit_train_batches is not None and val_check_interval > limit_train_batches:
+        val_check_interval = limit_train_batches
+
     config["val_check_interval"] = val_check_interval
 
     max_training_steps: int = config["max_training_steps"]
@@ -307,8 +324,15 @@ def run_task_experiment(
         logger = loggers.CSVLogger(save_dir=experiment_dir, name=trial_name)
         logger.log_hyperparams(hyperparams_logging)
 
+    limit_train_batches = config.get("limit_train_batches", None)
+    limit_val_batches = config.get("limit_val_batches", None)
+    max_epochs = config.get("max_epochs", None)
+
     trainer = L.Trainer(
         max_steps=max_training_steps,
+        max_epochs=max_epochs,
+        limit_train_batches=limit_train_batches,
+        limit_val_batches=limit_val_batches,
         accelerator=device.type,
         devices=1,
         logger=logger,
@@ -427,27 +451,12 @@ def run_ray_tuner(
     if "GPU" in resources:
         gpus_used = 1
 
-    def get_model_specific_params(model_name: str) -> int:
-        if model_name == "hetero_sage":
-            return {
-                "tabular_encoder_model": "resnet",
-                "gnn_aggr": "sum",
-            }
-        elif model_name in ["universal_sage", "universal_homogeneous_sage"]:
-            return {
-                "tabular_encoder_heads": 8,
-                "tabular_encoder_dropout": 0.1,
-                "gnn_aggr": "sum",
-            }
-        elif model_name == "universal_homogeneous_gan":
-            return {
-                "tabular_encoder_heads": 8,
-                "tabular_encoder_dropout": 0.1,
-                "gnn_heads": 8,
-                "gnn_dropout": 0.1,
-            }
-        else:
-            raise ValueError(f"Unknown model name: {model_name}")
+    def get_model_specific_params(model_name: str) -> dict:
+        return {
+            "tabular_encoder_heads": 8,
+            "tabular_encoder_dropout": 0.1,
+            "gnn_aggr": "sum",
+        }
 
     tuner = tune.Tuner(
         tune.with_resources(
@@ -483,7 +492,7 @@ def run_ray_tuner(
             "mlflow_uri": mlflow_uri,
             # training config
             "max_training_steps": 30000,
-            "lr": 0.0001,
+            "lr": 0.001,
             # sampling config
             "batch_size": 128,
             "num_neighbors": 16,
