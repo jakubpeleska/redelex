@@ -1,3 +1,4 @@
+from typing import Optional
 import copy
 
 import torch
@@ -13,7 +14,11 @@ from .utils import get_loss, get_metrics
 
 class LightningEntityTaskWrapper(L.LightningModule):
     def __init__(
-        self, model: torch.nn.Module, optimizer: torch.optim.Optimizer, task: EntityTask
+        self,
+        model: torch.nn.Module,
+        optimizer: torch.optim.Optimizer,
+        task: EntityTask,
+        scheduler: Optional[torch.optim.lr_scheduler.LRScheduler] = None,
     ):
         super().__init__()
 
@@ -25,6 +30,7 @@ class LightningEntityTaskWrapper(L.LightningModule):
         )
         self.test_metrics = copy.deepcopy(self.val_metrics)
         self.optimizer = optimizer
+        self.scheduler = scheduler
 
         self.train_loss = MeanMetric().requires_grad_(False)
         self.best_tune_metric = MaxMetric() if self.higher_is_better else MinMetric()
@@ -116,4 +122,13 @@ class LightningEntityTaskWrapper(L.LightningModule):
         self.log_dict(val_metrics, prog_bar=True, logger=True)
 
     def configure_optimizers(self):
+        if self.scheduler is not None:
+            return {
+                "optimizer": self.optimizer,
+                "lr_scheduler": {
+                    "scheduler": self.scheduler,
+                    "interval": "step",
+                    "frequency": 1,
+                },
+            }
         return self.optimizer
