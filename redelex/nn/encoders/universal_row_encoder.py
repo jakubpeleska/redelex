@@ -222,7 +222,7 @@ class UniversalCategoricalEncoder(UniversalStypeEncoder):
             x: torch.Tensor = self.feat_embedding(indices)  # [total_elems, data_channels]
 
             x = F.embedding_bag(
-                input=torch.arange(x.size(0)),
+                input=torch.arange(x.size(0), device=x.device),
                 weight=x,
                 offsets=feat.offset[:-1],
                 mode="sum",
@@ -237,7 +237,9 @@ class UniversalCategoricalEncoder(UniversalStypeEncoder):
                 -1, self.embedding_dim
             )  # [num_cols * max_cardinality, embed_dim]
 
-            bag_shifts = torch.arange(feat.num_cols) * value_emb.size(1)  # [num_cols]
+            bag_shifts = torch.arange(feat.num_cols, device=x.device) * value_emb.size(
+                1
+            )  # [num_cols]
 
             lengths = feat.offset.diff()  # [num_rows * num_cols]
             col_lengths = lengths.view(feat.num_rows, feat.num_cols).sum(
@@ -267,7 +269,9 @@ class UniversalCategoricalEncoder(UniversalStypeEncoder):
             if value_emb is None:
                 return x
 
-            col_indices = torch.arange(value_emb.size(0)).unsqueeze(0)  # [1, num_cols]
+            col_indices = torch.arange(value_emb.size(0), device=feat.device).unsqueeze(
+                0
+            )  # [1, num_cols]
 
             x_val_emb = value_emb[col_indices, indices]  # [batch_size, num_cols, embed_dim]
 
