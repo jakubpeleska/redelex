@@ -131,7 +131,7 @@ class LightningMultiTaskWrapper(L.LightningModule):
 
     def configure_optimizers(self):
         if self.scheduler is not None:
-            {
+            return {
                 "optimizer": self.optimizer,
                 "lr_scheduler": {
                     "scheduler": self.scheduler,

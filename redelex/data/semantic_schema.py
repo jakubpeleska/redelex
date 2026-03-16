@@ -20,7 +20,7 @@ from torch_frame.utils import infer_series_stype
 from relbench.base import Database, Table, TaskType
 
 from redelex.db import DBSchema, TableSchema
-from redelex.tasks import mixins
+import redelex.tasks.mixins as mixins
 
 ID_NAME_REGEX = re.compile(
     r"_id$|^id_|_id_|Id$|Id[^a-z]|[Ii]dentifier|IDENTIFIER|ID[^a-zA-Z]|ID$|[guGU]uid[^a-z]|[guGU]uid$|[GU]UID[^a-zA-Z]|[GU]UID$"
