@@ -1,12 +1,14 @@
 #!/bin/bash
-#SBATCH --partition=cpulong
-#SBATCH --job-name=exp1_1_pretrain_hetero
-#SBATCH --cpus-per-task=3
-#SBATCH --mem-per-cpu=80G
-#SBATCH --time=72:00:00
-#SBATCH --array=0-4
+#SBATCH --partition=gpu
+#SBATCH --job-name=universal_pretrained_heterogeneous
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-gpu=3
+#SBATCH --mem-per-cpu=60G
+#SBATCH --time=24:00:00
+#SBATCH --array=5-5
 
 declare -a leave_out_datasets=(
+    'rel-all'
     'rel-amazon'
     'rel-avito'
     'rel-f1'
@@ -19,7 +21,7 @@ VENV_PATH="/home/pelesjak/git/ctu-relational-py/.venv"
 # Activate the local virtual environment
 source "${VENV_PATH}/bin/activate"
 
-EXPERIMENT_NAME="exp1_1_pretrain_hetero"
+EXPERIMENT_NAME="universal_pretrained_heterogeneous"
 
 echo $SLURM_ARRAY_JOB_ID
 
@@ -41,9 +43,9 @@ mkdir -p $log_dir
 
 python -u experiments/universal_encoder/universal_encoder_pretrained.py \
   --leave_out_dataset=${dataset} \
-  --gnn_type="heterogeneous" \
+  --gnn_type="heterogeneous"\
   --ray_address="local" --ray_storage=${log_dir} \
   --run_name=${EXPERIMENT_ID}_leave_out_${dataset} --mlflow_uri=${MLFLOW_TRACKING_URI} \
-  --mlflow_experiment=pelesjak_${EXPERIMENT_NAME} --num_cpus=${SLURM_CPUS_PER_TASK} --num_gpus=0 \
+  --mlflow_experiment=pelesjak_${EXPERIMENT_NAME} --num_cpus=${SLURM_CPUS_PER_GPU} --num_gpus=1 \
   --num_samples=${NUM_SAMPLES} \
-  --model_save_path="${experiment_dir}/${dataset}_pretrained.pt" &> "${log_dir}/run.log"
+  --model_save_dir="${log_dir}/models" &> "${log_dir}/run.log"

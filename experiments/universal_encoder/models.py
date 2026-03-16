@@ -70,7 +70,7 @@ class HomogeneousGNN(torch.nn.Module):
         self,
         gnn_channels: int,
         gnn_layers: int = 2,
-        gnn_aggr: str = "mean",
+        gnn_aggr: str = "sum",
     ):
         super().__init__()
         self.temporal_encoder = RelativeTemporalEncoder(channels=gnn_channels)

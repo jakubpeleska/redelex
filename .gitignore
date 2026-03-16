@@ -166,3 +166,4 @@ logs/
 /notebooks/data
 results/
 /data/
+/experiments/universal_encoder/pretrained_models
