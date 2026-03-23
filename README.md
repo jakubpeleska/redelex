@@ -134,10 +134,25 @@ uv sync
 uv pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.4.0+cpu.html
 ```
 
-CUDA 12.4:
+CUDA 12.8:
+
+```bash
+uv sync --no-group cpu --group cu128
+uv pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.8.0+cu128.html
+```
+
+CUDA 12.4 (Old CUDA env):
 
 ```bash
 uv sync --no-group cpu --group cu124
+uv pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.4.0+cu124.html
+```
+
+CUDA 12.1 (RCI Setup):
+
+```bash
+uv sync --no-group cpu --group cu121
+uv pip install pyg_lib==0.3.1 torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.1.2+cu121.html
 ```
 
 ### Enable and run `pre-commit`
@@ -147,18 +162,27 @@ uv run pre-commit install
 uv run pre-commit run
 ```
 
+### Database schema visualizations
+
+Visualizations run on `Graphviz`, which needs to be available on your system.
+
+- Install `Graphviz` https://graphviz.org/download/
+
 ## 📜 Citation
 
 If you use ReDeLEx in your work, please cite:
 
-<!-- ```bibtex
-@inproceedings{peleska2025redelex,
-  title = {ReDeLEx: A Framework for Relational Deep Learning Exploration},
-  author = {Peleška, Jakub and Šír, Gustav},
-  booktitle = {ECML PKDD},
-  year = {2025}
+```
+@misc{peleska2025redelex,
+  title={REDELEX: A Framework for Relational Deep Learning Exploration},
+  author={Jakub Peleška and Gustav Šír},
+  year={2025},
+  eprint={2506.22199},
+  archivePrefix={arXiv},
+  primaryClass={cs.LG},
+  url={https://arxiv.org/abs/2506.22199},
 }
-``` -->
+```
 
 ## 📎 Acknowledgements
 

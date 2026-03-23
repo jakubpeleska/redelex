@@ -1,9 +1,24 @@
-import pandas as pd
 from relbench.base import TaskType
 
-from .ctu_entity_task_classic import CTUEntityTask
-from .ctu_entity_task_temporal import CTUEntityTaskTemporal
-from .ctu_link_task import CTULinkTask
+from .task_impute import ImputeEntityStaticTask, ImputeEntityTemporalTask
+
+
+class CTUEntityTask(ImputeEntityStaticTask):
+    entity_col = "__PK__"
+
+
+class CTUEntityTaskTemporal(ImputeEntityTemporalTask):
+    entity_col = "__PK__"
+
+
+# TODO: implement link prediction tasks, currently they are placeholders
+class CTULinkTask(ImputeEntityStaticTask):
+    pass
+
+
+##############################################################################
+# CTU Relational Benchmark Tasks
+##############################################################################
 
 
 class AccidentsOriginalTask(CTUEntityTask):
@@ -16,8 +31,6 @@ class AccidentsTemporalTask(CTUEntityTaskTemporal):
     entity_table = "nesreca"
     target_col = "klas_nesreca"
     task_type = TaskType.MULTICLASS_CLASSIFICATION
-    val_timestamp = pd.Timestamp("2004-03-01")
-    test_timestamp = pd.Timestamp("2005-03-01")
 
 
 class AdventureWorksOriginalTask(CTUEntityTask):
@@ -30,8 +43,6 @@ class AdventureWorksTemporalTask(CTUEntityTaskTemporal):
     entity_table = "SalesOrderHeader"
     target_col = "TotalDue"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2014-03-01")
-    test_timestamp = pd.Timestamp("2014-05-01")
 
 
 # TODO: remove duplicate target cols
@@ -46,8 +57,6 @@ class AirlineTemporalTask(CTUEntityTaskTemporal):
     entity_table = "On_Time_On_Time_Performance_2016_1"
     target_col = "ArrDelay"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2016-01-18")
-    test_timestamp = pd.Timestamp("2016-01-25")
 
 
 class AtherosclerosisOriginalTask(CTUEntityTask):
@@ -108,8 +117,6 @@ class ClassicModelsTemporalTask(CTUEntityTaskTemporal):
     entity_table = "payments"
     target_col = "amount"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2004-11-01")
-    test_timestamp = pd.Timestamp("2005-02-01")
 
 
 class CORAOriginalTask(CTUEntityTask):
@@ -130,12 +137,11 @@ class CraftBeerOriginalTask(CTUEntityTask):
     task_type = TaskType.MULTICLASS_CLASSIFICATION
 
 
+# TODO: fix link prediction tasks
 class CreditOriginalTask(CTULinkTask):
     entity_table = "member"
-    link_table = "region"
+    target_col = "region_no"
     task_type = TaskType.LINK_PREDICTION
-    val_timestamp = pd.Timestamp("1999-09-01")
-    test_timestamp = pd.Timestamp("1999-10-01")
 
 
 class DallasOriginalTask(CTUEntityTask):
@@ -148,8 +154,6 @@ class DallasTemporalTask(CTUEntityTaskTemporal):
     entity_table = "incidents"
     target_col = "subject_statuses"
     task_type = TaskType.MULTICLASS_CLASSIFICATION
-    val_timestamp = pd.Timestamp("2014-01-01")
-    test_timestamp = pd.Timestamp("2015-01-01")
 
 
 class DCGOriginalTask(CTUEntityTask):
@@ -164,12 +168,14 @@ class DiabetesOriginalTask(CTUEntityTask):
     task_type = TaskType.MULTICLASS_CLASSIFICATION
 
 
+# TODO: fix link prediction tasks
 class DunurOriginalTask(CTULinkTask):
     entity_table = "target"
     target_col = "is_dunur"
     task_type = TaskType.LINK_PREDICTION
 
 
+# TODO: fix link prediction tasks
 class EltiOriginalTask(CTULinkTask):
     entity_table = "target"
     target_col = "is_elti"
@@ -186,8 +192,6 @@ class EmployeeTemporalTask(CTUEntityTaskTemporal):
     entity_table = "salaries"
     target_col = "salary"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2000-01-01")
-    test_timestamp = pd.Timestamp("2001-01-01")
 
 
 class ErgastF1OriginalTask(CTUEntityTask):
@@ -200,8 +204,6 @@ class ErgastF1TemporalTask(CTUEntityTaskTemporal):
     entity_table = "target"
     target_col = "win"
     task_type = TaskType.BINARY_CLASSIFICATION
-    val_timestamp = pd.Timestamp("2014-01-01")
-    test_timestamp = pd.Timestamp("2016-01-01")
 
 
 class ExpendituresOriginalTask(CTUEntityTask):
@@ -220,8 +222,6 @@ class FinancialTemporalTask(CTUEntityTaskTemporal):
     entity_table = "loan"
     target_col = "status"
     task_type = TaskType.MULTICLASS_CLASSIFICATION
-    val_timestamp = pd.Timestamp("1998-01-01")
-    test_timestamp = pd.Timestamp("1998-07-01")
 
 
 class FNHKOriginalTask(CTUEntityTask):
@@ -234,8 +234,6 @@ class FNHKTemporalTask(CTUEntityTaskTemporal):
     entity_table = "pripady"
     target_col = "Delka_hospitalizace"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2014-09-01")
-    test_timestamp = pd.Timestamp("2014-11-01")
 
 
 class FTPOriginalTask(CTUEntityTask):
@@ -248,8 +246,6 @@ class FTPTemporalTask(CTUEntityTaskTemporal):
     entity_table = "session"
     target_col = "gender"
     task_type = TaskType.BINARY_CLASSIFICATION
-    val_timestamp = pd.Timestamp("2014-12-15")
-    test_timestamp = pd.Timestamp("2014-12-19")
 
 
 class GeneeaOriginalTask(CTUEntityTask):
@@ -262,8 +258,6 @@ class GeneeaTemporalTask(CTUEntityTaskTemporal):
     entity_table = "hl_hlasovani"
     target_col = "vysledek"
     task_type = TaskType.BINARY_CLASSIFICATION
-    val_timestamp = pd.Timestamp("2015-06-01")
-    test_timestamp = pd.Timestamp("2015-10-01")
 
 
 class GenesOriginalTask(CTUEntityTask):
@@ -282,8 +276,6 @@ class GOSalesTemporalTask(CTUEntityTaskTemporal):
     entity_table = "go_daily_sales"
     target_col = "Quantity"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2017-10-01")
-    test_timestamp = pd.Timestamp("2018-03-01")
 
 
 class GrantsOriginalTask(CTUEntityTask):
@@ -296,8 +288,6 @@ class GrantsTemporalTask(CTUEntityTaskTemporal):
     entity_table = "awards"
     target_col = "award_amount"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2010-10-01")
-    test_timestamp = pd.Timestamp("2014-01-01")
 
 
 class HepatitisOriginalTask(CTUEntityTask):
@@ -316,8 +306,6 @@ class HockeyTemporalTask(CTUEntityTaskTemporal):
     entity_table = "Master"
     target_col = "shootCatch"
     task_type = TaskType.MULTICLASS_CLASSIFICATION
-    val_timestamp = pd.Timestamp("2007-01-01")
-    test_timestamp = pd.Timestamp("2009-01-01")
 
 
 class IMDbOriginalTask(CTUEntityTask):
@@ -330,8 +318,6 @@ class IMDbTemporalTask(CTUEntityTaskTemporal):
     entity_table = "actors"
     target_col = "gender"
     task_type = TaskType.BINARY_CLASSIFICATION
-    val_timestamp = pd.Timestamp("1998-01-01")
-    test_timestamp = pd.Timestamp("2002-01-01")
 
 
 class LahmanOriginalTask(CTUEntityTask):
@@ -344,8 +330,6 @@ class LahmanTemporalTask(CTUEntityTaskTemporal):
     entity_table = "salaries"
     target_col = "salary"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2010-01-01")
-    test_timestamp = pd.Timestamp("2012-01-01")
 
 
 class LegalActsOriginalTask(CTUEntityTask):
@@ -358,8 +342,6 @@ class LegalActsTemporalTask(CTUEntityTaskTemporal):
     entity_table = "legalacts"
     target_col = "ActKind"
     task_type = TaskType.MULTICLASS_CLASSIFICATION
-    val_timestamp = pd.Timestamp("2012-02-01")
-    test_timestamp = pd.Timestamp("2012-05-01")
 
 
 class MeshOriginalTask(CTUEntityTask):
@@ -374,6 +356,7 @@ class MondialOriginalTask(CTUEntityTask):
     task_type = TaskType.BINARY_CLASSIFICATION
 
 
+# TODO: fix link prediction tasks
 class MooneyOriginalTask(CTULinkTask):
     entity_table = "uncle"
     task_type = TaskType.LINK_PREDICTION
@@ -413,8 +396,6 @@ class NCAATemporalTask(CTUEntityTaskTemporal):
     entity_table = "target"
     target_col = "team_id1_wins"
     task_type = TaskType.BINARY_CLASSIFICATION
-    val_timestamp = pd.Timestamp("2010-11-01")
-    test_timestamp = pd.Timestamp("2012-11-05")
 
 
 class NorthwindOriginalTask(CTUEntityTask):
@@ -427,8 +408,6 @@ class NorthwindTemporalTask(CTUEntityTaskTemporal):
     entity_table = "Orders"
     target_col = "Freight"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("1998-02-01")
-    test_timestamp = pd.Timestamp("1998-04-01")
 
 
 class PimaOriginalTask(CTUEntityTask):
@@ -447,8 +426,6 @@ class PremiereLeagueTemporalTask(CTUEntityTaskTemporal):
     entity_table = "Matches"
     target_col = "ResultOfTeamHome"
     task_type = TaskType.MULTICLASS_CLASSIFICATION
-    val_timestamp = pd.Timestamp("2012-04-01")
-    test_timestamp = pd.Timestamp("2012-05-01")
 
 
 class RestbaseOriginalTask(CTUEntityTask):
@@ -467,8 +444,6 @@ class SakilaTemporalTask(CTUEntityTaskTemporal):
     entity_table = "payment"
     target_col = "amount"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2005-08-19")
-    test_timestamp = pd.Timestamp("2005-08-21")
 
 
 class SalesOriginalTask(CTUEntityTask):
@@ -477,6 +452,7 @@ class SalesOriginalTask(CTUEntityTask):
     task_type = TaskType.REGRESSION
 
 
+# TODO: fix link prediction tasks
 class SameGenOriginalTask(CTULinkTask):
     entity_table = "target"
     target_col = "target"
@@ -499,10 +475,9 @@ class SAPSalesTemporalTask(CTUEntityTaskTemporal):
     entity_table = "Sales"
     target_col = "AMOUNT"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2007-06-10")
-    test_timestamp = pd.Timestamp("2007-06-20")
 
 
+# TODO: fix link prediction tasks
 class SatelliteOriginalTask(CTULinkTask):
     entity_table = "tm"
     link_table = "fault"
@@ -519,8 +494,6 @@ class SeznamTemporalTask(CTUEntityTaskTemporal):
     entity_table = "probehnuto"
     target_col = "kc_proklikano"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2015-03-01")
-    test_timestamp = pd.Timestamp("2015-07-01")
 
 
 class SFScoresOriginalTask(CTUEntityTask):
@@ -533,10 +506,9 @@ class SFScoresTemporalTask(CTUEntityTaskTemporal):
     entity_table = "inspections"
     target_col = "score"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2016-03-01")
-    test_timestamp = pd.Timestamp("2016-07-01")
 
 
+# TODO: fix link prediction tasks
 class ShakespeareOriginalTask(CTULinkTask):
     entity_table = "paragraphs"
     link_table = "characters"
@@ -553,8 +525,6 @@ class StatsTemporalTask(CTUEntityTaskTemporal):
     entity_table = "users"
     target_col = "Reputation"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2014-03-01")
-    test_timestamp = pd.Timestamp("2014-06-01")
 
 
 class StudentLoanOriginalTask(CTUEntityTask):
@@ -573,8 +543,6 @@ class ThrombosisTemporalTask(CTUEntityTaskTemporal):
     entity_table = "Examination"
     target_col = "Thrombosis"
     task_type = TaskType.MULTICLASS_CLASSIFICATION
-    val_timestamp = pd.Timestamp("1996-01-01")
-    test_timestamp = pd.Timestamp("1997-01-01")
 
 
 class ToxicologyOriginalTask(CTUEntityTask):
@@ -599,8 +567,6 @@ class TPCDTemporalTask(CTUEntityTaskTemporal):
     entity_table = "dss_customer"
     target_col = "c_mktsegment"
     task_type = TaskType.MULTICLASS_CLASSIFICATION
-    val_timestamp = pd.Timestamp("1997-01-01")
-    test_timestamp = pd.Timestamp("1998-01-01")
 
 
 class TPCDSOriginalTask(CTUEntityTask):
@@ -613,8 +579,6 @@ class TPCDSTemporalTask(CTUEntityTaskTemporal):
     entity_table = "customer"
     target_col = "c_preferred_cust_flag"
     task_type = TaskType.BINARY_CLASSIFICATION
-    val_timestamp = pd.Timestamp("2001-01-01")
-    test_timestamp = pd.Timestamp("2002-01-01")
 
 
 class TPCHOriginalTask(CTUEntityTask):
@@ -627,8 +591,6 @@ class TPCHTemporalTask(CTUEntityTaskTemporal):
     entity_table = "customer"
     target_col = "c_acctbal"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("1997-09-01")
-    test_timestamp = pd.Timestamp("1998-03-01")
 
 
 class TriazineOriginalTask(CTUEntityTask):
@@ -659,8 +621,6 @@ class VOCTemporalTask(CTUEntityTaskTemporal):
     entity_table = "voyages"
     target_col = "arrival_harbour"
     task_type = TaskType.MULTICLASS_CLASSIFICATION
-    val_timestamp = pd.Timestamp("1887-01-01")
-    test_timestamp = pd.Timestamp("1902-01-01")
 
 
 class WalmartOriginalTask(CTUEntityTask):
@@ -673,8 +633,6 @@ class WalmartTemporalTask(CTUEntityTaskTemporal):
     entity_table = "train_table"
     target_col = "units"
     task_type = TaskType.REGRESSION
-    val_timestamp = pd.Timestamp("2014-01-01")
-    test_timestamp = pd.Timestamp("2014-06-01")
 
 
 class WebKPOriginalTask(CTUEntityTask):
