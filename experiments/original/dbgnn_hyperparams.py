@@ -37,7 +37,7 @@ from redelex.tasks.utils import is_temporal_task
 from redelex.nn.models.sagegnn import SAGEModel
 from redelex.nn.models.dbformer import DBFormerModel
 
-from experiments.utils import (
+from experiments.original.utils import (
     get_cache_path,
     get_data,
     get_loss,

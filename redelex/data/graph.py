@@ -61,6 +61,7 @@ def make_pkey_fkey_graph(
     col_to_stype_dict: Dict[str, Dict[str, stype]],
     text_embedder: Optional[TextEmbedder] = None,
     cache_dir: Optional[str] = None,
+    target: Optional[tuple[str, str]] = None,
 ) -> Tuple[HeteroData, Dict[str, Dict[str, Dict[StatType, Any]]]]:
     r"""Given a :class:`Database` object, construct a heterogeneous graph with primary-
     foreign key relationships, together with the column stats of each table.
@@ -74,6 +75,7 @@ def make_pkey_fkey_graph(
             frames. If specified, we will either cache the file or use the
             cached file. If not specified, we will not use cached file and
             re-process everything from scratch without saving the cache.
+        target: [table_name, col_name] pair specifying the target column.
 
     Returns:
         HeteroData: The heterogeneous :class:`PyG` object with
@@ -115,6 +117,9 @@ def make_pkey_fkey_graph(
             col_to_text_embedder_cfg=TextEmbedderConfig(
                 text_embedder=text_embedder, batch_size=256
             ),
+            target_col=target[1]
+            if target is not None and target[0] == table_name
+            else None,
         ).materialize(device=torch.device("cpu"), path=path)
 
         data[table_name].tf = dataset.tensor_frame

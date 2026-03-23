@@ -122,7 +122,7 @@ def make_tensor_stats_dict(
                 stype_stats[st][stat] = (
                     torch.nn.utils.rnn.pad_sequence(  # TODO: change to nested tensor
                         embeddings_list, batch_first=True, padding_value=0.0
-                    )
+                    ).to(device)
                 )
             elif stat == TensorStatType.EARLIEST_DATE:
                 stype_stats[st][stat] = torch.stack(

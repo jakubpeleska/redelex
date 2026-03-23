@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Any, Union
+from typing import Dict, Optional
 
 import json
 
@@ -37,7 +37,7 @@ from redelex.data import (
 )
 from redelex.datasets import DBDataset
 from redelex.db import RemoteDBInterface, RelbenchDBInterface, DBSchema
-from redelex.tasks.mixins import ModifyDBTaskMixin
+from redelex.tasks import mixins
 from redelex.utils import convert_timedelta, merge_tf
 
 
@@ -52,19 +52,34 @@ def get_text_embedder(
         raise ValueError(f"Text embedder {embedder_name} is not supported")
 
 
-def get_hyperparams_logging(
-    config: dict[str, Any],
-) -> dict[str, Union[str, int, float, bool]]:
-    hyperparams_logging = {}
-    for key, value in config.items():
-        if type(value) in [str, int, float, bool]:
-            hyperparams_logging[key] = value
-    return hyperparams_logging
+def get_attribute_schema(
+    schema_cache_path: str,
+    db: Database,
+    db_schema: Optional[DBSchema] = None,
+    task: Optional[mixins.BaseTask] = None,
+) -> Dict[str, Dict[str, stype]]:
+    try:
+        with open(schema_cache_path, "r") as f:
+            attribute_schema = json.load(f)
+        for tname, table_attribute_schema in attribute_schema.items():
+            for col, stype_str in table_attribute_schema.items():
+                if isinstance(stype_str, str):
+                    table_attribute_schema[col] = stype(stype_str)
+    except FileNotFoundError:
+        if db_schema is not None:
+            attribute_schema = guess_schema(db, db_schema, task=task)
+        else:
+            attribute_schema = guess_schema(db, task=task)
+        Path(schema_cache_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(schema_cache_path, "w") as f:
+            json.dump(attribute_schema, f, indent=2, default=str)
+
+    return attribute_schema
 
 
 def get_cache_path(dataset_name: str, task_name: str, cache_dir: str):
     task = get_task(dataset_name, task_name)
-    if isinstance(task, ModifyDBTaskMixin):
+    if isinstance(task, mixins.ModifyDBTaskMixin):
         return Path(f"{cache_dir}/{dataset_name}/{task_name}")
 
     elif isinstance(task, RelbenchTask):
@@ -120,30 +135,6 @@ def get_loss(dataset_name: str, task_name: str):
         raise ValueError(f"Task type {task.task_type} is unsupported")
 
 
-def get_attribute_schema(
-    schema_cache_path: str,
-    db: Database,
-    db_schema: Optional[DBSchema] = None,
-) -> Dict[str, Dict[str, stype]]:
-    try:
-        with open(schema_cache_path, "r") as f:
-            attribute_schema = json.load(f)
-        for tname, table_attribute_schema in attribute_schema.items():
-            for col, stype_str in table_attribute_schema.items():
-                if isinstance(stype_str, str):
-                    table_attribute_schema[col] = stype(stype_str)
-    except FileNotFoundError:
-        if db_schema is not None:
-            attribute_schema = guess_schema(db, db_schema)
-        else:
-            attribute_schema = guess_schema(db)
-        Path(schema_cache_path).parent.mkdir(parents=True, exist_ok=True)
-        with open(schema_cache_path, "w") as f:
-            json.dump(attribute_schema, f, indent=2, default=str)
-
-    return attribute_schema
-
-
 def get_data(
     dataset_name: str,
     task_name: str,
@@ -154,7 +145,7 @@ def get_data(
 ):
     dataset = get_dataset(dataset_name)
     task = get_task(dataset_name, task_name)
-    if isinstance(task, ModifyDBTaskMixin):
+    if isinstance(task, mixins.ModifyDBTaskMixin):
         db = task.make_modified_db(inplace=False)
     else:
         db = dataset.get_db(upto_test_timestamp=False)
@@ -207,15 +198,3 @@ def get_data(
         )
 
     return task, data, col_stats_dict
-
-
-__all__ = [
-    "get_text_embedder",
-    "get_hyperparams_logging",
-    "get_cache_path",
-    "get_metrics",
-    "get_tune_metric",
-    "get_loss",
-    "get_attribute_schema",
-    "get_data",
-]

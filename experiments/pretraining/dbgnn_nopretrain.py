@@ -22,8 +22,8 @@ from relbench.tasks import get_task, get_task_names
 
 from redelex.data import make_pkey_fkey_graph
 
-from experiments.utils import get_attribute_schema, get_text_embedder
 from experiments.pretraining.dbgnn_pretrain import run_task_experiment
+from experiments.pretraining.utils import get_attribute_schema, get_text_embedder
 
 
 def run_ray_tuner(

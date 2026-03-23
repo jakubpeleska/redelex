@@ -27,7 +27,7 @@ class ResampleCorruptor(BaseTransform):
             for tname, tf in data.collect("tf").items()
         }
 
-    def __call__(self, data: HeteroData) -> HeteroData:
+    def forward(self, data: HeteroData) -> HeteroData:
         """
         Corrupt the data by resampling features with a given probability.
         Args:

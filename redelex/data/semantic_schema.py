@@ -17,9 +17,10 @@ import inflect
 from torch_frame import stype
 from torch_frame.utils import infer_series_stype
 
-from relbench.base import BaseTask, Database, Table, TaskType
+from relbench.base import Database, Table, TaskType
 
 from redelex.db import DBSchema, TableSchema
+import redelex.tasks.mixins as mixins
 
 ID_NAME_REGEX = re.compile(
     r"_id$|^id_|_id_|Id$|Id[^a-z]|[Ii]dentifier|IDENTIFIER|ID[^a-zA-Z]|ID$|[guGU]uid[^a-z]|[guGU]uid$|[GU]UID[^a-zA-Z]|[GU]UID$"
@@ -153,7 +154,7 @@ def guess_column_stype(
 def guess_table_stypes(
     table: Table,
     table_schema: Optional[TableSchema] = None,
-    task: Optional[BaseTask] = None,
+    task: Optional[mixins.EntityTaskMixin] = None,
     ignore_none: bool = True,
 ) -> Dict[str, stype]:
     """
@@ -177,7 +178,7 @@ def guess_table_stypes(
             schema[col] = None
             continue
 
-        if task is not None:
+        if task is not None and col == task.target_col:
             if task.task_type == TaskType.BINARY_CLASSIFICATION:
                 schema[col] = stype.categorical
             elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
@@ -204,7 +205,9 @@ def guess_table_stypes(
 
 
 def guess_schema(
-    db: Database, db_schema: Optional[DBSchema] = None
+    db: Database,
+    db_schema: Optional[DBSchema] = None,
+    task: Optional[mixins.BaseTask] = None,
 ) -> Dict[str, Dict[str, stype]]:
     """Locate all database tables and all columns and run :py:method:`guess_column_type` for all of them.
 
@@ -217,6 +220,9 @@ def guess_schema(
             table,
             table_schema=db_schema.table_schemas.get(table_name, None)
             if db_schema
+            else None,
+            task=task
+            if isinstance(task, mixins.EntityTaskMixin) and table_name == task.entity_table
             else None,
         )
 

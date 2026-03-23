@@ -4536,6 +4536,7 @@ cu128 = [
 ]
 dev = [
     { name = "ipykernel" },
+    { name = "ipywidgets" },
     { name = "matplotlib" },
     { name = "pre-commit" },
 ]
@@ -4543,6 +4544,7 @@ experiments = [
     { name = "getml" },
     { name = "lightning" },
     { name = "mlflow" },
+    { name = "pynvml" },
     { name = "ray", extra = ["data", "serve", "train", "tune"] },
 ]
 visualization = [
