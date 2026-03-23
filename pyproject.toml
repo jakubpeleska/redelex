@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "redelex"
-version = "0.5.1"
+version = "0.6.0"
 description = "ReDeLEx: A Framework for Relational Deep Learning Exploration"
 authors = [{ name = "Jakub Peleška", email = "jakub.peleska@fel.cvut.cz" }]
 readme = "README.md"
@@ -40,8 +40,8 @@ cu121 = [
     "numpy==1.26.4",
     "huggingface-hub==0.21.2",
     "transformers==4.37.2",
-    "sentence-transformers==2.2.2"
-]   
+    "sentence-transformers==2.2.2",
+]
 cu124 = [
     "torch==2.4.1",
     "torchvision==0.19.1",
@@ -77,7 +77,14 @@ visualization = ["jinja2>=3.1.6", "pydot>=4.0.1"]
 
 [tool.uv]
 default-groups = ["dev", "cpu", "experiments", "visualization"]
-conflicts = [[{ group = "cpu" }, { group = "cu121" }, { group = "cu124" }, { group = "cu128" }]]
+conflicts = [
+    [
+        { group = "cpu" },
+        { group = "cu121" },
+        { group = "cu124" },
+        { group = "cu128" },
+    ],
+]
 
 [tool.uv.sources]
 torch = [
