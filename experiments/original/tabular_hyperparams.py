@@ -34,8 +34,8 @@ from relbench.modeling.graph import get_node_train_table_input
 
 from redelex.tasks.mixins import BaseTask
 from redelex.tasks.utils import is_temporal_task
-from redelex.nn.models.tabular import TabularModel
 
+from experiments.original.models import TabularModel
 from experiments.original.utils import (
     get_cache_path,
     get_data,

@@ -32,9 +32,9 @@ from relbench.modeling.graph import get_node_train_table_input
 
 from redelex.data import make_pkey_fkey_graph
 from redelex.datasets import get_dataset_info
-from redelex.nn.models.rdl_model import RDLModel
 from redelex.transforms import ResampleCorruptor
 
+from experiments.pretraining.rdl_model import RDLModel
 from experiments.pretraining.utils import get_attribute_schema, get_text_embedder
 from experiments.pretraining.lightning_wrappers import (
     PretrainingWrapper,
