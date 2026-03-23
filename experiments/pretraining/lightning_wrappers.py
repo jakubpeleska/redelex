@@ -17,7 +17,6 @@ from relbench.tasks import get_task
 from relbench.base import TaskType
 
 
-from redelex.nn.models.rdl_model import RDLModel
 from redelex.nn.loss import (
     TableContrastiveLoss,
     EdgeContrastiveLoss,
@@ -25,6 +24,8 @@ from redelex.nn.loss import (
 )
 
 from redelex.nn.train.utils import get_loss, get_metrics
+
+from .rdl_model import RDLModel
 
 
 class PretrainingWrapper(torch.nn.Module):
