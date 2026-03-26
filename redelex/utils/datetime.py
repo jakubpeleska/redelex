@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
-
 from relbench.base import Database
-
 
 TIMESTAMP_MIN = np.datetime64(pd.Timestamp.min.date())
 TIMESTAMP_MAX = np.datetime64(pd.Timestamp.max.date())

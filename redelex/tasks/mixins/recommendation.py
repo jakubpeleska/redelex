@@ -2,7 +2,6 @@ from typing import Callable, Dict, Optional
 
 import numpy as np
 from numpy.typing import NDArray
-
 from relbench.base import Dataset, Table, TaskType
 
 from .base import BaseTask
@@ -80,6 +79,7 @@ class RecommendationTaskMixin(BaseTask):
         for true_dst_nodes, pred_dst_nodes in zip(
             target_table.df[self.dst_entity_col],
             pred,
+            strict=False,
         ):
             pred_isin_list.append(
                 np.isin(np.array(pred_dst_nodes), np.array(true_dst_nodes))

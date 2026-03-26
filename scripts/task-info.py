@@ -22,7 +22,7 @@ from relbench.modeling.graph import get_node_train_table_input
 from redelex.data import GloveTextEmbedder, make_pkey_fkey_graph, guess_schema
 from redelex.datasets import CTUDataset, DBDataset
 from redelex.tasks import CTUEntityTask, CTUEntityTaskTemporal
-from redelex.utils import convert_timedelta
+from redelex.utils.datetime import convert_timedelta
 
 
 def max_multiplicity(df: pd.DataFrame, fk_col: str):

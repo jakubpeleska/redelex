@@ -1,7 +1,6 @@
 from typing import Callable, Dict, Optional
 
 from numpy.typing import NDArray
-
 from relbench.base import Table, TaskType
 
 from .base import BaseTask
@@ -26,13 +25,12 @@ class EntityTaskMixin(BaseTask):
     # TODO: add proper metrics
     @property
     def metrics(self) -> list[Callable[[NDArray, NDArray], float]]:
-        if self.task_type == TaskType.REGRESSION:
-            return []
-        elif self.task_type == TaskType.BINARY_CLASSIFICATION:
-            return []
-        elif self.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-            return []
-        elif self.task_type == TaskType.MULTILABEL_CLASSIFICATION:
+        if (
+            self.task_type == TaskType.REGRESSION
+            or self.task_type == TaskType.BINARY_CLASSIFICATION
+            or self.task_type == TaskType.MULTICLASS_CLASSIFICATION
+            or self.task_type == TaskType.MULTILABEL_CLASSIFICATION
+        ):
             return []
 
     def filter_dangling_entities(self, table: Table) -> Table:

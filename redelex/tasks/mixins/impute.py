@@ -1,7 +1,6 @@
 from typing import Callable
 
 import pandas as pd
-
 from relbench.base import Database, Table, TaskType
 
 from .db_modify import ModifyDBTaskMixin

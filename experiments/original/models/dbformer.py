@@ -12,7 +12,7 @@ from torch_geometric.typing import NodeType
 from relbench.modeling.nn import HeteroEncoder, HeteroTemporalEncoder
 
 from redelex.nn.encoders import PerFeatureRowEncoder
-from redelex.nn.models.rgnn import DBFormer
+from redelex.nn.models import DBFormer
 
 
 class DBFormerModel(torch.nn.Module):

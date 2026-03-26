@@ -1,15 +1,12 @@
-from typing import Optional, Union
-
 import warnings
-
 from enum import Enum
+from typing import Optional, Union
 
 import torch
 import torch.nn.functional as F
-
 import torch_frame
 from torch_frame import stype
-from torch_frame.data import MultiNestedTensor, MultiEmbeddingTensor
+from torch_frame.data import MultiEmbeddingTensor, MultiNestedTensor
 from torch_frame.data.mapper import TimestampTensorMapper
 from torch_frame.nn.encoding import CyclicEncoding, PositionalEncoding
 
@@ -630,7 +627,8 @@ class UniversalRowEncoder(torch.nn.Module):
         if name_embeddings is None:
             if self.use_name_emb:
                 warnings.warn(
-                    f"use_name_emb is True, but name_embeddings is None for table {tname}."
+                    f"use_name_emb is True, but name_embeddings is None for table {tname}.",
+                    stacklevel=2,
                 )
             name_embeddings = {}
             use_name_emb = False
@@ -638,7 +636,8 @@ class UniversalRowEncoder(torch.nn.Module):
         if stype_stats is None:
             if self.use_stats_emb:
                 warnings.warn(
-                    f"use_stats_emb is True, but stype_stats is None for table {tname}."
+                    f"use_stats_emb is True, but stype_stats is None for table {tname}.",
+                    stacklevel=2,
                 )
             stype_stats = {}
             use_stats_emb = False
@@ -657,7 +656,7 @@ class UniversalRowEncoder(torch.nn.Module):
         for st, cols in tf.col_names_dict.items():
             encoder = self.stype_encoders[st]
             data_emb, stats_emb = encoder(
-                tf.feat_dict[st], stype_stats.get(st, None) if use_stats_emb else None
+                tf.feat_dict[st], stype_stats.get(st) if use_stats_emb else None
             )
             # data_emb: [batch_size, num_cols, col_channels]
             # stats_emb: [num_cols, col_channels]

@@ -1,7 +1,5 @@
-from typing import Optional
-
 from copy import deepcopy
-
+from typing import Optional
 
 from relbench.base import Database
 
@@ -41,10 +39,8 @@ class ModifyDBTaskMixin(BaseTask):
 
         if db is None:
             db = self.dataset.get_db(upto_test_timestamp=False)
-        if inplace:
-            modified_db = db
-        else:
-            modified_db = deepcopy(db)
+
+        modified_db = db if inplace else deepcopy(db)
 
         return self._make_modified_db(modified_db)
 

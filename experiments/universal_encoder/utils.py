@@ -34,7 +34,7 @@ from redelex.transforms import (
     AttachDictTransform,
     AttachValuesTransform,
 )
-from redelex.utils import to_unix_time
+from redelex.utils.datetime import to_unix_time
 
 
 def get_dataset_data(

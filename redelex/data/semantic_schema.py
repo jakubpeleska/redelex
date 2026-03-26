@@ -1,26 +1,20 @@
-from typing import Dict, Optional
-
 import re
 import warnings
-
-from sqlalchemy.dialects.mysql import types as mysql_types
-from sqlalchemy import types as sql_types
-
-import numpy as np
-
-import pandas as pd
-from pandas.api import types as pd_types
-from dateutil.parser import ParserError
+from typing import Dict, Optional
 
 import inflect
-
+import numpy as np
+import pandas as pd
+from dateutil.parser import ParserError
+from pandas.api import types as pd_types
+from relbench.base import Database, Table, TaskType
+from sqlalchemy import types as sql_types
+from sqlalchemy.dialects.mysql import types as mysql_types
 from torch_frame import stype
 from torch_frame.utils import infer_series_stype
 
-from relbench.base import Database, Table, TaskType
-
-from redelex.db import DBSchema, TableSchema
 import redelex.tasks.mixins as mixins
+from redelex.db import DBSchema, TableSchema
 
 ID_NAME_REGEX = re.compile(
     r"_id$|^id_|_id_|Id$|Id[^a-z]|[Ii]dentifier|IDENTIFIER|ID[^a-zA-Z]|ID$|[guGU]uid[^a-z]|[guGU]uid$|[GU]UID[^a-zA-Z]|[GU]UID$"
@@ -179,9 +173,10 @@ def guess_table_stypes(
             continue
 
         if task is not None and col == task.target_col:
-            if task.task_type == TaskType.BINARY_CLASSIFICATION:
-                schema[col] = stype.categorical
-            elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
+            if (
+                task.task_type == TaskType.BINARY_CLASSIFICATION
+                or task.task_type == TaskType.MULTICLASS_CLASSIFICATION
+            ):
                 schema[col] = stype.categorical
             elif task.task_type == TaskType.REGRESSION:
                 schema[col] = stype.numerical

@@ -1,11 +1,9 @@
+import copy
+from collections import defaultdict
 from typing import Literal, Optional
 
-from collections import defaultdict
-import copy
-
 import torch
-
-from torch_frame import stype, TensorFrame
+from torch_frame import TensorFrame, stype
 from torch_frame.data import MultiEmbeddingTensor
 from torch_frame.typing import TensorData
 

@@ -1,7 +1,6 @@
 from typing import Literal
 
 import torch
-
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NodeLoader
 

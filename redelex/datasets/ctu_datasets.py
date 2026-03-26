@@ -2,9 +2,9 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-
 from relbench.base import Database, Table
-from redelex.utils import TIMESTAMP_MIN, TIMESTAMP_MAX
+
+from redelex.utils.datetime import TIMESTAMP_MAX, TIMESTAMP_MIN
 
 from .ctu_dataset import CTUDataset
 
@@ -1563,7 +1563,7 @@ class TPCDS(CTUDataset):
                 ].df.join(date_df["d_date"], on=fk, how="left")["d_date"]
                 db.table_dict[t_name].df.drop(columns=[fk], inplace=True)
                 db.table_dict[t_name].fkey_col_to_pkey_table.pop(fk)
-            time_col = time_col_dict.get(t_name, None)
+            time_col = time_col_dict.get(t_name)
             if time_col is not None:
                 db.table_dict[t_name].time_col = time_col
 

@@ -1,4 +1,4 @@
-from .attention import SelfAttention, CrossAttentionConv
+from .attention import CrossAttentionConv, SelfAttention
 
 __all__ = [
     "SelfAttention",

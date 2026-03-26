@@ -1,9 +1,7 @@
+from enum import Enum
 from typing import Any, Optional
 
-from enum import Enum
-
 import torch
-
 import torch_frame
 from torch_frame import stype
 from torch_frame.data import StatType

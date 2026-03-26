@@ -1,10 +1,9 @@
 from typing import Optional
 
 import pandas as pd
-
 from relbench.base import Database, Dataset, Table, TaskType
 
-from redelex.tasks.mixins import StaticTaskMixin, TemporalTaskMixin, ImputeEntityTaskMixin
+from redelex.tasks.mixins import ImputeEntityTaskMixin, StaticTaskMixin, TemporalTaskMixin
 
 
 class ImputeEntityStaticTask(StaticTaskMixin, ImputeEntityTaskMixin):
