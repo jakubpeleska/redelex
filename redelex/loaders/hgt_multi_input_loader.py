@@ -1,7 +1,6 @@
-from typing import Callable, Optional, Tuple, List, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import torch
-
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import HGTLoader
 from torch_geometric.typing import NodeType

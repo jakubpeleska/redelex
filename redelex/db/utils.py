@@ -1,6 +1,6 @@
-import sqlalchemy as sa
-import pandas as pd
 import numpy as np
+import pandas as pd
+import sqlalchemy as sa
 
 try:
     import psycopg2  # noqa: F401

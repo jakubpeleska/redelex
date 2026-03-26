@@ -1,9 +1,7 @@
-from typing import List, Dict
-
 import math
+from typing import Dict, List
 
 import torch
-
 from torch_geometric.typing import NodeType
 
 

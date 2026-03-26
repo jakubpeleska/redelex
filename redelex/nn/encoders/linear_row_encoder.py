@@ -1,13 +1,13 @@
 from typing import Any, Optional
-import torch
 
+import torch
 import torch_frame
 from torch_frame.data import StatType
 from torch_frame.nn.encoder import (
-    StypeWiseFeatureEncoder,
-    StypeEncoder,
     EmbeddingEncoder,
     LinearEncoder,
+    StypeEncoder,
+    StypeWiseFeatureEncoder,
 )
 
 

@@ -2,7 +2,6 @@ from typing import Dict, Literal, Optional
 
 import pandas as pd
 
-
 from .db_dataset import DBDataset
 
 __all__ = ["CTUDataset"]

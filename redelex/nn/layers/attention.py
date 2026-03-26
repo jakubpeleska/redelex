@@ -1,8 +1,7 @@
 from typing import List, Optional, Union
 
 import torch
-
-from torch_geometric.nn import MessagePassing, Aggregation
+from torch_geometric.nn import Aggregation, MessagePassing
 
 
 class CrossAttentionConv(MessagePassing):
