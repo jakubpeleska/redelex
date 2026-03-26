@@ -22,6 +22,17 @@ dependencies = [
     "attrs>=25.4.0",
 ]
 
+[project.optional-dependencies]
+torch = [
+    "torch",
+    "torchvision",
+    "torchaudio",
+    "pytorch-frame",
+    "torch-geometric",
+    "sentence-transformers",
+]
+
+
 [dependency-groups]
 cpu = [
     "torch==2.8.0",
