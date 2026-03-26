@@ -38,7 +38,7 @@ from redelex.data import guess_schema
 from redelex.datasets import DBDataset
 from redelex.tasks.mixins import ModifyDBTaskMixin, EntityTaskMixin
 from redelex.tasks.utils import is_temporal_task
-from redelex.utils import convert_timedelta, to_unix_time
+from redelex.utils.datetime import convert_timedelta, to_unix_time
 
 from experiments.original.utils import get_cache_path, get_metrics, get_tune_metric
 

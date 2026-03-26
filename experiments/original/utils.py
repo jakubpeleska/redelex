@@ -38,7 +38,8 @@ from redelex.data import (
 from redelex.datasets import DBDataset
 from redelex.db import RemoteDBInterface, RelbenchDBInterface, DBSchema
 from redelex.tasks import mixins
-from redelex.utils import convert_timedelta, merge_tf
+from redelex.utils.datetime import convert_timedelta
+from redelex.utils.merge import merge_tf
 
 
 def get_text_embedder(

@@ -39,7 +39,7 @@ from torch_frame.data.stats import StatType
 from torch_geometric.data import HeteroData
 from torch_geometric.utils import sort_edge_index
 
-from redelex.utils import to_unix_time
+from redelex.utils.datetime import to_unix_time
 
 from .text_embedder import GloveTextEmbedder, TextEmbedder
 

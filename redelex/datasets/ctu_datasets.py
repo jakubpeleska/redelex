@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from relbench.base import Database, Table
 
-from redelex.utils import TIMESTAMP_MAX, TIMESTAMP_MIN
+from redelex.utils.datetime import TIMESTAMP_MAX, TIMESTAMP_MIN
 
 from .ctu_dataset import CTUDataset
 
