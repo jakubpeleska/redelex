@@ -1,16 +1,13 @@
-from typing import Callable, Dict, Literal, Optional, Any, Tuple
-
 import copy
+from typing import Any, Callable, Dict, Literal, Optional, Tuple
 
 import torch
-
-from torch_geometric.data import HeteroData
-from torch_geometric.typing import NodeType
-from torch_geometric.transforms import BaseTransform
-
 from torch_frame import TensorFrame, stype
-from torch_frame.data import StatType, MultiEmbeddingTensor, MultiNestedTensor
+from torch_frame.data import MultiEmbeddingTensor, MultiNestedTensor, StatType
 from torch_frame.typing import TensorData
+from torch_geometric.data import HeteroData
+from torch_geometric.transforms import BaseTransform
+from torch_geometric.typing import NodeType
 
 
 class ResampleCorruptor(BaseTransform):
@@ -82,6 +79,7 @@ class TFCorruptor:
     def __call__(self, tf: TensorFrame) -> TensorFrame:
         return self.corrupt_tf(tf, self.col_samplers, p=self.p)
 
+    @classmethod
     def get_tf_col(cls, tf: TensorFrame, col: str) -> torch.Tensor:
         x: TensorData = tf.get_col_feat(col)
         if isinstance(x, torch.Tensor):
@@ -92,6 +90,7 @@ class TFCorruptor:
             x = x.values.squeeze(1)
         return x
 
+    @classmethod
     def get_categorical_sampler(
         cls, x: torch.Tensor, empirical=True, max_values: int = 10000
     ) -> Callable[[torch.Size], torch.Tensor]:
@@ -123,6 +122,7 @@ class TFCorruptor:
 
         return sample
 
+    @classmethod
     def corrupt_tf(
         cls,
         tf: TensorFrame,

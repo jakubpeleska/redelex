@@ -1,11 +1,9 @@
-from functools import cached_property, lru_cache
+from functools import cached_property
 
 import pandas as pd
 import sqlalchemy as sa
-
-from tqdm import tqdm
-
 from relbench.base import Database, Table
+from tqdm import tqdm
 
 from .foreign_key import ForeignKey
 from .interface import DBInterface
@@ -41,11 +39,9 @@ class RemoteDBInterface(DBInterface):
             self.inspector = None
             self.remote_md = None
 
-    @lru_cache(maxsize=None)
     def get_primary_key(self, table_name: str) -> list[str]:
         return self.inspector.get_pk_constraint(table_name).get("constrained_columns", [])
 
-    @lru_cache(maxsize=None)
     def get_foreign_keys(self, table_name: str) -> list[ForeignKey]:
         return [
             ForeignKey(
@@ -56,7 +52,6 @@ class RemoteDBInterface(DBInterface):
             for fk in self.inspector.get_foreign_keys(table_name)
         ]
 
-    @lru_cache(maxsize=None)
     def get_schema(self) -> DBSchema:
         table_schemas = {}
         for tname in self.table_names:
@@ -79,11 +74,9 @@ class RemoteDBInterface(DBInterface):
             )
         return DBSchema(table_schemas=table_schemas)
 
-    @lru_cache(maxsize=None)
     def sql(self, query: str) -> "pd.DataFrame":
         return pd.read_sql(query, self.connection)
 
-    @lru_cache(maxsize=None)
     def get_table(self, table_name: str) -> "pd.DataFrame":
         sql_table = sa.Table(table_name, self.remote_md)
 
@@ -98,11 +91,10 @@ class RemoteDBInterface(DBInterface):
 
             dtype = SQL_TO_PANDAS.get(sql_type, None)
 
-            if dtype is None:
-                # Special case for YEAR type
-                if c.type.__str__() == "YEAR":
-                    dtype = pd.Int32Dtype()
-                    sql_type = sa.types.Integer
+            # Special case for YEAR type
+            if dtype is None and c.type.__str__() == "YEAR":
+                dtype = pd.Int32Dtype()
+                sql_type = sa.types.Integer
 
             if dtype is not None:
                 dtypes[c.name] = dtype
@@ -133,7 +125,9 @@ class RemoteDBInterface(DBInterface):
 
         return df
 
-    def get_relbench_db(self, time_col_dict: dict[str, str] = {}) -> Database:
+    def get_relbench_db(self, time_col_dict: dict[str, str] = None) -> Database:
+        if time_col_dict is None:
+            time_col_dict = {}
         df_dict: dict[str, pd.DataFrame] = {}
 
         fk_dict: dict[str, list[ForeignKey]] = {
@@ -164,7 +158,7 @@ class RemoteDBInterface(DBInterface):
                 # All original columns are preserved.
                 df_dict[tname][fk_name] = fk_col
 
-            time_col = time_col_dict.get(tname, None)
+            time_col = time_col_dict.get(tname)
             if time_col is not None:
                 try:
                     df_dict[tname][time_col] = pd.to_datetime(df_dict[tname][time_col])

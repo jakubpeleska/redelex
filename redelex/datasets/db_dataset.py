@@ -1,19 +1,18 @@
+import contextlib
 from typing import Dict, List, Optional
 
 import pandas as pd
 import sqlalchemy as sa
-
+from relbench.base import Database, Dataset, Table
 from tqdm.std import tqdm
 
-from relbench.base import Dataset, Database, Table
-
-from redelex.db import ForeignKey, DBInspector
+from redelex.db import DBInspector, ForeignKey
 from redelex.db.utils import (
-    get_db_url,
-    get_db_connection,
     SQL_DATE_MAP,
     SQL_DATE_TYPES,
     SQL_TO_PANDAS,
+    get_db_connection,
+    get_db_url,
 )
 
 __all__ = ["DBDataset"]
@@ -127,11 +126,10 @@ class DBDataset(Dataset):
 
                 dtype = SQL_TO_PANDAS.get(sql_type, None)
 
-                if dtype is None:
-                    # Special case for YEAR type
-                    if c.type.__str__() == "YEAR":
-                        dtype = pd.Int32Dtype()
-                        sql_type = sa.types.Integer
+                # Special case for YEAR type
+                if dtype is None and c.type.__str__() == "YEAR":
+                    dtype = pd.Int32Dtype()
+                    sql_type = sa.types.Integer
 
                 if dtype is not None:
                     dtypes[c.name] = dtype
@@ -199,7 +197,7 @@ class DBDataset(Dataset):
         try:
             db = self.customize_db(db)
         except NotImplementedError:
-            pass
+            contextlib.suppress(NotImplementedError)
 
         # Remove original primary and foreign keys
         if not self.keep_original_keys:

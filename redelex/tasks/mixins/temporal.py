@@ -1,7 +1,6 @@
 from typing import Optional
 
 import pandas as pd
-
 from relbench.base import Database, Dataset, Table, TaskType
 
 from .base import BaseTask

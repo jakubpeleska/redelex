@@ -1,7 +1,7 @@
 import duckdb
 import pandas as pd
-
-from relbench.base import Database, Dataset as RelbenchDataset
+from relbench.base import Database
+from relbench.base import Dataset as RelbenchDataset
 
 from .foreign_key import ForeignKey
 from .interface import DBInterface
@@ -41,7 +41,8 @@ class RelbenchDBInterface(DBInterface):
             pk = [table.pkey_col]
             fks = self.get_foreign_keys(tname)
             type_dict = {
-                col: str(dtype) for col, dtype in zip(table.df.columns, table.df.dtypes)
+                col: str(dtype)
+                for col, dtype in zip(table.df.columns, table.df.dtypes, strict=False)
             }
             table_schemas[tname] = TableSchema(
                 name=tname, pk=pk, fks=fks, type_dict=type_dict
@@ -60,6 +61,6 @@ class RelbenchDBInterface(DBInterface):
         return self.db
 
     def close(self):
-        for tname in self.db.table_dict.keys():
+        for tname in self.db.table_dict:
             duckdb.unregister(tname)
         self.db = None

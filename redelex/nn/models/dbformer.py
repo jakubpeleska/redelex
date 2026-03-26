@@ -2,11 +2,9 @@ from typing import Any, Dict, List, Optional
 
 import torch
 from torch import Tensor
-
-from torch_geometric.nn import HeteroConv, HeteroDictLinear
-from torch_geometric.typing import NodeType, EdgeType
-
 from torch_frame.data.stats import StatType
+from torch_geometric.nn import HeteroConv, HeteroDictLinear
+from torch_geometric.typing import EdgeType, NodeType
 
 from redelex.nn.layers import CrossAttentionConv, SelfAttention
 
@@ -109,7 +107,7 @@ class DBFormer(torch.nn.Module):
         for i in range(self.num_layers):
             x_dict_next = {}
             # Apply self-attention
-            for key in x_dict.keys():
+            for key in x_dict:
                 x_dict_next[key] = self.attn[i][key](x_dict[key])
                 if self.with_norm:
                     x = x_dict_next[key]
@@ -123,7 +121,7 @@ class DBFormer(torch.nn.Module):
             # Apply cross-attention
             x_dict_next: Dict[str, Tensor] = self.convs[i](x_dict, edge_index_dict)
             if self.with_norm:
-                for key in x_dict.keys():
+                for key in x_dict:
                     x = x_dict_next[key]
                     if self.with_residuals:
                         # Optionally apply residuals

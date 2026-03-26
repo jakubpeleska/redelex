@@ -1,11 +1,9 @@
 import time
-from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Optional, Union
 
 import pandas as pd
 from numpy.typing import NDArray
-
 from relbench.base import Database, Dataset, Table, TaskType
 
 
@@ -79,7 +77,6 @@ class BaseTask:
 
         return table
 
-    @lru_cache(maxsize=None)
     def get_table(self, split, mask_input_cols=None, db: Optional[Database] = None):
         r"""Get a table for a split.
 

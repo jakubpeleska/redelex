@@ -1,13 +1,10 @@
-from typing import Optional
 import copy
-
-import torch
+from typing import Optional
 
 import lightning as L
-
-from torchmetrics.aggregation import MaxMetric, MinMetric, MeanMetric
-
-from relbench.base import TaskType, EntityTask
+import torch
+from relbench.base import EntityTask, TaskType
+from torchmetrics.aggregation import MaxMetric, MeanMetric, MinMetric
 
 from .utils import get_loss, get_metrics
 
@@ -83,7 +80,7 @@ class LightningEntityTaskWrapper(L.LightningModule):
         mode = "val" if dataloader_idx == 0 else "test"
         metrics = self.val_metrics if mode == "val" else self.test_metrics
 
-        for mname, m in metrics.items():
+        for _, m in metrics.items():
             m.update(pred, target)
 
     def on_validation_epoch_end(self):

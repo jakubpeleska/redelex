@@ -134,7 +134,17 @@ Issues = "https://github.com/jakubpeleska/redelex/issues"
 
 [tool.ruff]
 line-length = 92
-target-version = "py312"
+target-version = "py310"
+extend-exclude = ["experiments", "notebooks", "scripts"]
+
+[tool.ruff.lint]
+select = [
+    "B",   # flake8-bugbear
+    "F",   # pyflakes
+    "I",   # isort
+    "SIM", # flake8-simplify
+]
+
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

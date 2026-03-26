@@ -1,4 +1,5 @@
 import torch
+from relbench.base import TaskType
 from torchmetrics import Metric
 from torchmetrics.classification import (
     BinaryAccuracy,
@@ -6,12 +7,10 @@ from torchmetrics.classification import (
     BinaryF1Score,
     BinaryPrecision,
     MulticlassAccuracy,
-    MulticlassF1Score,
     MulticlassAUROC,
+    MulticlassF1Score,
 )
 from torchmetrics.regression import MeanAbsoluteError, MeanSquaredError, R2Score
-
-from relbench.base import TaskType
 
 
 def get_metrics(

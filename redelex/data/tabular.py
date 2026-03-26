@@ -1,12 +1,10 @@
-from typing import Optional, Any
+from typing import Any, Optional
 
 import pandas as pd
-
 import torch
-
 from torch_frame import stype
-from torch_frame.data import Dataset, TensorFrame, StatType
 from torch_frame.config import TextEmbedderConfig
+from torch_frame.data import Dataset, StatType, TensorFrame
 
 from .text_embedder import TextEmbedder
 
