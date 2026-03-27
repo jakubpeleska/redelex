@@ -13,13 +13,13 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 requires-python = ">=3.10"
 keywords = []
 dependencies = [
-    "relbench==1.1.0",
     "pandas>=2.3.3",
     "pymysql>=1.1.2",
     "sqlalchemy>=2.0.46",
     "inflect>=7.5.0",
     "tqdm>=4.67.1",
     "attrs>=25.4.0",
+    "relbench>=2.1.1",
 ]
 
 [project.optional-dependencies]
