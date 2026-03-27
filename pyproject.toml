@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "redelex"
-version = "0.6.1"
+version = "0.6.2"
 description = "ReDeLEx: A Framework for Relational Deep Learning Exploration"
 authors = [{ name = "Jakub Peleška", email = "jakub.peleska@fel.cvut.cz" }]
 readme = "README.md"
