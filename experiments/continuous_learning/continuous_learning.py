@@ -34,6 +34,7 @@ import redelex.tasks.mixins as task_mixin
 from redelex.data import make_pkey_fkey_graph
 from redelex.loaders import ComposedLoader
 from redelex.nn.train.lightning import LightningEntityTaskWrapper, SaveModelCallback
+from redelex.nn.train.utils import get_metrics
 
 from experiments.continuous_learning.continuous_task import ContinuousWrapper
 
@@ -197,10 +198,13 @@ def run_continuous_learning_experiment(
     )
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    
+    _, val_metric, higher_is_better = get_metrics(task.task_type)
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, "min", factor=0.5, patience=3
+        optimizer, "max" if higher_is_better else "min", factor=0.5, patience=3
     )
+    
 
     lightning_model = LightningEntityTaskWrapper(
         model=model,
@@ -208,12 +212,12 @@ def run_continuous_learning_experiment(
         optimizer=optimizer,
         lr_scheduler_config={
             "scheduler": scheduler,
-            "monitor": "val_loss_epoch",
-            "mode": "min",
+            "monitor": f"val_{val_metric}_epoch",
+            "mode": "max" if higher_is_better else "min",
             "interval": "epoch",
             "frequency": 1,
         },
-        metrics=({"loss": MeanMetric()}, "loss", False),
+        modes=("val",)
     )
 
     model_summary = ModelSummary(lightning_model, max_depth=2)
@@ -239,8 +243,8 @@ def run_continuous_learning_experiment(
 
     save_model_callback = SaveModelCallback(
         save_dir=model_save_dir,
-        monitor="val_loss_epoch",
-        mode="min",
+        monitor=f"val_{val_metric}_epoch",
+        mode="max" if higher_is_better else "min",
         save_every_epoch=True,
     )
     trainer = L.Trainer(
@@ -267,12 +271,12 @@ def run_continuous_learning_experiment(
         )
 
         if with_ray:
-            best_val_loss = trainer.callback_metrics.get("val_loss_epoch")
-            if best_val_loss is not None:
-                best_val_loss = best_val_loss.item()
+            best_val_metric = trainer.callback_metrics.get(f"val_{val_metric}_epoch")
+            if best_val_metric is not None:
+                best_val_metric = best_val_metric.item()
             else:
-                best_val_loss = float("inf")
-            ray_train.report({"val_loss_epoch": best_val_loss, "model_save_dir": str(model_save_dir)})
+                best_val_metric = float("-inf") if higher_is_better else float("inf")
+            ray_train.report({f"val_{val_metric}_epoch": best_val_metric, "model_save_dir": str(model_save_dir)})
 
 
     except Exception as e:
@@ -334,7 +338,7 @@ def run_ray_tuner(
 
     task = get_task(dataset_name, task_name)
     wrapped_task = ContinuousWrapper(task)
-
+    _, val_metric, higher_is_better = get_metrics(task.task_type)
     splits = copy.deepcopy(wrapped_task.get_splits())
     best_weights_path = None
 
@@ -395,12 +399,13 @@ def run_ray_tuner(
             print(f"Errors encountered in split {i}. Stopping continuous learning.")
             break
 
-        best_result = results.get_best_result(metric="val_loss_epoch", mode="min")
+        best_result = results.get_best_result(metric=f"val_{val_metric}_epoch", mode="max" if higher_is_better else "min")
         if best_result is None or "model_save_dir" not in best_result.metrics:
             print(f"Failed to find the best result in split {i}. Stopping.")
             break
             
         best_weights_path = f"{best_result.metrics['model_save_dir']}/best_model.pt"
+
 
 
 if __name__ == "__main__":
@@ -417,7 +422,9 @@ if __name__ == "__main__":
     parser.add_argument("--num_gpus", type=int, default=0)
     parser.add_argument("--num_cpus", type=int, default=1)
     parser.add_argument("--learning_mode", type=str, choices=["from_scratch", "ft_full", "ft_upsample", "ft_newonly"], default="from_scratch")
-
+    parser.add_argument("--model_save_dir", type=str, default="./models")
+    
+    
     args = parser.parse_args()
     print(args)
     dataset_name = args.dataset
@@ -440,4 +447,5 @@ if __name__ == "__main__":
         num_gpus=args.num_gpus,
         num_cpus=args.num_cpus,
         learning_mode=args.learning_mode,
+        model_save_dir=args.model_save_dir,
     )

@@ -20,17 +20,21 @@ class LightningEntityTaskWrapper(L.LightningModule):
         metrics: Optional[
             tuple[dict[str, Callable[[torch.Tensor, torch.Tensor], float]], str, bool]
         ] = None,
+        modes: tuple[str, ...] = ("val", "test"),
     ):
         super().__init__()
 
         self.model = model
         self.task = task
         self.loss_fn = get_loss(self.task.task_type)
-        self.val_metrics, self.tune_metric, self.higher_is_better = (
+        _metrics, self.tune_metric, self.higher_is_better = (
             metrics if metrics is not None else get_metrics(self.task.task_type)
         )
+        self.modes = modes
+        self.metrics = {f"{mode}": copy.deepcopy(_metrics) for mode in modes}
 
-        self.test_metrics = copy.deepcopy(self.val_metrics)
+        print(self.metrics)
+
         self.optimizer = optimizer
         self.lr_scheduler_config = lr_scheduler_config
         self.scheduler = (
@@ -88,8 +92,7 @@ class LightningEntityTaskWrapper(L.LightningModule):
         pred = pred.detach().cpu()
         target = target.detach().cpu()
 
-        mode = "val" if dataloader_idx == 0 else "test"
-        metrics = self.val_metrics if mode == "val" else self.test_metrics
+        metrics = self.metrics[self.modes[dataloader_idx]]
 
         for _, m in metrics.items():
             m.update(pred, target)
@@ -97,14 +100,11 @@ class LightningEntityTaskWrapper(L.LightningModule):
     def on_validation_epoch_end(self):
         val_metrics: dict[str, float] = {}
 
-        tune_metric = self.val_metrics[self.tune_metric].compute()
+        tune_metric = self.metrics[self.modes[0]][self.tune_metric].compute()
         best_tune_metric = self.best_tune_metric.compute()
         self.best_tune_metric.update(tune_metric)
 
-        for metrics, mode in [
-            (self.val_metrics, "val"),
-            (self.test_metrics, "test"),
-        ]:
+        for mode, metrics in self.metrics.items():
             for k, m in metrics.items():
                 val_metrics[f"{mode}_{k}"] = m.compute()
                 m.reset()
