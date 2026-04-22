@@ -338,7 +338,7 @@ def run_ray_tuner(
     del task
     best_weights_path = None
 
-    for i in range(len(splits) - 1):
+    for i in range(1, len(splits) - 1):
         train_timestamp = splits[i]
         val_timestamp = splits[i+1]
         prev_train_timestamp = splits[i-1] if i > 0 else None
