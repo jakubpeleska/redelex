@@ -1,4 +1,5 @@
 import copy
+from pathlib import Path
 from typing import Optional
 
 import lightning as L
@@ -15,7 +16,7 @@ class LightningEntityTaskWrapper(L.LightningModule):
         model: torch.nn.Module,
         optimizer: torch.optim.Optimizer,
         task: EntityTask,
-        scheduler: Optional[torch.optim.lr_scheduler.LRScheduler] = None,
+        lr_scheduler_config: Optional[dict] = None,
     ):
         super().__init__()
 
@@ -27,7 +28,10 @@ class LightningEntityTaskWrapper(L.LightningModule):
         )
         self.test_metrics = copy.deepcopy(self.val_metrics)
         self.optimizer = optimizer
-        self.scheduler = scheduler
+        self.lr_scheduler_config = lr_scheduler_config
+        self.scheduler = (
+            lr_scheduler_config["scheduler"] if lr_scheduler_config is not None else None
+        )
 
         self.train_loss = MeanMetric().requires_grad_(False)
         self.best_tune_metric = MaxMetric() if self.higher_is_better else MinMetric()
@@ -60,7 +64,10 @@ class LightningEntityTaskWrapper(L.LightningModule):
         self.train_loss.update(loss.detach(), batch_size)
 
         self.log(
-            "train_loss", self.train_loss.compute(), prog_bar=True, batch_size=batch_size
+            "train_loss",
+            self.train_loss.compute(),
+            prog_bar=True,
+            batch_size=batch_size,
         )
 
         return loss
@@ -119,13 +126,52 @@ class LightningEntityTaskWrapper(L.LightningModule):
         self.log_dict(val_metrics, prog_bar=True, logger=True)
 
     def configure_optimizers(self):
-        if self.scheduler is not None:
+        if self.lr_scheduler_config is not None:
             return {
                 "optimizer": self.optimizer,
-                "lr_scheduler": {
-                    "scheduler": self.scheduler,
-                    "interval": "step",
-                    "frequency": 1,
-                },
+                **self.lr_scheduler_config,
             }
         return self.optimizer
+
+
+class SaveModelCallback(L.Callback):
+    def __init__(
+        self,
+        save_dir: str,
+        monitor: str = "val_loss_epoch",
+        mode: str = "min",
+        save_every_epoch: bool = False,
+    ):
+        super().__init__()
+        self.save_dir = save_dir
+        self.monitor = monitor
+        self.mode = mode
+        self.save_every_epoch = save_every_epoch
+        self.best_score = float("inf") if mode == "min" else float("-inf")
+        Path(save_dir).mkdir(parents=True, exist_ok=True)
+
+    def on_validation_epoch_end(
+        self, trainer: L.Trainer, pl_module: LightningEntityTaskWrapper
+    ):
+        current_score = trainer.callback_metrics.get(self.monitor)
+        if current_score is None:
+            # If the metric is not present yet (e.g. sanity check), just return
+            return
+
+        current_score = (
+            current_score.item()
+            if isinstance(current_score, torch.Tensor)
+            else current_score
+        )
+
+        if self.save_every_epoch:
+            torch.save(
+                pl_module.model.state_dict(),
+                f"{self.save_dir}/epoch_{trainer.current_epoch}_{self.monitor}_{current_score:.3f}.pt",
+            )
+
+        if (self.mode == "min" and current_score < self.best_score) or (
+            self.mode == "max" and current_score > self.best_score
+        ):
+            self.best_score = current_score
+            torch.save(pl_module.model.state_dict(), f"{self.save_dir}/best_model.pt")
