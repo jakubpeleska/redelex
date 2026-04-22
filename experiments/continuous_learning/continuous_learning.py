@@ -205,14 +205,13 @@ def run_continuous_learning_experiment(
         optimizer, "max" if higher_is_better else "min", factor=0.5, patience=3
     )
     
-
     lightning_model = LightningEntityTaskWrapper(
         model=model,
         task=task,
         optimizer=optimizer,
         lr_scheduler_config={
             "scheduler": scheduler,
-            "monitor": f"val_{val_metric}_epoch",
+            "monitor": f"val_{val_metric}",
             "mode": "max" if higher_is_better else "min",
             "interval": "epoch",
             "frequency": 1,
@@ -243,7 +242,7 @@ def run_continuous_learning_experiment(
 
     save_model_callback = SaveModelCallback(
         save_dir=model_save_dir,
-        monitor=f"val_{val_metric}_epoch",
+        monitor=f"val_{val_metric}",
         mode="max" if higher_is_better else "min",
         save_every_epoch=True,
     )
@@ -271,12 +270,8 @@ def run_continuous_learning_experiment(
         )
 
         if with_ray:
-            best_val_metric = trainer.callback_metrics.get(f"val_{val_metric}_epoch")
-            if best_val_metric is not None:
-                best_val_metric = best_val_metric.item()
-            else:
-                best_val_metric = float("-inf") if higher_is_better else float("inf")
-            ray_train.report({f"val_{val_metric}_epoch": best_val_metric, "model_save_dir": str(model_save_dir)})
+            best_val_metric = trainer.callback_metrics.get(f"best_val_{val_metric}")
+            ray_train.report({f"val_{val_metric}": best_val_metric, "model_save_dir": str(model_save_dir)})
 
 
     except Exception as e:
@@ -341,6 +336,8 @@ def run_ray_tuner(
     _, val_metric, higher_is_better = get_metrics(task.task_type)
     splits = copy.deepcopy(wrapped_task.get_splits())
     best_weights_path = None
+    
+    model_save_dir = Path(model_save_dir).absolute()
 
     for i in range(1, len(splits) - 1):
         train_timestamp = splits[i]
@@ -390,7 +387,7 @@ def run_ray_tuner(
                 "gnn_aggr": "sum",
                 "head_norm": "batch_norm",
                 "cache_path": Path(cache_dir).absolute(),
-                "model_save_dir": (Path(model_save_dir).absolute())
+                "model_save_dir": model_save_dir / f"increment_{i}",
             },
         )
         results = tuner.fit()
@@ -399,7 +396,7 @@ def run_ray_tuner(
             print(f"Errors encountered in split {i}. Stopping continuous learning.")
             break
 
-        best_result = results.get_best_result(metric=f"val_{val_metric}_epoch", mode="max" if higher_is_better else "min")
+        best_result = results.get_best_result(metric=f"val_{val_metric}", mode="max" if higher_is_better else "min")
         if best_result is None or "model_save_dir" not in best_result.metrics:
             print(f"Failed to find the best result in split {i}. Stopping.")
             break
