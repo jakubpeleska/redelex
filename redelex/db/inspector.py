@@ -1,4 +1,4 @@
-from sqlalchemy import Connection, Engine, inspect, Table, MetaData
+from sqlalchemy import Connection, Engine, MetaData, Table, inspect
 from sqlalchemy.types import TypeEngine
 
 from .foreign_key import ForeignKey

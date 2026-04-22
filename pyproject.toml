@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "redelex"
-version = "0.5.1"
+version = "0.6.2"
 description = "ReDeLEx: A Framework for Relational Deep Learning Exploration"
 authors = [{ name = "Jakub Peleška", email = "jakub.peleska@fel.cvut.cz" }]
 readme = "README.md"
@@ -13,14 +13,25 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 requires-python = ">=3.10"
 keywords = []
 dependencies = [
-    "relbench==1.1.0",
     "pandas>=2.3.3",
     "pymysql>=1.1.2",
     "sqlalchemy>=2.0.46",
     "inflect>=7.5.0",
     "tqdm>=4.67.1",
     "attrs>=25.4.0",
+    "relbench>=2.1.1",
 ]
+
+[project.optional-dependencies]
+torch = [
+    "torch",
+    "torchvision",
+    "torchaudio",
+    "pytorch-frame",
+    "torch-geometric",
+    "sentence-transformers",
+]
+
 
 [dependency-groups]
 cpu = [
@@ -40,8 +51,8 @@ cu121 = [
     "numpy==1.26.4",
     "huggingface-hub==0.21.2",
     "transformers==4.37.2",
-    "sentence-transformers==2.2.2"
-]   
+    "sentence-transformers==2.2.2",
+]
 cu124 = [
     "torch==2.4.1",
     "torchvision==0.19.1",
@@ -77,7 +88,14 @@ visualization = ["jinja2>=3.1.6", "pydot>=4.0.1"]
 
 [tool.uv]
 default-groups = ["dev", "cpu", "experiments", "visualization"]
-conflicts = [[{ group = "cpu" }, { group = "cu121" }, { group = "cu124" }, { group = "cu128" }]]
+conflicts = [
+    [
+        { group = "cpu" },
+        { group = "cu121" },
+        { group = "cu124" },
+        { group = "cu128" },
+    ],
+]
 
 [tool.uv.sources]
 torch = [
@@ -127,7 +145,17 @@ Issues = "https://github.com/jakubpeleska/redelex/issues"
 
 [tool.ruff]
 line-length = 92
-target-version = "py312"
+target-version = "py310"
+extend-exclude = ["experiments", "notebooks", "scripts"]
+
+[tool.ruff.lint]
+select = [
+    "B",   # flake8-bugbear
+    "F",   # pyflakes
+    "I",   # isort
+    "SIM", # flake8-simplify
+]
+
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

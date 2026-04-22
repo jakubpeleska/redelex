@@ -31,7 +31,7 @@ from typing import Any, Dict, Optional, Tuple
 import numpy as np
 import pandas as pd
 import torch
-
+from relbench.base import Database, Table
 from torch_frame import stype
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.data import Dataset
@@ -39,19 +39,16 @@ from torch_frame.data.stats import StatType
 from torch_geometric.data import HeteroData
 from torch_geometric.utils import sort_edge_index
 
-from relbench.base import Database, Table
+from redelex.utils.datetime import to_unix_time
 
-from redelex.utils import to_unix_time
-
-from .text_embedder import TextEmbedder, GloveTextEmbedder
+from .text_embedder import GloveTextEmbedder, TextEmbedder
 
 
 def remove_pkey_fkey(col_to_stype: Dict[str, Any], table: Table) -> dict:
     r"""Remove pkey, fkey columns since they will not be used as input feature."""
-    if table.pkey_col is not None:
-        if table.pkey_col in col_to_stype:
-            col_to_stype.pop(table.pkey_col)
-    for fkey in table.fkey_col_to_pkey_table.keys():
+    if table.pkey_col is not None and table.pkey_col in col_to_stype:
+        col_to_stype.pop(table.pkey_col)
+    for fkey in table.fkey_col_to_pkey_table:
         if fkey in col_to_stype:
             col_to_stype.pop(fkey)
 

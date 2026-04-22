@@ -1,11 +1,9 @@
-from typing import List, Dict
-
 import math
+from typing import Dict, List
 
 import torch
-
-from torch_geometric.typing import NodeType, EdgeType
 from torch_geometric.data import HeteroData
+from torch_geometric.typing import EdgeType, NodeType
 from torch_geometric.utils import scatter
 
 

@@ -1,12 +1,10 @@
-from typing import List, Dict
-
 import math
+from typing import Dict, List
 
 import torch
-
-from torch_geometric.typing import NodeType, EdgeType
 from torch_geometric.data import HeteroData
 from torch_geometric.nn import conv
+from torch_geometric.typing import EdgeType, NodeType
 
 
 class ContextContrastiveLoss(torch.nn.Module):

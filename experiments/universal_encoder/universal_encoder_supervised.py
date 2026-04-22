@@ -163,7 +163,7 @@ def run_task_experiment(
     )
     task, loader_dict = get_task_data(
         task,
-        cache_path,
+        f"{dataset_name}-{task_name}",
         data,
         name_embeddings_dict,
         tensor_stats_dict,

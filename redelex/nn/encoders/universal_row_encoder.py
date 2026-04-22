@@ -1,15 +1,12 @@
-from typing import Optional, Union
-
 import warnings
-
 from enum import Enum
+from typing import Optional, Union
 
 import torch
 import torch.nn.functional as F
-
 import torch_frame
 from torch_frame import stype
-from torch_frame.data import MultiNestedTensor, MultiEmbeddingTensor
+from torch_frame.data import MultiEmbeddingTensor, MultiNestedTensor
 from torch_frame.data.mapper import TimestampTensorMapper
 from torch_frame.nn.encoding import CyclicEncoding, PositionalEncoding
 
@@ -443,6 +440,14 @@ class TransformerEncoderLayer(torch.nn.Module):
 
         self.activation = F.relu
 
+    def reset_parameters(self):
+        self.self_attn._reset_parameters()
+        for m in self.ffn:
+            if isinstance(m, torch.nn.Linear):
+                m.reset_parameters()
+        self.norm1.reset_parameters()
+        self.norm2.reset_parameters()
+
     def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         next_x, _ = self.self_attn(x, x, x, key_padding_mask=mask)
         x = x + self.dropout1(next_x)
@@ -476,6 +481,13 @@ class TransformerAggregator(torch.nn.Module):
             torch.nn.Tanh(),
             torch.nn.Linear(encoder_channels // 2, 1),
         )
+
+    def reset_parameters(self):
+        for transformer in self.transformer:
+            transformer.reset_parameters()
+        for m in self.attention_scorer:
+            if isinstance(m, torch.nn.Linear):
+                m.reset_parameters()
 
     def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None):
         # x: [Batch, Num_Features, d_model]
@@ -593,12 +605,14 @@ class UniversalRowEncoder(torch.nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        if self.use_stype_emb:
-            self.token_type_encoder.reset_parameters()
         if self.use_name_emb:
             self.name_transform.reset_parameters()
+        if self.use_stype_emb:
+            self.token_type_encoder.reset_parameters()
         for encoder in self.stype_encoders.values():
             encoder.reset_parameters()
+        self.encoder.reset_parameters()
+        self.out_transform.reset_parameters()
 
     def forward(
         self,
@@ -606,14 +620,15 @@ class UniversalRowEncoder(torch.nn.Module):
         tname: Optional[str] = None,
         stype_stats: Optional[dict[stype, dict[TensorStatType, torch.Tensor]]] = None,
         name_embeddings: Optional[dict[str, torch.Tensor]] = None,
-    ) -> dict[str, torch.Tensor]:
+    ) -> torch.Tensor:
         use_name_emb = self.use_name_emb
         use_stats_emb = self.use_stats_emb
 
         if name_embeddings is None:
             if self.use_name_emb:
                 warnings.warn(
-                    f"use_name_emb is True, but name_embeddings is None for table {tname}."
+                    f"use_name_emb is True, but name_embeddings is None for table {tname}.",
+                    stacklevel=2,
                 )
             name_embeddings = {}
             use_name_emb = False
@@ -621,7 +636,8 @@ class UniversalRowEncoder(torch.nn.Module):
         if stype_stats is None:
             if self.use_stats_emb:
                 warnings.warn(
-                    f"use_stats_emb is True, but stype_stats is None for table {tname}."
+                    f"use_stats_emb is True, but stype_stats is None for table {tname}.",
+                    stacklevel=2,
                 )
             stype_stats = {}
             use_stats_emb = False
@@ -633,14 +649,14 @@ class UniversalRowEncoder(torch.nn.Module):
         )
 
         if tf.num_cols == 0 or tf.num_rows == 0:
-            # Return zero tensor if there are no columns or rows
-            return torch.zeros((tf.num_rows, self.out_channels), device=tf.device)
+            # Return empty tensor if there are no columns or rows
+            return torch.empty((0, self.out_channels), device=tf.device)
 
         cols_emb = []
         for st, cols in tf.col_names_dict.items():
             encoder = self.stype_encoders[st]
             data_emb, stats_emb = encoder(
-                tf.feat_dict[st], stype_stats.get(st, None) if use_stats_emb else None
+                tf.feat_dict[st], stype_stats.get(st) if use_stats_emb else None
             )
             # data_emb: [batch_size, num_cols, col_channels]
             # stats_emb: [num_cols, col_channels]

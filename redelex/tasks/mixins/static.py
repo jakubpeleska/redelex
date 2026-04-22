@@ -1,7 +1,5 @@
 import numpy as np
-
 import pandas as pd
-
 from relbench.base import Database, Table, TaskType
 
 from .base import BaseTask
@@ -50,10 +48,7 @@ class StaticTaskMixin(BaseTask):
         else:
             sampling_df = sampling_df.drop(train_df.index)
             val_df = sampling_df.sample(frac=0.5, random_state=random_state)
-            if split == "val":
-                sampling_df = val_df
-            else:
-                sampling_df = sampling_df.drop(val_df.index)
+            sampling_df = val_df if split == "val" else sampling_df.drop(val_df.index)
 
         return sampling_df.index
 

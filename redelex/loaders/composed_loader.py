@@ -1,7 +1,6 @@
 from typing import Literal
 
 import torch
-
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NodeLoader
 
@@ -31,9 +30,12 @@ class ComposedLoader:
                 torch.stack([torch.randperm(L) for _ in range(N)]).flatten().long().tolist()
             )
         elif self.mode == "full":
-            _rnd_cat = torch.repeat_interleave(torch.tensor(self.loaders_len))
-            _rnd_idx = torch.randperm(_rnd_cat.shape[0])
-            self.rnd_loader_idx = _rnd_cat[_rnd_idx].long().tolist()
+            loader_indices = torch.arange(len(self.loaders_len))
+            rnd_cat = torch.repeat_interleave(
+                loader_indices, repeats=torch.tensor(self.loaders_len)
+            )
+            rnd_idx = torch.randperm(rnd_cat.shape[0])
+            self.rnd_loader_idx = rnd_cat[rnd_idx].long().tolist()
         self.loader_iter = [iter(self.loaders[tn]) for tn in self.task_names]
         return self
 

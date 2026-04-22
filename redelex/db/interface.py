@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
 import pandas as pd
-
 from relbench.base import Database
 
 from .foreign_key import ForeignKey
