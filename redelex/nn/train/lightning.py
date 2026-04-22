@@ -1,6 +1,6 @@
 import copy
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import lightning as L
 import torch
@@ -17,15 +17,19 @@ class LightningEntityTaskWrapper(L.LightningModule):
         optimizer: torch.optim.Optimizer,
         task: EntityTask,
         lr_scheduler_config: Optional[dict] = None,
+        metrics: Optional[
+            tuple[dict[str, Callable[[torch.Tensor, torch.Tensor], float]], str, bool]
+        ] = None,
     ):
         super().__init__()
 
         self.model = model
         self.task = task
         self.loss_fn = get_loss(self.task.task_type)
-        self.val_metrics, self.tune_metric, self.higher_is_better = get_metrics(
-            self.task.task_type
+        self.val_metrics, self.tune_metric, self.higher_is_better = (
+            metrics if metrics is not None else get_metrics(self.task.task_type)
         )
+
         self.test_metrics = copy.deepcopy(self.val_metrics)
         self.optimizer = optimizer
         self.lr_scheduler_config = lr_scheduler_config
@@ -78,7 +82,7 @@ class LightningEntityTaskWrapper(L.LightningModule):
         self.log_dict({"train_loss_epoch": train_loss}, prog_bar=True, logger=True)
 
     @torch.no_grad()
-    def validation_step(self, batch, batch_idx: int, dataloader_idx: int):
+    def validation_step(self, batch, batch_idx: int, dataloader_idx: int = 0):
         pred, target = self(batch)
 
         pred = pred.detach().cpu()

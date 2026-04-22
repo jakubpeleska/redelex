@@ -15,6 +15,7 @@ os.environ["RAY_memory_monitor_refresh_ms"] = "0"
 import numpy as np
 
 import torch
+from torchmetrics.aggregation import MeanMetric
 
 import ray
 from ray import tune, train as ray_train
@@ -212,6 +213,7 @@ def run_continuous_learning_experiment(
             "interval": "epoch",
             "frequency": 1,
         },
+        metrics=({"loss": MeanMetric()}, "loss", False),
     )
 
     model_summary = ModelSummary(lightning_model, max_depth=2)
@@ -334,16 +336,14 @@ def run_ray_tuner(
     wrapped_task = ContinuousWrapper(task)
 
     splits = copy.deepcopy(wrapped_task.get_splits())
-    del wrapped_task
-    del task
     best_weights_path = None
 
     for i in range(1, len(splits) - 1):
         train_timestamp = splits[i]
         val_timestamp = splits[i+1]
-        prev_train_timestamp = splits[i-1] if i > 0 else None
+        prev_train_timestamp = splits[i-1] if i > 1 else None
         
-        current_learning_mode = "from_scratch" if i == 0 else learning_mode
+        current_learning_mode = "from_scratch" if i == 1 else learning_mode
 
         tuner = tune.Tuner(
             tune.with_resources(
