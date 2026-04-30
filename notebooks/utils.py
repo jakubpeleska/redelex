@@ -1,3 +1,5 @@
+from typing import Optional
+
 from mlflow.tracking import MlflowClient
 from mlflow.entities import Run
 
@@ -8,7 +10,7 @@ def get_potato_client():
     return MlflowClient(tracking_uri="http://potato.felk.cvut.cz:2222")
 
 
-def get_experiment_runs(client: MlflowClient, experiment_name: str) -> list[Run]:
+def get_experiment_runs(client: MlflowClient, experiment_name: str, filter_string: str = "status != 'FAILED'") -> list[Run]:
     experiment = client.get_experiment_by_name(experiment_name)
     if experiment is None:
         raise ValueError(f"Experiment '{experiment_name}' not found.")
@@ -19,7 +21,7 @@ def get_experiment_runs(client: MlflowClient, experiment_name: str) -> list[Run]
     while next_token is not None:
         runs = client.search_runs(
             experiment_ids=[experiment_id],
-            filter_string="status != 'FAILED'",
+            filter_string=filter_string,
             max_results=1000,
             page_token=next_token if next_token != -1 else None,
         )
@@ -28,8 +30,8 @@ def get_experiment_runs(client: MlflowClient, experiment_name: str) -> list[Run]
     return all_runs
 
 
-def get_experiment_runs_df(client: MlflowClient, experiment_name: str) -> pd.DataFrame:
-    all_runs = get_experiment_runs(client, experiment_name)
+def get_experiment_runs_df(client: MlflowClient, experiment_name: str, filter_string: Optional[str] = None) -> pd.DataFrame:
+    all_runs = get_experiment_runs(client, experiment_name, filter_string=filter_string)
     runs_dict = []
     for r in all_runs:
         r_info = r.info.__dict__
