@@ -6,24 +6,26 @@ class ContinuousWrapper:
     def __init__(self, task: EntityTask):
         self.task = task
 
-        train_table = self.task.get_table("train", mask_input_cols=False)
-        val_table = self.task.get_table("val", mask_input_cols=False)
-        test_table = self.task.get_table("test", mask_input_cols=False)
+        self.train_table = self.task.get_table("train", mask_input_cols=False)
+        self.val_table = self.task.get_table("val", mask_input_cols=False)
+        self.test_table = self.task.get_table("test", mask_input_cols=False)
 
         df = (
-            pd.concat([train_table.df, val_table.df, test_table.df], ignore_index=True)
-            .sort_values(train_table.time_col)
+            pd.concat([self.train_table.df, self.val_table.df, self.test_table.df], ignore_index=True)
+            .sort_values(self.train_table.time_col)
             .reset_index(drop=True)
         )
 
         self.full_table = Table(
             df=df,
-            fkey_col_to_pkey_table=train_table.fkey_col_to_pkey_table,
-            pkey_col=train_table.pkey_col,
-            time_col=train_table.time_col,
+            fkey_col_to_pkey_table=self.train_table.fkey_col_to_pkey_table,
+            pkey_col=self.train_table.pkey_col,
+            time_col=self.train_table.time_col,
         )
 
-    def get_table(self, start: pd.Timestamp, end: pd.Timestamp):
+    def get_table(self, start: pd.Timestamp, end: pd.Timestamp = None):
+        if end is None:
+            end = self.full_table.max_timestamp + pd.Timedelta(days=1)
         mask = (self.full_table.df[self.full_table.time_col] >= start) & (
             self.full_table.df[self.full_table.time_col] < end
         )

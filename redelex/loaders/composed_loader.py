@@ -13,8 +13,8 @@ class ComposedLoader:
         weights: Optional[list[float]] = None,
     ):
         self.loaders = loaders
-        self.task_names = list(self.loaders.keys())
-        self.loaders_len = [len(self.loaders[tn]) for tn in self.task_names]
+        self.names = list(self.loaders.keys())
+        self.loaders_len = [len(self.loaders[tn]) for tn in self.names]
         self.mode = mode
 
         if self.mode in ["minimum", "rnd_uni", "rnd_weighted"]:
@@ -51,7 +51,7 @@ class ComposedLoader:
                 self.weights, num_samples=self.total_len, replacement=True
             )
             self.rnd_loader_idx = rnd_cat.long().tolist()
-        self.loader_iter = [iter(self.loaders[tn]) for tn in self.task_names]
+        self.loader_iter = [iter(self.loaders[tn]) for tn in self.names]
         return self
 
     def __next__(self) -> HeteroData:
