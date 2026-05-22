@@ -1,7 +1,6 @@
 from typing import Optional
 
 import torch
-import torch_geometric.nn.aggr as geo_aggr
 from torch_geometric.data import HeteroData
 from torch_geometric.nn import SAGEConv, MLP
 from torch_geometric.typing import NodeType, EdgeType

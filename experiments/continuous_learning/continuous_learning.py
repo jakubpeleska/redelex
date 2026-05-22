@@ -12,6 +12,8 @@ from argparse import ArgumentParser
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["RAY_memory_monitor_refresh_ms"] = "0"
 
+import pandas as pd
+
 import numpy as np
 
 import torch
@@ -43,7 +45,63 @@ from experiments.continuous_learning.utils import (
     get_hyperparams_logging,
     get_text_embedder,
     get_table_input,
+    get_potato_client,
+    get_experiment_runs_df,
 )
+
+def get_resume_state_from_mlflow(
+    mlflow_experiment: str,
+    dataset_name: str,
+    task_name: str,
+    val_metric: str,
+    higher_is_better: bool,
+) -> tuple[int, Optional[str]]:
+    """Queries MLFlow to find the last completed increment and the best weights path."""
+    try:
+        mlflow_client = get_potato_client()
+        runs = get_experiment_runs_df(
+            mlflow_client,
+            mlflow_experiment,
+            filter_string=f"params.dataset_name = '{dataset_name}' and params.task_name = '{task_name}' and attributes.status = 'FINISHED'",
+        )
+        
+        best_metric_col = f"best_val_{val_metric}"
+        
+        runs["increment"] = runs["increment"].astype(int)
+        runs[best_metric_col] = pd.to_numeric(runs[best_metric_col], errors="coerce")
+        
+        print()
+        
+        max_inc = runs["increment"].max()
+        while max_inc >= 0:
+            inc_runs = runs[runs["increment"] == max_inc]
+            if len(inc_runs) >= 5:
+                break
+            max_inc -= 1
+
+        print(f"Found {len(inc_runs)} runs for increment {max_inc}.")
+        
+        if higher_is_better:
+            best_run = inc_runs.loc[inc_runs[best_metric_col].idxmax()]
+        else:
+            best_run = inc_runs.loc[inc_runs[best_metric_col].idxmin()]
+
+        # Resolve weights path
+        if "model_save_dir" in best_run and pd.notna(
+            best_run["model_save_dir"]
+        ):
+            weights_path = Path(best_run["model_save_dir"]) / "best_model.pt"
+        else:
+            raise ValueError(
+                f"Best run for increment {max_inc} does not have 'weights_path'."
+            )
+
+        return max_inc + 1, weights_path
+
+    except Exception as e:
+        print(f"Failed to query MLflow for resume state: {e}")
+
+    return 1, None
 
 
 def run_continuous_learning_experiment(
@@ -97,7 +155,7 @@ def run_continuous_learning_experiment(
     weights_path: Optional[str] = config.get("weights_path", None)
     train_timestamp = config["train_timestamp"]
     val_timestamp = config["val_timestamp"]
-    prev_train_timestamp: Optional[int] = config.get("prev_train_timestamp", None)
+    prev_train_timestamp: Optional[pd.Timestamp] = config.get("prev_train_timestamp", None)
 
     assert learning_mode in ["from_scratch", "ft_full", "ft_upsample", "ft_newonly"]
 
@@ -145,6 +203,8 @@ def run_continuous_learning_experiment(
         train_start = db.min_timestamp
     elif learning_mode in ["ft_upsample", "ft_newonly"]:
         train_start = prev_train_timestamp
+        
+    config["train_start"] = train_start
 
     # create train dataloader for current split
     train_table = wrapped_task.get_table(start=train_start, end=train_timestamp)
@@ -178,7 +238,7 @@ def run_continuous_learning_experiment(
             temporal_strategy="uniform",
             shuffle=True,
         )
-        train_loader = ComposedLoader([train_loader, old_train_loader], mode="rnd_uni")
+        train_loader = ComposedLoader({"new": train_loader, "old": old_train_loader}, mode="rnd_uni")
 
     # create val dataloader for current split
     val_table = wrapped_task.get_table(start=train_timestamp, end=val_timestamp)
@@ -237,9 +297,9 @@ def run_continuous_learning_experiment(
 
     save_model_callback = SaveModelCallback(
         save_dir=model_save_dir,
-        monitor="val_loss_epoch",
-        mode="min",
-        save_every_epoch=True,
+        monitor=f"val_{val_metric}",
+        mode="max" if higher_is_better else "min",
+        save_every_epoch=False,
     )
     trainer = L.Trainer(
         max_steps=max_training_steps,
@@ -265,12 +325,10 @@ def run_continuous_learning_experiment(
         )
 
         if with_ray:
-            best_val_loss = trainer.callback_metrics.get("val_loss_epoch")
-            if best_val_loss is not None:
-                best_val_loss = best_val_loss.item()
-            else:
-                best_val_loss = float("inf")
-            ray_train.report({"val_loss_epoch": best_val_loss, "model_save_dir": str(model_save_dir)})
+            best_val_metric = trainer.callback_metrics.get(f"best_val_{val_metric}")
+            if best_val_metric is not None:
+                best_val_metric = best_val_metric.item()
+                ray_train.report({f"val_{val_metric}": best_val_metric, "model_save_dir": str(model_save_dir)})
 
 
     except Exception as e:
@@ -296,6 +354,7 @@ def run_ray_tuner(
     random_seed: int = 42,
     cache_dir: str = ".cache",
     model_save_dir: str = "./models",
+    resume: bool = False,
 ):
     random.seed(random_seed)
     np.random.seed(random_seed)
@@ -337,8 +396,29 @@ def run_ray_tuner(
     del wrapped_task
     del task
     best_weights_path = None
+    
+    model_save_dir = Path(model_save_dir).absolute()
+    
+    cache_path = Path(cache_dir).absolute() / dataset_name
+    
+    start_inc = 1
+    
+    if resume:
+        resume_inc, resume_weights_path = get_resume_state_from_mlflow(
+            mlflow_experiment, dataset_name, task_name, val_metric, higher_is_better
+        )
+        if resume_inc > 1 and resume_weights_path is not None:
+            start_inc = resume_inc
+            best_weights_path = resume_weights_path
+            print(f"Resuming from increment {resume_inc} with weights from {resume_weights_path}")
+        else:
+            print("No valid resume state found. Starting from scratch.")
+            
+    if start_inc >= len(splits) - 1:
+        print("All increments are already completed according to MLflow. Exiting.")
+        return
 
-    for i in range(len(splits) - 1):
+    for i in range(start_inc, len(splits) - 1):
         train_timestamp = splits[i]
         val_timestamp = splits[i+1]
         prev_train_timestamp = splits[i-1] if i > 0 else None
@@ -359,7 +439,7 @@ def run_ray_tuner(
             tune_config=tune.TuneConfig(
                 num_samples=num_samples,
                 trial_name_creator=lambda trial: (
-                    f"{dataset_name}_{task_name}_{trial.trial_id}"
+                    f"{dataset_name}_{task_name}_{i}_{trial.trial_id}"
                 ),
                 trial_dirname_creator=lambda trial: trial.trial_id,
                 max_concurrent_trials=num_cpus,
@@ -374,10 +454,11 @@ def run_ray_tuner(
                 "mlflow_uri": mlflow_uri,
                 "max_training_steps": 2000,
                 "limit_train_batches": 100,
+                "increment": i,
                 "train_timestamp": train_timestamp,
                 "val_timestamp": val_timestamp,
                 "prev_train_timestamp": prev_train_timestamp,
-                "weights_path": best_weights_path,
+                "weights_path": best_weights_path if learning_mode != "from_scratch" else None,
                 "lr": 0.001,
                 "batch_size": 128,
                 "num_neighbors": 32,
@@ -385,8 +466,8 @@ def run_ray_tuner(
                 "gnn_layers": 2,
                 "gnn_aggr": "sum",
                 "head_norm": "batch_norm",
-                "cache_path": Path(cache_dir).absolute(),
-                "model_save_dir": (Path(model_save_dir).absolute())
+                "cache_path": cache_path,
+                "model_save_dir": model_save_dir / f"increment_{i}",
             },
         )
         results = tuner.fit()
@@ -399,7 +480,7 @@ def run_ray_tuner(
         if best_result is None or "model_save_dir" not in best_result.metrics:
             print(f"Failed to find the best result in split {i}. Stopping.")
             break
-            
+        
         best_weights_path = f"{best_result.metrics['model_save_dir']}/best_model.pt"
 
 
@@ -417,7 +498,10 @@ if __name__ == "__main__":
     parser.add_argument("--num_gpus", type=int, default=0)
     parser.add_argument("--num_cpus", type=int, default=1)
     parser.add_argument("--learning_mode", type=str, choices=["from_scratch", "ft_full", "ft_upsample", "ft_newonly"], default="from_scratch")
-
+    parser.add_argument("--model_save_dir", type=str, default="./models")
+    parser.add_argument("--resume", action="store_true", default=False)
+    
+    
     args = parser.parse_args()
     print(args)
     dataset_name = args.dataset
@@ -440,4 +524,6 @@ if __name__ == "__main__":
         num_gpus=args.num_gpus,
         num_cpus=args.num_cpus,
         learning_mode=args.learning_mode,
+        model_save_dir=args.model_save_dir,
+        resume=args.resume,
     )
