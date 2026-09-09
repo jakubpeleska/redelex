@@ -506,7 +506,12 @@ def cluster(monkeypatch):
     return fake
 
 
-def test_dry_run_prints_the_cost_and_the_commands(capsys):
+def test_dry_run_prints_the_cost_and_the_commands(cluster, capsys):
+    # `cluster` is not decoration: without it this reads the REAL marker
+    # directory, so the plan shrinks as the operator's grid fills up. It passed
+    # on an empty machine and failed on RCI, where tier A is finished, printing
+    # one sbatch instead of nine. A planner test must describe the planner, not
+    # the state of somebody's scratch directory.
     assert main(["--pairs", "rel-f1:driver-dnf", "--dry-run"]) == 0
     out = capsys.readouterr().out
     assert "GPU-h" in out and "TOTAL" in out
@@ -697,7 +702,9 @@ def test_more_lanes_than_gpus_is_refused():
         main(["--pairs", "rel-f1:driver-dnf", "--lanes", "8", "--dry-run"])
 
 
-def test_v100_partition_costs_more_than_a100(capsys):
+def test_v100_partition_costs_more_than_a100(cluster, capsys):
+    # Same reason as above: with real markers this prints no "==>" summary at
+    # all once the selection is already done, and the parse below IndexErrors.
     def total(partition):
         main(["--pairs", "rel-trial:site-success", "--partition", partition,
               "--dry-run"])
