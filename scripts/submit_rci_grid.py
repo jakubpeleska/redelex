@@ -222,8 +222,24 @@ def resolve_partition(spec: str) -> Partition:
     return Partition(spec, min(p.max_hours for p in members), slowest.device)
 
 
+# The A100 nodes (g01-g12) are reachable through FOUR partitions, not one.
+# Only amdgpufast was listed here, so every plan was squeezed into a 4 h wall
+# that nothing about the hardware requires: amdgpu/amdgpulong/amdgpuextralong
+# serve the same nodes with AllowAccounts=ALL and AllowQos=ALL. That omission
+# is what forced ewc chains to be chunked to fit 4 h, and when the estimate was
+# optimistic they TIMEOUTed at ~90% and needed a manual resume -- five times in
+# tier A. It also caps the prediction pass, whose largest rel-stack chain scores
+# every checkpoint over the full task table and is estimated at 4-5 h.
+#
+# amdgpufast stays the default: a shorter wall schedules sooner under backfill,
+# and most chunks genuinely fit. The longer partitions are for the work that
+# does not -- pass --partition amdgpu rather than chunking around a limit that
+# was never real.
 PARTITIONS: Dict[str, Partition] = {
     "amdgpufast": Partition("amdgpufast", 4.0, "A100"),
+    "amdgpu": Partition("amdgpu", 24.0, "A100"),
+    "amdgpulong": Partition("amdgpulong", 72.0, "A100"),
+    "amdgpuextralong": Partition("amdgpuextralong", 504.0, "A100"),
     "gpufast": Partition("gpufast", 4.0, "V100"),
     "gpu": Partition("gpu", 24.0, "V100"),
     "gpulong": Partition("gpulong", 72.0, "V100"),
@@ -237,7 +253,7 @@ DEVICE_FACTOR: Dict[str, float] = {"A100": 1.0, "V100": 1.8}
 
 # Datasets already in the 17 GB relbench cache on RCI. Anything else has to be
 # fetched first, and fetching does not belong on a login node.
-CACHED_ON_RCI: Set[str] = {"rel-amazon", "rel-stack", "rel-trial", "rel-avito"}
+CACHED_ON_RCI: Set[str] = {"rel-f1", "rel-amazon", "rel-stack", "rel-trial", "rel-avito"}
 
 # Job names carry the lane so a later submission can see which lanes are taken.
 JOB_PREFIX = "clg"

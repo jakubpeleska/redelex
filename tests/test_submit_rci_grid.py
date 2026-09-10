@@ -210,10 +210,31 @@ def test_well_sized_chunks_are_not_flagged(cfg):
 
 
 def test_uncached_dataset_is_flagged(cfg):
-    """rel-f1 is not in the RCI relbench cache, and downloads must not happen
-    by accident on a compute node."""
-    warnings = srg.plan_warnings([plan_chain("rel-f1", "driver-dnf", "naive", cfg)], cfg)
-    assert any("cache" in w and "rel-f1" in w for w in warnings)
+    """A dataset absent from the RCI cache must be flagged before it is planned.
+
+    Downloading does not belong on a compute node, so the warning is the only
+    thing standing between a grid launch and a job that fetches gigabytes.
+
+    Picked from the table rather than hardcoded: this used to name rel-f1, which
+    has been cached on RCI for as long as the grid has run, so the assertion
+    passed while the launcher cried wolf on every single submission -- and a
+    warning that is always wrong is a warning nobody reads.
+    """
+    uncached = sorted(set(srg.DATASET_GPU_HOURS) - srg.CACHED_ON_RCI)
+    assert uncached, "no uncached dataset left to exercise the warning with"
+    dataset = uncached[0]
+    task = next(t for (d, t) in srg.EPISODES if d == dataset)
+    warnings = srg.plan_warnings([plan_chain(dataset, task, "naive", cfg)], cfg)
+    assert any("cache" in w and dataset in w for w in warnings), warnings
+
+
+def test_a_cached_dataset_is_not_flagged(cfg):
+    """The other half: no warning for something that is demonstrably present."""
+    dataset = "rel-f1"
+    assert dataset in srg.CACHED_ON_RCI
+    task = next(t for (d, t) in srg.EPISODES if d == dataset)
+    warnings = srg.plan_warnings([plan_chain(dataset, task, "naive", cfg)], cfg)
+    assert not any("cache" in w and dataset in w for w in warnings), warnings
     cached = srg.plan_warnings(
         [plan_chain("rel-stack", "user-badge", "naive", cfg)], cfg)
     assert not any("cache" in w for w in cached)
@@ -1042,3 +1063,34 @@ def test_empty_partition_spec_is_rejected():
 
     with pytest.raises(ValueError, match="at least one"):
         m.resolve_partition(" , ")
+
+
+def test_a100_is_reachable_beyond_a_four_hour_wall():
+    """The A100 nodes serve four partitions, and only one was listed.
+
+    Every plan was therefore squeezed into a 4 h wall that nothing about the
+    hardware requires -- which is what forced ewc chains to be chunked to fit,
+    and TIMEOUTed five of them at ~90% in tier A when the estimate ran
+    optimistic. amdgpu/amdgpulong/amdgpuextralong are the same g01-g12 nodes
+    with AllowAccounts=ALL.
+    """
+    a100 = {n: p for n, p in srg.PARTITIONS.items() if p.device == "A100"}
+    assert max(p.max_hours for p in a100.values()) > 4.0, (
+        "an A100 partition longer than 4 h must be selectable, or a chain that "
+        "does not fit 4 h has no home but a slower V100"
+    )
+    # And a long A100 must not be silently downgraded to the V100 cost model.
+    assert srg.resolve_partition("amdgpu").device == "A100"
+    assert srg.resolve_partition("amdgpu").max_hours == 24.0
+
+
+def test_longer_a100_partition_removes_the_need_to_chunk_ewc():
+    """The concrete payoff: ewc on rel-f1 fits one job on amdgpu, not two."""
+    from dataclasses import replace
+    fast = replace(srg.Config(), time_limit_hours=4.0)
+    long_ = replace(srg.Config(), time_limit_hours=24.0)
+    ep = srg.EPISODES[("rel-f1", "driver-position")]
+    n_fast = len(srg.split_episodes(ep, srg.episodes_per_chunk("rel-f1", "ewc", fast)))
+    n_long = len(srg.split_episodes(ep, srg.episodes_per_chunk("rel-f1", "ewc", long_)))
+    assert n_fast > 1, "the 4 h wall splits this chain"
+    assert n_long == 1, "a 24 h wall should not"
