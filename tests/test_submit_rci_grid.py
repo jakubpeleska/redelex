@@ -14,6 +14,7 @@ import os
 import re
 import stat
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -1094,3 +1095,48 @@ def test_longer_a100_partition_removes_the_need_to_chunk_ewc():
     n_long = len(srg.split_episodes(ep, srg.episodes_per_chunk("rel-f1", "ewc", long_)))
     assert n_fast > 1, "the 4 h wall splits this chain"
     assert n_long == 1, "a 24 h wall should not"
+
+
+# ---------------------------------------------------------------------------
+# Delta-I sweep: episode-count override
+# ---------------------------------------------------------------------------
+
+def test_episodes_override_replaces_the_measured_count(cfg):
+    """A Delta-I sweep arm runs a different number of episodes than the table says.
+
+    EPISODES is keyed by (dataset, task) and holds the *native* stride's count.
+    Re-running a pair at --val_delta_days=913 yields 21 episodes for
+    rel-f1:driver-dnf, not the tabulated 11, and without an override the chain
+    plans 11 and silently stops half way -- producing a truncated matrix that
+    looks complete.
+    """
+    native = srg.episodes_for("rel-f1", "driver-dnf")
+    assert native == 11
+
+    plain = srg.plan_chain("rel-f1", "driver-dnf", "joint", cfg)
+    assert sum(c.episodes for c in plain) == native
+
+    swept = replace(cfg, episodes_override=21)
+    chunks = srg.plan_chain("rel-f1", "driver-dnf", "joint", swept)
+    assert sum(c.episodes for c in chunks) == 21
+
+
+def test_episodes_override_is_not_consulted_when_absent(cfg):
+    """The override must be opt-in: None keeps the measured table authoritative."""
+    assert cfg.episodes_override is None
+    for dataset, task in [("rel-f1", "driver-dnf"), ("rel-trial", "study-outcome")]:
+        chunks = srg.plan_chain(dataset, task, "naive", cfg)
+        assert sum(c.episodes for c in chunks) == srg.episodes_for(dataset, task)
+
+
+def test_episodes_override_does_not_bypass_the_cost_table(cfg):
+    """The override is deliberately narrow: it supplies a count, not a cost.
+
+    A sweep arm knows how many episodes its stride yields, because it measured
+    them with `get_splits`. It does *not* thereby know the dataset's GPU-hour
+    rate, so a dataset absent from DATASET_GPU_HOURS must still refuse to plan
+    rather than silently cost itself at zero.
+    """
+    swept = replace(cfg, episodes_override=14)
+    with pytest.raises(ValueError, match="no measured cost"):
+        srg.plan_chain("rel-event", "user-attendance", "joint", swept)

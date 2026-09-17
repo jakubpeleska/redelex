@@ -316,6 +316,11 @@ class Config:
     mlflow_experiment_prefix: str = "pelesjak_cl_rci"
     dependency_type: str = "afterany"
     chunk_episodes: Optional[int] = None
+    # The Delta-I ablation reruns a pair at a non-native update stride, which changes
+    # how many episodes `get_splits` yields. EPISODES is keyed by (dataset, task) and
+    # holds the *native* count only, so a sweep arm has to say what it measured or the
+    # chain silently stops at the native episode count.
+    episodes_override: Optional[int] = None
     extra: str = ""
 
     def __post_init__(self) -> None:
@@ -498,8 +503,10 @@ def plan_chain(dataset: str, task: str, mode: str, cfg: Config) -> List[Chunk]:
     for value in (dataset, task, mode):
         if not _SAFE_NAME_RE.match(value):
             raise ValueError(f"unsafe name for a shell command line: {value!r}")
-    sizes = split_episodes(episodes_for(dataset, task),
-                           episodes_per_chunk(dataset, mode, cfg))
+    episodes = (cfg.episodes_override
+                if cfg.episodes_override is not None
+                else episodes_for(dataset, task))
+    sizes = split_episodes(episodes, episodes_per_chunk(dataset, mode, cfg))
     return [
         Chunk(dataset, task, mode, i, size,
               estimate_hours(dataset, mode, size, cfg.num_samples, cfg.device_factor))
@@ -880,6 +887,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
                         "Default: by the partition's GPU.")
     p.add_argument("--chunk-episodes", type=int, default=None,
                    help="Override the computed episodes per job.")
+    p.add_argument("--episodes-override", type=int, default=None,
+                   help="Override the measured episode count for the chain. Needed "
+                        "when --extra changes --val_delta_days: EPISODES holds the "
+                        "native stride's count, so without this the chain stops "
+                        "early. Measure with ContinuousWrapper.get_splits(val_delta=...).")
     p.add_argument("--num-samples", type=int, default=5,
                    help="Seeds per episode. Must not change mid-chain: it is the "
                         "resume quorum (run_chain.sh refuses if it does).")
@@ -965,6 +977,7 @@ def config_from_args(args: argparse.Namespace) -> Config:
         mlflow_experiment_prefix=args.mlflow_experiment_prefix,
         dependency_type=args.dependency_type,
         chunk_episodes=args.chunk_episodes,
+        episodes_override=args.episodes_override,
         extra=args.extra,
     )
 
