@@ -1140,3 +1140,41 @@ def test_episodes_override_does_not_bypass_the_cost_table(cfg):
     swept = replace(cfg, episodes_override=14)
     with pytest.raises(ValueError, match="no measured cost"):
         srg.plan_chain("rel-event", "user-attendance", "joint", swept)
+
+
+def test_variant_makes_sweep_arms_distinct_chains(cfg):
+    """Two arms of a Delta-I sweep must not read each other as already queued.
+
+    `pending_chunks` skips a whole chain whose key appears in squeue, which is
+    right for the main grid -- two jobs of one chain would both resume from the
+    same increment. But a sweep reruns the same (dataset, task, mode) at a
+    different --val_delta_days, and those are different chains wearing the same
+    name. Without a discriminator, arm 2 is silently skipped while arm 1 is in
+    flight, and the sweep quietly has one fewer point than the paper claims.
+    """
+    a = srg.plan_chain("rel-f1", "driver-dnf", "joint", replace(cfg, variant="di05"))
+    b = srg.plan_chain("rel-f1", "driver-dnf", "joint", replace(cfg, variant="di20"))
+    assert a[0].chain_key != b[0].chain_key
+
+    # arm A in flight must not mask arm B
+    state = srg.ClusterState()
+    state.busy_chains = {a[0].chain_key}
+    assert srg.pending_chunks(a, state) == []
+    assert srg.pending_chunks(b, state) == b
+
+
+def test_variant_is_absent_from_the_main_grid_key(cfg):
+    """The default must leave existing chain keys byte-identical.
+
+    Marker files and job names on RCI already use the unsuffixed form; changing
+    it would orphan 48 chain-complete markers and re-run finished work.
+    """
+    plain = srg.plan_chain("rel-f1", "driver-dnf", "joint", cfg)
+    assert plain[0].chain_key == "rel-f1__driver-dnf__joint"
+    assert plain[0].job_name(0) == "clg-L0-rel-f1__driver-dnf__joint__c00"
+
+
+def test_variant_is_rejected_when_shell_unsafe(cfg):
+    """The variant lands in a job name and an sbatch command line."""
+    with pytest.raises(ValueError, match="unsafe name"):
+        srg.plan_chain("rel-f1", "driver-dnf", "joint", replace(cfg, variant="di 05; rm -rf /"))

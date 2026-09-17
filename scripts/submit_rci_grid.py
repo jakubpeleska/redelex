@@ -283,10 +283,17 @@ class Chunk:
     index: int
     episodes: int
     gpu_hours: float
+    # A sweep arm reruns the same (dataset, task, mode) under a different protocol
+    # setting -- most of all a different --val_delta_days. Those are genuinely
+    # different chains, but they share a name, so without a discriminator the
+    # busy-chain check in `pending_chunks` reads arm 2 as arm 1 already queued and
+    # silently skips it. Empty for the main grid, so existing keys are unchanged.
+    variant: str = ""
 
     @property
     def chain_key(self) -> str:
-        return f"{self.dataset}__{self.task}__{self.mode}"
+        stem = f"{self.dataset}__{self.task}__{self.mode}"
+        return f"{stem}__{self.variant}" if self.variant else stem
 
     @property
     def chunk_key(self) -> str:
@@ -321,6 +328,8 @@ class Config:
     # holds the *native* count only, so a sweep arm has to say what it measured or the
     # chain silently stops at the native episode count.
     episodes_override: Optional[int] = None
+    # Discriminates one sweep arm from another; see `Chunk.variant`.
+    variant: str = ""
     extra: str = ""
 
     def __post_init__(self) -> None:
@@ -503,13 +512,16 @@ def plan_chain(dataset: str, task: str, mode: str, cfg: Config) -> List[Chunk]:
     for value in (dataset, task, mode):
         if not _SAFE_NAME_RE.match(value):
             raise ValueError(f"unsafe name for a shell command line: {value!r}")
+    if cfg.variant and not _SAFE_NAME_RE.match(cfg.variant):
+        raise ValueError(f"unsafe name for a shell command line: {cfg.variant!r}")
     episodes = (cfg.episodes_override
                 if cfg.episodes_override is not None
                 else episodes_for(dataset, task))
     sizes = split_episodes(episodes, episodes_per_chunk(dataset, mode, cfg))
     return [
         Chunk(dataset, task, mode, i, size,
-              estimate_hours(dataset, mode, size, cfg.num_samples, cfg.device_factor))
+              estimate_hours(dataset, mode, size, cfg.num_samples, cfg.device_factor),
+              variant=cfg.variant)
         for i, size in enumerate(sizes)
     ]
 
@@ -887,6 +899,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
                         "Default: by the partition's GPU.")
     p.add_argument("--chunk-episodes", type=int, default=None,
                    help="Override the computed episodes per job.")
+    p.add_argument("--variant", default="",
+                   help="Tag distinguishing one sweep arm from another. Sweep arms "
+                        "rerun the same (dataset, task, mode) under a different "
+                        "protocol setting, so without this the busy-chain check "
+                        "reads a later arm as an earlier one already queued.")
     p.add_argument("--episodes-override", type=int, default=None,
                    help="Override the measured episode count for the chain. Needed "
                         "when --extra changes --val_delta_days: EPISODES holds the "
@@ -978,6 +995,7 @@ def config_from_args(args: argparse.Namespace) -> Config:
         dependency_type=args.dependency_type,
         chunk_episodes=args.chunk_episodes,
         episodes_override=args.episodes_override,
+        variant=args.variant,
         extra=args.extra,
     )
 
