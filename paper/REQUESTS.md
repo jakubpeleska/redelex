@@ -482,3 +482,77 @@ Drop "we introduce a multi-episodic protocol" as a standalone contribution. The 
 over an established benchmark; (2) the **first controlled comparison of the four CL families** in this
 setting; (3) the **three protocol defects** — buffer-capacity dependence, BWT's tautology under a
 growing history, and budget starvation — which is the part no prior work has.
+
+---
+
+## REQ-015 [detail] Protocol framing — **AUTHORS' DECISION 2026-09-17. Supersedes any "we introduce" phrasing.**
+
+**Decision: ground the protocol in existing evaluation literature and present it as adapted to RDL,
+not invented for it.**
+
+### Why this is the stronger move, not a concession
+
+The rolling retrain-and-evaluate loop is established methodology in at least three literatures —
+rolling-origin evaluation in forecasting (Tashman 2000 and successors), prequential / test-then-train
+evaluation in data streams (Gama, Dawid), and **ROLAND** (You, Du & Leskovec, **KDD 2022**), which
+states it outright for graphs: *"a live-update evaluation setting for dynamic graphs that mimics
+real-world use cases, where GNNs are making predictions and being updated on a rolling basis."*
+
+An invention claim is therefore attackable in one sentence, and the sentence is easy to write:
+
+> *"Their protocol is `for t in cutoffs: train(D≤t); eval(D[t, t+1])`. That loop is identical whether
+> D is a dynamic graph or a relational database. The protocol did not change — the data did."*
+
+Positioning the protocol as a principled adaptation removes that attack entirely, costs one
+contribution bullet, and buys three things: it moves the paper's novelty weight onto findings that are
+genuinely new, it signals the scholarly care reviewers reward in an evaluation-track paper, and it is
+**the same move that already worked in this review cycle** — NHfu replied *"The distinction from Galke
+et al. is now clear"* and dropped the point.
+
+### What relational data actually forces — state these as PROTOCOL properties, not as "our data is different"
+
+A protocol that is unchanged when you swap the data is not a new protocol. These three changes are
+protocol-level, and they are what the adaptation consists of:
+
+1. **ΔI has no natural value.** In a dynamic graph the snapshot *is* both the update unit and the
+   prediction horizon — one object. In RDL the update interval ΔI and the task's own prediction window
+   ΔW are independent: `rel-f1/driver-dnf` has ΔW = 30 days and ΔI = 1826. The episode grid must be
+   **constructed**, and ΔI becomes a free protocol parameter that has to be chosen and justified.
+   This is precisely what CMu9 named as remaining gap #2 and what item A measures.
+2. **The task table is re-derived per episode by querying the truncated database.** The label set at
+   episode *i* is a function of the cutoff, not a slice of a fixed stream. A dynamic graph has no
+   analogue — its "labels" are future edges, so there is nothing to re-derive.
+3. **Admissibility is non-trivial.** Whether a task supports the protocol at all is a question that
+   does not arise when snapshots come with the data. Our rule (REQ-004) is part of the protocol, not
+   an experimental detail.
+
+### Phrasing
+
+Write **"we adapt"**, **"we instantiate"**, **"we extend … to"**. Never "we introduce a protocol",
+"we propose a new evaluation paradigm", or "the first protocol for". One usable form:
+
+> Rolling-origin evaluation is long established in forecasting and data streams, and has been brought
+> to dynamic graphs as live-update evaluation. Relational data breaks its central assumption that the
+> update interval and the prediction horizon coincide: a relational task carries its own prediction
+> window, independent of how often a practitioner retrains. We adapt the protocol accordingly,
+> decoupling the two, re-deriving the task table at each cutoff, and stating an auditable rule for
+> which tasks admit the setting at all.
+
+### Where the novelty weight now sits
+
+In descending order of defensibility — lead with the top of this list, not the protocol:
+
+1. **The BWT tautology** — a metric-validity finding, immune to "you applied a known loop to new
+   data". *(Novelty being checked; if it is clean, this leads the paper.)*
+2. **The three protocol defects** — buffer-capacity dependence, the BWT tautology, budget starvation.
+3. **The first controlled comparison of all four CL families** in this setting — which ROLAND does not
+   do: it proposes one training method and re-implements baselines under it.
+4. **The admissibility census** over an established benchmark.
+5. The protocol instantiation itself — real, but now a *supporting* contribution.
+
+### Consequence for §2
+
+Related Work must now carry a short lineage paragraph — rolling-origin → prequential → ROLAND → this
+work — rather than a differentiation table defending originality. Cite Tashman, Gama et al. 2013,
+Hidalgo et al. 2019, Galke et al. 2020, ROLAND, and DRIFT. The two fading-factor citations were
+already promised in rebuttal (D2) and both reviewers said they resolve the point outright.
