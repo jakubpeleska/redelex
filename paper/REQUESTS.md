@@ -288,3 +288,96 @@ render.
 (`/home/pelesjak/...`, `claude-redelex`) and `model_save_dir` values pointing at a personal tree.
 Nothing has been anonymised yet and no anonymous mirror exists. This needs an explicit scrub step
 before any bundle ships. Treat it as unresolved.
+
+---
+
+## REQ-014 [detail] Abstract review — **ANSWERED 2026-09-17, authors' direction. Read before redrafting.**
+
+The WIP abstract was reviewed by the authors. Two structural changes and three line-level fixes.
+
+### 1. Delete the backward-transfer sentence. It is the refuted claim, restated.
+
+> ~~"Retention is therefore not the bottleneck one would expect: we measure backward transfer directly
+> and find it non-negative even for updates that revisit no history at all."~~
+
+`from_scratch` reinitialises at every episode, has no parameter continuity, **cannot forget by
+construction** — and scores non-negative BWT on 9 of 9 tasks (`bwt.nonnegative_task_count.*`). So does
+`naive`. The sentence is true of a baseline that cannot exhibit the property it is offered as evidence
+for. See REQ-003. **No replacement forgetting number.**
+
+### 2. Keep the reconstructibility argument — it is the real lead, and it is analytic.
+
+The abstract's other structural claim survives, and it is stronger than the one being cut, because it
+is verifiable from the protocol definition rather than from a metric:
+
+> Bounded-memory continual learning exists to approximate a past you can no longer access. In
+> append-only relational data with deterministic temporal masking, the past training set is always
+> exactly reconstructible. The bounded-memory family is therefore unmotivated in this setting — not
+> because forgetting does not occur, but because the problem it solves does not arise.
+
+Note what this does **not** claim: nothing about whether forgetting happens. It says the *remedy* is
+unmotivated when the data is still there. That is enough to explain the negative result, and it
+survives a reviewer who recomputes BWT.
+
+It also names the real constraint: **not memory, but compute.** You cannot retrain on an unbounded
+history at every update.
+
+### 3. The value of continual updating GROWS with history — measured, and this is the positive finding.
+
+Requested by the authors and now computed (`warmstart_margin.*` in NUMBERS.json). Diagonal margin
+`R[i,i]` of a warm-started mode over `from_scratch`, regressed on episode index:
+
+| task | early | late | slope/ep | p | trend |
+|---|---|---|---|---|---|
+| rel-stack/user-engagement | **−0.0008** | **+0.0029** | +0.00028 | 0.000 | **grows** |
+| rel-stack/user-badge | **−0.0019** | **+0.0078** | +0.00076 | 0.002 | **grows** |
+| rel-stack/post-votes | +0.0012 | +0.0023 | +0.00009 | 0.001 | **grows** |
+| rel-trial/study-adverse | +0.198 | +1.857 | +0.309 | 0.008 | **grows** |
+| rel-f1/driver-position, rel-f1/driver-dnf, rel-trial/site-success | — | — | — | — | flat |
+| rel-trial/study-outcome | — | — | −0.0045 | 0.045 | shrinks |
+
+(`joint` shown; `naive` gives the same verdict on the same 4/8 tasks.)
+
+**On the large tasks the margin starts negative and becomes positive.** Early on, retraining is as
+good or better; the warm-start advantage *emerges* as history accumulates. And it grows exactly where
+the fixed budget stops covering that history — `from_scratch` falls to 0.07 passes over its own
+training set by late rel-stack episodes while `naive` gets 1.33. The growth curve and the starvation
+curve are the same curve, which is why §9 and this claim must be written together.
+
+State it as scoped: grows on 4 of 8 tasks, and name which — the three rel-stack tasks (17 episodes,
+millions of rows) and study-adverse. It is flat on the small rel-f1 tasks, where history never
+accumulates enough to matter. That scoping is the finding, not a weakness of it.
+
+### 4. Separate the two comparisons. The abstract currently blurs them.
+
+- **Warm-start vs from-scratch** — budget-*asymmetric*: by episode *i* a warm-started model carries
+  *i*×2000 cumulative steps against from_scratch's 2000. Any claim here must ship with the budget
+  disclosed, or a reviewer states the asymmetry for us.
+- **CL machinery vs plain continued training** (`er`/`der_pp`/`ewc`/`lwf`/`freeze_extend` versus
+  `joint`/`naive`) — budget-*clean*: same warm start, same per-episode budget, no compute asymmetry.
+  **The negative result belongs here and only here.** Scope it as "adds nothing over simply continuing
+  to train on retained data", never as "continual learning does not work".
+
+### 5. Requalify the hundred-step figure.
+
+> "reaching that accuracy within a small fraction of the budget—on the order of a hundred optimization
+> steps"
+
+100 is `val_check_interval` — the *first observation point*. Five of eight modes are already at
+97–99% of final validation skill when first observed, so the true figure is unknown and 100 is a
+**measurement floor**. CMu9 cited it as a strength, so it cannot simply be repeated. Write it as a
+lower bound: warm-started modes are within a few percent of final skill by the first checkpoint, at or
+before step 100.
+
+### 6. Recommended arc
+
+1. Data is retained and exactly reconstructible → memory-based CL is unmotivated here
+2. So the binding constraint is the **update budget**, not retention
+3. Under a fixed per-episode budget, continuing beats restarting — and the margin **grows with
+   history**, on the tasks where history accumulates
+4. The bounded-memory machinery adds nothing over plain continued training (budget-clean comparison)
+5. Open problem: how to spend a bounded update budget on an unbounded history
+
+This makes the negative results supporting evidence rather than the headline, which also answers
+d22i's W2 ("what work is there still to do?") with a named open problem instead of a flat ranking.
+Item C — the epoch-budget arm, queued — is what turns step 3 from assertable into defensible.

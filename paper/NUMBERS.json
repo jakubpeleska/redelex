@@ -827,5 +827,179 @@
   "note": "trial slots, NOT seeds: hash-sorted per increment, do not track across episodes",
   "source": "analysis_study_outcome_results.csv",
   "value": 5
+ },
+ "warmstart_margin.grows_task_count.joint": {
+  "criterion": "OLS slope>0 at p<0.05",
+  "note": "the growers are the three rel-stack tasks plus rel-trial/study-adverse",
+  "of": 8,
+  "source": "derived from warmstart_margin.* above",
+  "value": 4
+ },
+ "warmstart_margin.grows_task_count.naive": {
+  "criterion": "OLS slope>0 at p<0.05",
+  "note": "the growers are the three rel-stack tasks plus rel-trial/study-adverse",
+  "of": 8,
+  "source": "derived from warmstart_margin.* above",
+  "value": 4
+ },
+ "warmstart_margin.rel_f1.driver_dnf.joint": {
+  "early_mean": -0.011923,
+  "late_mean": -0.025825,
+  "metric": "roc_auc",
+  "n_episodes": 11,
+  "note": "diagonal R[i,i] margin of joint over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.2935,
+  "slope_per_episode": -0.001367,
+  "source": "analysis_driver_dnf_results.csv"
+ },
+ "warmstart_margin.rel_f1.driver_dnf.naive": {
+  "early_mean": -0.008193,
+  "late_mean": -0.016406,
+  "metric": "roc_auc",
+  "n_episodes": 11,
+  "note": "diagonal R[i,i] margin of naive over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.8332,
+  "slope_per_episode": -0.000368,
+  "source": "analysis_driver_dnf_results.csv"
+ },
+ "warmstart_margin.rel_f1.driver_position.joint": {
+  "early_mean": -0.3024,
+  "late_mean": -0.187284,
+  "metric": "neg_mae",
+  "n_episodes": 11,
+  "note": "diagonal R[i,i] margin of joint over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.6292,
+  "slope_per_episode": 0.009324,
+  "source": "analysis_driver_position_results.csv"
+ },
+ "warmstart_margin.rel_f1.driver_position.naive": {
+  "early_mean": -0.401201,
+  "late_mean": -0.523685,
+  "metric": "neg_mae",
+  "n_episodes": 11,
+  "note": "diagonal R[i,i] margin of naive over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.6535,
+  "slope_per_episode": -0.012751,
+  "source": "analysis_driver_position_results.csv"
+ },
+ "warmstart_margin.rel_stack.post_votes.joint": {
+  "early_mean": 0.001211,
+  "late_mean": 0.002324,
+  "metric": "neg_mae",
+  "n_episodes": 18,
+  "note": "diagonal R[i,i] margin of joint over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.001,
+  "slope_per_episode": 9.5e-05,
+  "source": "post_votes_results.csv"
+ },
+ "warmstart_margin.rel_stack.post_votes.naive": {
+  "early_mean": 0.00127,
+  "late_mean": 0.003219,
+  "metric": "neg_mae",
+  "n_episodes": 18,
+  "note": "diagonal R[i,i] margin of naive over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.006,
+  "slope_per_episode": 0.000151,
+  "source": "post_votes_results.csv"
+ },
+ "warmstart_margin.rel_stack.user_badge.joint": {
+  "early_mean": -0.001907,
+  "late_mean": 0.007752,
+  "metric": "roc_auc",
+  "n_episodes": 17,
+  "note": "diagonal R[i,i] margin of joint over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.002,
+  "slope_per_episode": 0.000761,
+  "source": "user_badge_results.csv"
+ },
+ "warmstart_margin.rel_stack.user_badge.naive": {
+  "early_mean": -0.002222,
+  "late_mean": 0.008155,
+  "metric": "roc_auc",
+  "n_episodes": 17,
+  "note": "diagonal R[i,i] margin of naive over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.0008,
+  "slope_per_episode": 0.000818,
+  "source": "user_badge_results.csv"
+ },
+ "warmstart_margin.rel_stack.user_engagement.joint": {
+  "early_mean": -0.00078,
+  "late_mean": 0.002853,
+  "metric": "roc_auc",
+  "n_episodes": 18,
+  "note": "diagonal R[i,i] margin of joint over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.0004,
+  "slope_per_episode": 0.000283,
+  "source": "analysis_user_engagement_results.csv"
+ },
+ "warmstart_margin.rel_stack.user_engagement.naive": {
+  "early_mean": -0.000596,
+  "late_mean": 0.004103,
+  "metric": "roc_auc",
+  "n_episodes": 18,
+  "note": "diagonal R[i,i] margin of naive over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.0002,
+  "slope_per_episode": 0.000402,
+  "source": "analysis_user_engagement_results.csv"
+ },
+ "warmstart_margin.rel_trial.site_success.joint": {
+  "early_mean": 0.000954,
+  "late_mean": 0.005425,
+  "metric": "neg_mae",
+  "n_episodes": 7,
+  "note": "diagonal R[i,i] margin of joint over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.9233,
+  "slope_per_episode": 0.000414,
+  "source": "analysis_site_success_results.csv"
+ },
+ "warmstart_margin.rel_trial.site_success.naive": {
+  "early_mean": -0.0015,
+  "late_mean": 0.012926,
+  "metric": "neg_mae",
+  "n_episodes": 7,
+  "note": "diagonal R[i,i] margin of naive over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.6959,
+  "slope_per_episode": 0.002191,
+  "source": "analysis_site_success_results.csv"
+ },
+ "warmstart_margin.rel_trial.study_adverse.joint": {
+  "early_mean": 0.197667,
+  "late_mean": 1.856888,
+  "metric": "neg_mae",
+  "n_episodes": 7,
+  "note": "diagonal R[i,i] margin of joint over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.0079,
+  "slope_per_episode": 0.308887,
+  "source": "analysis_study_adverse_results.csv"
+ },
+ "warmstart_margin.rel_trial.study_adverse.naive": {
+  "early_mean": 0.294682,
+  "late_mean": 1.764231,
+  "metric": "neg_mae",
+  "n_episodes": 7,
+  "note": "diagonal R[i,i] margin of naive over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.0105,
+  "slope_per_episode": 0.312024,
+  "source": "analysis_study_adverse_results.csv"
+ },
+ "warmstart_margin.rel_trial.study_outcome.joint": {
+  "early_mean": 0.001779,
+  "late_mean": -0.024711,
+  "metric": "roc_auc",
+  "n_episodes": 7,
+  "note": "diagonal R[i,i] margin of joint over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.0453,
+  "slope_per_episode": -0.004523,
+  "source": "analysis_study_outcome_results.csv"
+ },
+ "warmstart_margin.rel_trial.study_outcome.naive": {
+  "early_mean": 0.003226,
+  "late_mean": -0.032066,
+  "metric": "roc_auc",
+  "n_episodes": 7,
+  "note": "diagonal R[i,i] margin of naive over from_scratch, regressed on episode index; positive slope = the value of continual updating grows with accumulated history",
+  "p_value": 0.0288,
+  "slope_per_episode": -0.006239,
+  "source": "analysis_study_outcome_results.csv"
  }
 }
