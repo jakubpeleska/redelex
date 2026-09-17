@@ -1,0 +1,831 @@
+{
+ "bwt.nonnegative_task_count.der_pp": {
+  "of": 9,
+  "source": "derived from bwt.* above",
+  "value": 9
+ },
+ "bwt.nonnegative_task_count.er": {
+  "of": 9,
+  "source": "derived from bwt.* above",
+  "value": 7
+ },
+ "bwt.nonnegative_task_count.ewc": {
+  "of": 9,
+  "source": "derived from bwt.* above",
+  "value": 9
+ },
+ "bwt.nonnegative_task_count.freeze_extend": {
+  "of": 9,
+  "source": "derived from bwt.* above",
+  "value": 6
+ },
+ "bwt.nonnegative_task_count.from_scratch": {
+  "of": 9,
+  "source": "derived from bwt.* above",
+  "value": 9
+ },
+ "bwt.nonnegative_task_count.joint": {
+  "of": 9,
+  "source": "derived from bwt.* above",
+  "value": 9
+ },
+ "bwt.nonnegative_task_count.lwf": {
+  "of": 9,
+  "source": "derived from bwt.* above",
+  "value": 9
+ },
+ "bwt.nonnegative_task_count.naive": {
+  "of": 9,
+  "source": "derived from bwt.* above",
+  "value": 9
+ },
+ "bwt.rel_f1.driver_dnf.der_pp": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.003376,
+  "source": "analysis_driver_dnf_results.csv",
+  "value": 0.100408
+ },
+ "bwt.rel_f1.driver_dnf.er": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.026005,
+  "source": "analysis_driver_dnf_results.csv",
+  "value": 0.170978
+ },
+ "bwt.rel_f1.driver_dnf.ewc": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.008246,
+  "source": "analysis_driver_dnf_results.csv",
+  "value": 0.008452
+ },
+ "bwt.rel_f1.driver_dnf.freeze_extend": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.006303,
+  "source": "analysis_driver_dnf_results.csv",
+  "value": -0.016279
+ },
+ "bwt.rel_f1.driver_dnf.from_scratch": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.010081,
+  "source": "analysis_driver_dnf_results.csv",
+  "value": 0.062158
+ },
+ "bwt.rel_f1.driver_dnf.joint": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.016395,
+  "source": "analysis_driver_dnf_results.csv",
+  "value": 0.217932
+ },
+ "bwt.rel_f1.driver_dnf.lwf": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.001723,
+  "source": "analysis_driver_dnf_results.csv",
+  "value": 0.065093
+ },
+ "bwt.rel_f1.driver_dnf.naive": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.013743,
+  "source": "analysis_driver_dnf_results.csv",
+  "value": 0.01747
+ },
+ "bwt.rel_f1.driver_position.der_pp": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.252561,
+  "source": "analysis_driver_position_results.csv",
+  "value": 1.316282
+ },
+ "bwt.rel_f1.driver_position.er": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.120861,
+  "source": "analysis_driver_position_results.csv",
+  "value": 1.75505
+ },
+ "bwt.rel_f1.driver_position.ewc": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.063412,
+  "source": "analysis_driver_position_results.csv",
+  "value": 0.33575
+ },
+ "bwt.rel_f1.driver_position.freeze_extend": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.018675,
+  "source": "analysis_driver_position_results.csv",
+  "value": -0.191557
+ },
+ "bwt.rel_f1.driver_position.from_scratch": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.210599,
+  "source": "analysis_driver_position_results.csv",
+  "value": 0.663663
+ },
+ "bwt.rel_f1.driver_position.joint": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.11036,
+  "source": "analysis_driver_position_results.csv",
+  "value": 2.541545
+ },
+ "bwt.rel_f1.driver_position.lwf": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.011953,
+  "source": "analysis_driver_position_results.csv",
+  "value": 0.366186
+ },
+ "bwt.rel_f1.driver_position.naive": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.053197,
+  "source": "analysis_driver_position_results.csv",
+  "value": 0.459005
+ },
+ "bwt.rel_f1.driver_top3.der_pp": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.026966,
+  "source": "analysis_driver_top3_results.csv",
+  "value": 0.099023
+ },
+ "bwt.rel_f1.driver_top3.er": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.012671,
+  "source": "analysis_driver_top3_results.csv",
+  "value": 0.114782
+ },
+ "bwt.rel_f1.driver_top3.ewc": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.036917,
+  "source": "analysis_driver_top3_results.csv",
+  "value": 0.150943
+ },
+ "bwt.rel_f1.driver_top3.freeze_extend": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.010553,
+  "source": "analysis_driver_top3_results.csv",
+  "value": 0.023619
+ },
+ "bwt.rel_f1.driver_top3.from_scratch": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.030951,
+  "source": "analysis_driver_top3_results.csv",
+  "value": 0.148613
+ },
+ "bwt.rel_f1.driver_top3.joint": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.01103,
+  "source": "analysis_driver_top3_results.csv",
+  "value": 0.12346
+ },
+ "bwt.rel_f1.driver_top3.lwf": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.010901,
+  "source": "analysis_driver_top3_results.csv",
+  "value": 0.041039
+ },
+ "bwt.rel_f1.driver_top3.naive": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.021628,
+  "source": "analysis_driver_top3_results.csv",
+  "value": 0.150084
+ },
+ "bwt.rel_stack.post_votes.der_pp": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000223,
+  "source": "post_votes_results.csv",
+  "value": 0.001064
+ },
+ "bwt.rel_stack.post_votes.er": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000205,
+  "source": "post_votes_results.csv",
+  "value": 0.000938
+ },
+ "bwt.rel_stack.post_votes.ewc": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.00042,
+  "source": "post_votes_results.csv",
+  "value": 0.001085
+ },
+ "bwt.rel_stack.post_votes.freeze_extend": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000143,
+  "source": "post_votes_results.csv",
+  "value": -0.00181
+ },
+ "bwt.rel_stack.post_votes.from_scratch": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000875,
+  "source": "post_votes_results.csv",
+  "value": 0.000104
+ },
+ "bwt.rel_stack.post_votes.joint": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000182,
+  "source": "post_votes_results.csv",
+  "value": 0.00234
+ },
+ "bwt.rel_stack.post_votes.lwf": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000361,
+  "source": "post_votes_results.csv",
+  "value": 0.001708
+ },
+ "bwt.rel_stack.post_votes.naive": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000236,
+  "source": "post_votes_results.csv",
+  "value": 0.000777
+ },
+ "bwt.rel_stack.user_badge.der_pp": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000347,
+  "source": "user_badge_results.csv",
+  "value": 0.012053
+ },
+ "bwt.rel_stack.user_badge.er": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.001103,
+  "source": "user_badge_results.csv",
+  "value": -0.000713
+ },
+ "bwt.rel_stack.user_badge.ewc": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.002466,
+  "source": "user_badge_results.csv",
+  "value": 0.004842
+ },
+ "bwt.rel_stack.user_badge.freeze_extend": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000156,
+  "source": "user_badge_results.csv",
+  "value": 0.000699
+ },
+ "bwt.rel_stack.user_badge.from_scratch": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000826,
+  "source": "user_badge_results.csv",
+  "value": 0.002179
+ },
+ "bwt.rel_stack.user_badge.joint": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000453,
+  "source": "user_badge_results.csv",
+  "value": 0.016294
+ },
+ "bwt.rel_stack.user_badge.lwf": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000283,
+  "source": "user_badge_results.csv",
+  "value": 0.011027
+ },
+ "bwt.rel_stack.user_badge.naive": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.001198,
+  "source": "user_badge_results.csv",
+  "value": 0.005496
+ },
+ "bwt.rel_stack.user_engagement.der_pp": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000151,
+  "source": "analysis_user_engagement_results.csv",
+  "value": 0.009519
+ },
+ "bwt.rel_stack.user_engagement.er": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000349,
+  "source": "analysis_user_engagement_results.csv",
+  "value": -0.017973
+ },
+ "bwt.rel_stack.user_engagement.ewc": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000292,
+  "source": "analysis_user_engagement_results.csv",
+  "value": 0.004604
+ },
+ "bwt.rel_stack.user_engagement.freeze_extend": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000152,
+  "source": "analysis_user_engagement_results.csv",
+  "value": 0.003647
+ },
+ "bwt.rel_stack.user_engagement.from_scratch": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000431,
+  "source": "analysis_user_engagement_results.csv",
+  "value": 0.000825
+ },
+ "bwt.rel_stack.user_engagement.joint": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.001512,
+  "source": "analysis_user_engagement_results.csv",
+  "value": 0.013517
+ },
+ "bwt.rel_stack.user_engagement.lwf": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000435,
+  "source": "analysis_user_engagement_results.csv",
+  "value": 0.011511
+ },
+ "bwt.rel_stack.user_engagement.naive": {
+  "metric": "backward_transfer",
+  "n_trials": 3,
+  "sd": 0.000197,
+  "source": "analysis_user_engagement_results.csv",
+  "value": 0.004873
+ },
+ "bwt.rel_trial.site_success.der_pp": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.018681,
+  "source": "analysis_site_success_results.csv",
+  "value": 0.268061
+ },
+ "bwt.rel_trial.site_success.er": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.026345,
+  "source": "analysis_site_success_results.csv",
+  "value": 0.227768
+ },
+ "bwt.rel_trial.site_success.ewc": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.004298,
+  "source": "analysis_site_success_results.csv",
+  "value": 0.087387
+ },
+ "bwt.rel_trial.site_success.freeze_extend": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.003663,
+  "source": "analysis_site_success_results.csv",
+  "value": 0.016654
+ },
+ "bwt.rel_trial.site_success.from_scratch": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.02685,
+  "source": "analysis_site_success_results.csv",
+  "value": 0.209957
+ },
+ "bwt.rel_trial.site_success.joint": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.016863,
+  "source": "analysis_site_success_results.csv",
+  "value": 0.255207
+ },
+ "bwt.rel_trial.site_success.lwf": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.003412,
+  "source": "analysis_site_success_results.csv",
+  "value": 0.114422
+ },
+ "bwt.rel_trial.site_success.naive": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.01122,
+  "source": "analysis_site_success_results.csv",
+  "value": 0.093302
+ },
+ "bwt.rel_trial.study_adverse.der_pp": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.046934,
+  "source": "analysis_study_adverse_results.csv",
+  "value": 1.968592
+ },
+ "bwt.rel_trial.study_adverse.er": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.511599,
+  "source": "analysis_study_adverse_results.csv",
+  "value": 7.807513
+ },
+ "bwt.rel_trial.study_adverse.ewc": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.063148,
+  "source": "analysis_study_adverse_results.csv",
+  "value": 0.961093
+ },
+ "bwt.rel_trial.study_adverse.freeze_extend": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.031452,
+  "source": "analysis_study_adverse_results.csv",
+  "value": 0.283585
+ },
+ "bwt.rel_trial.study_adverse.from_scratch": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.137691,
+  "source": "analysis_study_adverse_results.csv",
+  "value": 2.300047
+ },
+ "bwt.rel_trial.study_adverse.joint": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.151661,
+  "source": "analysis_study_adverse_results.csv",
+  "value": 9.597906
+ },
+ "bwt.rel_trial.study_adverse.lwf": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.055984,
+  "source": "analysis_study_adverse_results.csv",
+  "value": 0.586189
+ },
+ "bwt.rel_trial.study_adverse.naive": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.223855,
+  "source": "analysis_study_adverse_results.csv",
+  "value": 2.871801
+ },
+ "bwt.rel_trial.study_outcome.der_pp": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.018278,
+  "source": "analysis_study_outcome_results.csv",
+  "value": 0.20388
+ },
+ "bwt.rel_trial.study_outcome.er": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.013387,
+  "source": "analysis_study_outcome_results.csv",
+  "value": 0.207682
+ },
+ "bwt.rel_trial.study_outcome.ewc": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.005127,
+  "source": "analysis_study_outcome_results.csv",
+  "value": 0.114178
+ },
+ "bwt.rel_trial.study_outcome.freeze_extend": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.006921,
+  "source": "analysis_study_outcome_results.csv",
+  "value": 0.015069
+ },
+ "bwt.rel_trial.study_outcome.from_scratch": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.026375,
+  "source": "analysis_study_outcome_results.csv",
+  "value": 0.119746
+ },
+ "bwt.rel_trial.study_outcome.joint": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.024822,
+  "source": "analysis_study_outcome_results.csv",
+  "value": 0.224995
+ },
+ "bwt.rel_trial.study_outcome.lwf": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.002888,
+  "source": "analysis_study_outcome_results.csv",
+  "value": 0.035711
+ },
+ "bwt.rel_trial.study_outcome.naive": {
+  "metric": "backward_transfer",
+  "n_trials": 5,
+  "sd": 0.007997,
+  "source": "analysis_study_outcome_results.csv",
+  "value": 0.115508
+ },
+ "episodes.rel_f1.driver_dnf": {
+  "note": "max train_episode as emitted",
+  "source": "analysis_driver_dnf_results.csv",
+  "value": 10
+ },
+ "episodes.rel_f1.driver_position": {
+  "note": "max train_episode as emitted",
+  "source": "analysis_driver_position_results.csv",
+  "value": 10
+ },
+ "episodes.rel_f1.driver_top3": {
+  "note": "max train_episode as emitted",
+  "source": "analysis_driver_top3_results.csv",
+  "value": 1
+ },
+ "episodes.rel_stack.post_votes": {
+  "note": "max train_episode as emitted",
+  "source": "post_votes_results.csv",
+  "value": 17
+ },
+ "episodes.rel_stack.user_badge": {
+  "note": "max train_episode as emitted",
+  "source": "user_badge_results.csv",
+  "value": 16
+ },
+ "episodes.rel_stack.user_engagement": {
+  "note": "max train_episode as emitted",
+  "source": "analysis_user_engagement_results.csv",
+  "value": 17
+ },
+ "episodes.rel_trial.site_success": {
+  "note": "max train_episode as emitted",
+  "source": "analysis_site_success_results.csv",
+  "value": 6
+ },
+ "episodes.rel_trial.study_adverse": {
+  "note": "max train_episode as emitted",
+  "source": "analysis_study_adverse_results.csv",
+  "value": 6
+ },
+ "episodes.rel_trial.study_outcome": {
+  "note": "max train_episode as emitted",
+  "source": "analysis_study_outcome_results.csv",
+  "value": 6
+ },
+ "mean_rank.final_episode.der_pp": {
+  "n_tasks": 9,
+  "note": "deployed quantity",
+  "source": "R[T,T] over trial replicates",
+  "value": 4.67
+ },
+ "mean_rank.final_episode.er": {
+  "n_tasks": 9,
+  "note": "deployed quantity",
+  "source": "R[T,T] over trial replicates",
+  "value": 4.33
+ },
+ "mean_rank.final_episode.ewc": {
+  "n_tasks": 9,
+  "note": "deployed quantity",
+  "source": "R[T,T] over trial replicates",
+  "value": 4.44
+ },
+ "mean_rank.final_episode.freeze_extend": {
+  "n_tasks": 9,
+  "note": "deployed quantity",
+  "source": "R[T,T] over trial replicates",
+  "value": 7.0
+ },
+ "mean_rank.final_episode.from_scratch": {
+  "n_tasks": 9,
+  "note": "deployed quantity",
+  "source": "R[T,T] over trial replicates",
+  "value": 3.78
+ },
+ "mean_rank.final_episode.joint": {
+  "n_tasks": 9,
+  "note": "deployed quantity",
+  "source": "R[T,T] over trial replicates",
+  "value": 3.33
+ },
+ "mean_rank.final_episode.lwf": {
+  "n_tasks": 9,
+  "note": "deployed quantity",
+  "source": "R[T,T] over trial replicates",
+  "value": 5.11
+ },
+ "mean_rank.final_episode.naive": {
+  "n_tasks": 9,
+  "note": "deployed quantity",
+  "source": "R[T,T] over trial replicates",
+  "value": 3.33
+ },
+ "mean_rank.retention.der_pp": {
+  "n_tasks": 9,
+  "note": "matrix-averaged: final model over EVERY episode it saw. Retention, not deployment.",
+  "source": "average_accuracy over trial replicates",
+  "value": 3.22
+ },
+ "mean_rank.retention.er": {
+  "n_tasks": 9,
+  "note": "matrix-averaged: final model over EVERY episode it saw. Retention, not deployment.",
+  "source": "average_accuracy over trial replicates",
+  "value": 3.89
+ },
+ "mean_rank.retention.ewc": {
+  "n_tasks": 9,
+  "note": "matrix-averaged: final model over EVERY episode it saw. Retention, not deployment.",
+  "source": "average_accuracy over trial replicates",
+  "value": 5.33
+ },
+ "mean_rank.retention.freeze_extend": {
+  "n_tasks": 9,
+  "note": "matrix-averaged: final model over EVERY episode it saw. Retention, not deployment.",
+  "source": "average_accuracy over trial replicates",
+  "value": 7.89
+ },
+ "mean_rank.retention.from_scratch": {
+  "n_tasks": 9,
+  "note": "matrix-averaged: final model over EVERY episode it saw. Retention, not deployment.",
+  "source": "average_accuracy over trial replicates",
+  "value": 4.33
+ },
+ "mean_rank.retention.joint": {
+  "n_tasks": 9,
+  "note": "matrix-averaged: final model over EVERY episode it saw. Retention, not deployment.",
+  "source": "average_accuracy over trial replicates",
+  "value": 1.22
+ },
+ "mean_rank.retention.lwf": {
+  "n_tasks": 9,
+  "note": "matrix-averaged: final model over EVERY episode it saw. Retention, not deployment.",
+  "source": "average_accuracy over trial replicates",
+  "value": 5.78
+ },
+ "mean_rank.retention.naive": {
+  "n_tasks": 9,
+  "note": "matrix-averaged: final model over EVERY episode it saw. Retention, not deployment.",
+  "source": "average_accuracy over trial replicates",
+  "value": 4.33
+ },
+ "metric.rel_f1.driver_dnf": {
+  "source": "analysis_driver_dnf_results.csv",
+  "value": "roc_auc"
+ },
+ "metric.rel_f1.driver_position": {
+  "source": "analysis_driver_position_results.csv",
+  "value": "neg_mae"
+ },
+ "metric.rel_f1.driver_top3": {
+  "source": "analysis_driver_top3_results.csv",
+  "value": "roc_auc"
+ },
+ "metric.rel_stack.post_votes": {
+  "source": "post_votes_results.csv",
+  "value": "neg_mae"
+ },
+ "metric.rel_stack.user_badge": {
+  "source": "user_badge_results.csv",
+  "value": "roc_auc"
+ },
+ "metric.rel_stack.user_engagement": {
+  "source": "analysis_user_engagement_results.csv",
+  "value": "roc_auc"
+ },
+ "metric.rel_trial.site_success": {
+  "source": "analysis_site_success_results.csv",
+  "value": "neg_mae"
+ },
+ "metric.rel_trial.study_adverse": {
+  "source": "analysis_study_adverse_results.csv",
+  "value": "neg_mae"
+ },
+ "metric.rel_trial.study_outcome": {
+  "source": "analysis_study_outcome_results.csv",
+  "value": "roc_auc"
+ },
+ "recency_gap.rel_f1.driver_dnf.from_scratch": {
+  "metric": "roc_auc",
+  "n_columns": 10,
+  "note": "R[j,j]-R[0,j]; positive = a stale model is worse on identical rows",
+  "source": "analysis_driver_dnf_results.csv",
+  "value": 0.050152
+ },
+ "recency_gap.rel_f1.driver_position.from_scratch": {
+  "metric": "neg_mae",
+  "n_columns": 10,
+  "note": "R[j,j]-R[0,j]; positive = a stale model is worse on identical rows",
+  "source": "analysis_driver_position_results.csv",
+  "value": 1.241596
+ },
+ "recency_gap.rel_f1.driver_top3.from_scratch": {
+  "metric": "roc_auc",
+  "n_columns": 1,
+  "note": "R[j,j]-R[0,j]; positive = a stale model is worse on identical rows",
+  "source": "analysis_driver_top3_results.csv",
+  "value": -0.033879
+ },
+ "recency_gap.rel_stack.post_votes.from_scratch": {
+  "metric": "neg_mae",
+  "n_columns": 17,
+  "note": "R[j,j]-R[0,j]; positive = a stale model is worse on identical rows",
+  "source": "post_votes_results.csv",
+  "value": 0.014509
+ },
+ "recency_gap.rel_stack.user_badge.from_scratch": {
+  "metric": "roc_auc",
+  "n_columns": 16,
+  "note": "R[j,j]-R[0,j]; positive = a stale model is worse on identical rows",
+  "source": "user_badge_results.csv",
+  "value": 0.026861
+ },
+ "recency_gap.rel_stack.user_engagement.from_scratch": {
+  "metric": "roc_auc",
+  "n_columns": 17,
+  "note": "R[j,j]-R[0,j]; positive = a stale model is worse on identical rows",
+  "source": "analysis_user_engagement_results.csv",
+  "value": 0.039995
+ },
+ "recency_gap.rel_trial.site_success.from_scratch": {
+  "metric": "neg_mae",
+  "n_columns": 6,
+  "note": "R[j,j]-R[0,j]; positive = a stale model is worse on identical rows",
+  "source": "analysis_site_success_results.csv",
+  "value": 0.035576
+ },
+ "recency_gap.rel_trial.study_adverse.from_scratch": {
+  "metric": "neg_mae",
+  "n_columns": 6,
+  "note": "R[j,j]-R[0,j]; positive = a stale model is worse on identical rows",
+  "source": "analysis_study_adverse_results.csv",
+  "value": 3.294229
+ },
+ "recency_gap.rel_trial.study_outcome.from_scratch": {
+  "metric": "roc_auc",
+  "n_columns": 6,
+  "note": "R[j,j]-R[0,j]; positive = a stale model is worse on identical rows",
+  "source": "analysis_study_outcome_results.csv",
+  "value": 0.09743
+ },
+ "trials.rel_f1.driver_dnf": {
+  "note": "trial slots, NOT seeds: hash-sorted per increment, do not track across episodes",
+  "source": "analysis_driver_dnf_results.csv",
+  "value": 5
+ },
+ "trials.rel_f1.driver_position": {
+  "note": "trial slots, NOT seeds: hash-sorted per increment, do not track across episodes",
+  "source": "analysis_driver_position_results.csv",
+  "value": 5
+ },
+ "trials.rel_f1.driver_top3": {
+  "note": "trial slots, NOT seeds: hash-sorted per increment, do not track across episodes",
+  "source": "analysis_driver_top3_results.csv",
+  "value": 5
+ },
+ "trials.rel_stack.post_votes": {
+  "note": "trial slots, NOT seeds: hash-sorted per increment, do not track across episodes",
+  "source": "post_votes_results.csv",
+  "value": 3
+ },
+ "trials.rel_stack.user_badge": {
+  "note": "trial slots, NOT seeds: hash-sorted per increment, do not track across episodes",
+  "source": "user_badge_results.csv",
+  "value": 3
+ },
+ "trials.rel_stack.user_engagement": {
+  "note": "trial slots, NOT seeds: hash-sorted per increment, do not track across episodes",
+  "source": "analysis_user_engagement_results.csv",
+  "value": 3
+ },
+ "trials.rel_trial.site_success": {
+  "note": "trial slots, NOT seeds: hash-sorted per increment, do not track across episodes",
+  "source": "analysis_site_success_results.csv",
+  "value": 5
+ },
+ "trials.rel_trial.study_adverse": {
+  "note": "trial slots, NOT seeds: hash-sorted per increment, do not track across episodes",
+  "source": "analysis_study_adverse_results.csv",
+  "value": 5
+ },
+ "trials.rel_trial.study_outcome": {
+  "note": "trial slots, NOT seeds: hash-sorted per increment, do not track across episodes",
+  "source": "analysis_study_outcome_results.csv",
+  "value": 5
+ }
+}
