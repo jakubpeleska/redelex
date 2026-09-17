@@ -381,3 +381,104 @@ before step 100.
 This makes the negative results supporting evidence rather than the headline, which also answers
 d22i's W2 ("what work is there still to do?") with a named open problem instead of a flat ranking.
 Item C — the epoch-budget arm, queued — is what turns step 3 from assertable into defensible.
+
+---
+
+## REQ-001 [detail] Artifact delivery — **ANSWERED 2026-09-17: through git.**
+
+Everything ships in the repo under `paper/`. Verified nothing there is gitignored — `.tex`, `.pdf`
+and `.png` all commit normally. Pull `feature/continual-learning-benchmark` and read:
+
+```
+paper/NUMBERS.json      every quotable scalar, provenanced   (150 entries, live)
+paper/MANIFEST.md       per-figure / per-table status         (live)
+paper/REQUESTS.md       this file                             (live)
+paper/figures/F*.pdf    + matching .png                       (pending the figure layer)
+paper/tables/T*.tex     booktabs                              (pending the figure layer)
+```
+
+Figures will be emitted as **PDF and PNG both**. Note the figure layer does not exist yet: the new
+analysis stack has zero plotting code, and every figure in the submission came from a notebook
+targeting the old 4-regime experiment, which does not map onto the eight current modes. It is a
+~2-day build, not a render. `MANIFEST.md` marks which numbers are already final (`DATA-READY`) so you
+can write against them before the plots exist.
+
+---
+
+## REQ-011 [detail] Anonymisation — **DEFERRED to submission, TRACKED as a checklist.**
+
+The authors have scheduled this for submission time. Recording the concrete scrub so it is not
+rediscovered at the deadline — it is a desk-reject risk, not a formatting nit:
+
+- [ ] `model_save_dir` and every logged path: `/home/pelesjak/...`, `~/git/claude-redelex`
+- [ ] Repo name `claude-redelex` anywhere in scripts, logs, receipts or figure metadata
+- [ ] MLflow experiment prefixes: every one is `pelesjak_cl_*`
+- [ ] Slurm job names and `--out` trees in any bundled log
+- [ ] `materialize-receipt.json` files, which embed absolute cache paths
+- [ ] Cluster identifiers: `rci.cvut.cz`, `potato.felk.cvut.cz`
+- [ ] Figure PDF metadata (matplotlib embeds the producing path unless cleared)
+- [ ] Code link must be an anonymous mirror, not a personal repository
+
+---
+
+## REQ-010 [detail] ROLAND and DRIFT — **ANSWERED 2026-09-17. Both are real, both matter, and your novelty instinct was right.**
+
+I read both rather than work from the differentiation table.
+
+### ROLAND (You, Du, Leskovec — **KDD 2022**, arXiv:2208.07239)
+
+**This is genuine prior art for the protocol, and it must be cited.** It introduces *"a live-update
+evaluation setting for dynamic graphs that mimics real-world use cases, where GNNs are making
+predictions and being updated on a rolling basis."* That is our rolling-horizon protocol, four years
+earlier.
+
+**So do not claim to introduce rolling-horizon evaluation.** Claim what is actually ours:
+
+| | ROLAND | this paper |
+|---|---|---|
+| graph | homogeneous dynamic graphs | heterogeneous, schema-derived, multi-table relational |
+| task | future link prediction only | pointwise entity tasks (binary / regression) |
+| update strategies | **one** — incremental training + meta-learning | **eight**, spanning all four CL families |
+| contribution | a method | a benchmark, and three protocol defects it localises |
+
+The fourth row is the load-bearing one: ROLAND proposes a training approach and compares baselines
+*re-implemented under it*; it does not compare alternative continual-learning strategies against each
+other. That is exactly what JDci's W2 demanded of us and exactly what we deliver.
+
+This is the same move the rebuttal already made successfully for Galke et al. 2020 — NHfu replied
+*"The distinction from Galke et al. is now clear"* and dropped the point. Make it explicitly, in
+Related Work, in one paragraph. A reviewer who finds ROLAND uncited will treat the protocol
+contribution as unoriginal; a reviewer who sees it cited and differentiated will not.
+
+**One honest exposure to pre-empt:** ROLAND evaluates link prediction, which our inclusion rule
+*excludes* (REQ-004). A reviewer can fairly say we excluded exactly the task type the closest prior
+work uses. Address it in the same paragraph — the exclusion is about the decay metric and prediction
+head, not about scope — rather than leaving it to be found.
+
+### DRIFT (Sun, Zhang, Ni, Song — arXiv:2605.12998, 13 May 2026, rev. 27 Jun 2026)
+
+*A Benchmark for Task-Free Continual Graph Learning with Continuous Distribution Shifts.* It models
+streams as time-varying mixtures of latent task distributions, and reports that **existing CL methods
+drop significantly in task-free settings, which it attributes to their dependence on explicit task
+boundaries.**
+
+**Concurrent, not prior, to the NeurIPS submission** (ours 4 May 2026, DRIFT 13 May) — but for an ICLR
+2027 deadline it is prior work and must be cited. Treat it as **corroboration, not competition**: it
+reaches a similar negative direction in a different domain, which strengthens rather than scoops us,
+provided the mechanisms are distinguished. They genuinely differ:
+
+- **DRIFT:** CL methods fail because there are no task boundaries to key on.
+- **Ours:** bounded-memory CL is *unmotivated* because the past training set is exactly
+  reconstructible under append-only growth with deterministic temporal masking. Not a failure of the
+  methods — an absence of the problem they solve.
+
+Those are compatible claims about different causes. Saying so explicitly turns the nearest concurrent
+work into support for our framing.
+
+### Net effect on the paper's novelty claim
+
+Drop "we introduce a multi-episodic protocol" as a standalone contribution. The defensible set is:
+(1) the protocol **transferred to multi-table relational data**, with an auditable admissibility rule
+over an established benchmark; (2) the **first controlled comparison of the four CL families** in this
+setting; (3) the **three protocol defects** — buffer-capacity dependence, BWT's tautology under a
+growing history, and budget starvation — which is the part no prior work has.
