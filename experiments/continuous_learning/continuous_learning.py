@@ -840,6 +840,8 @@ def run_ray_tuner(
     seeds: Optional[list[int]] = None,
     max_increments: Optional[int] = None,
     max_training_steps: int = 2000,
+    limit_train_batches: Optional[int] = 100,
+    max_epochs: Optional[int] = None,
     val_check_interval: Optional[int] = 100,
     val_max_rows: Optional[int] = 25_000,
     val_delta_days: Optional[float] = None,
@@ -1031,7 +1033,12 @@ def run_ray_tuner(
                 "mlflow_experiment": mlflow_experiment,
                 "mlflow_uri": mlflow_uri,
                 "max_training_steps": max_training_steps,
-                "limit_train_batches": 100,
+                # 100 batches is not an epoch: it is the step-budget protocol, where
+                # cost is equalised across episodes by capping batches rather than
+                # passes. The budget-sensitivity arm needs the other regime -- a real
+                # pass over the episode's own data -- so both are now expressible.
+                "limit_train_batches": limit_train_batches,
+                "max_epochs": max_epochs,
                 "val_check_interval": val_check_interval,
                 "val_max_rows": val_max_rows,
                 "val_delta_days": val_delta_days,
@@ -1121,6 +1128,18 @@ if __name__ == "__main__":
     )
     parser.add_argument("--max_training_steps", type=int, default=2000)
     parser.add_argument(
+        "--limit_train_batches", type=int, default=100,
+        help="Cap each epoch at N batches. The default is the step-budget "
+             "protocol. Pass 0 to let an epoch be a full pass over the episode's "
+             "training set, which is what --max_epochs then counts.",
+    )
+    parser.add_argument(
+        "--max_epochs", type=int, default=None,
+        help="Stop after N epochs. With --limit_train_batches 0 this is a real "
+             "epoch budget, so later episodes with more history train longer -- "
+             "the opposite of the fixed step budget, and the control for it.",
+    )
+    parser.add_argument(
         "--val_check_interval", type=int, default=100,
         help="Validate every N optimiser steps. 0 restores the old epoch-based "
              "behaviour, where an epoch was min(limit_train_batches, len(loader)) "
@@ -1197,6 +1216,8 @@ if __name__ == "__main__":
         seeds=args.seeds,
         max_increments=args.max_increments,
         max_training_steps=args.max_training_steps,
+        limit_train_batches=(args.limit_train_batches or None),
+        max_epochs=args.max_epochs,
         val_check_interval=args.val_check_interval or None,
         val_max_rows=args.val_max_rows or None,
         val_delta_days=args.val_delta_days,
