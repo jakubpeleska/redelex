@@ -210,7 +210,7 @@ def test_well_sized_chunks_are_not_flagged(cfg):
     assert not any("will kill it" in w for w in srg.plan_warnings(chains, cfg))
 
 
-def test_uncached_dataset_is_flagged(cfg):
+def test_uncached_dataset_is_flagged(cfg, monkeypatch):
     """A dataset absent from the RCI cache must be flagged before it is planned.
 
     Downloading does not belong on a compute node, so the warning is the only
@@ -220,12 +220,21 @@ def test_uncached_dataset_is_flagged(cfg):
     has been cached on RCI for as long as the grid has run, so the assertion
     passed while the launcher cried wolf on every single submission -- and a
     warning that is always wrong is a warning nobody reads.
+
+    It no longer *derives* the dataset from the table either. Once every costed
+    dataset was verified present on RCI the difference went empty, and a test
+    that needs the production config to have a gap in it fails the moment the
+    gap is correctly closed. So the uncached dataset is injected instead: what
+    is under test is the warning, not the contents of CACHED_ON_RCI.
     """
-    uncached = sorted(set(srg.DATASET_GPU_HOURS) - srg.CACHED_ON_RCI)
-    assert uncached, "no uncached dataset left to exercise the warning with"
-    dataset = uncached[0]
+    dataset = next(iter(sorted(srg.CACHED_ON_RCI & set(srg.DATASET_GPU_HOURS))))
     task = next(t for (d, t) in srg.EPISODES if d == dataset)
-    warnings = srg.plan_warnings([plan_chain(dataset, task, "naive", cfg)], cfg)
+    chain = [plan_chain(dataset, task, "naive", cfg)]
+
+    assert not any("cache" in w for w in srg.plan_warnings(chain, cfg))
+
+    monkeypatch.setattr(srg, "CACHED_ON_RCI", srg.CACHED_ON_RCI - {dataset})
+    warnings = srg.plan_warnings(chain, cfg)
     assert any("cache" in w and dataset in w for w in warnings), warnings
 
 

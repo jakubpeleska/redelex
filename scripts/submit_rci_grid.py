@@ -253,7 +253,10 @@ DEVICE_FACTOR: Dict[str, float] = {"A100": 1.0, "V100": 1.8}
 
 # Datasets already in the 17 GB relbench cache on RCI. Anything else has to be
 # fetched first, and fetching does not belong on a login node.
-CACHED_ON_RCI: Set[str] = {"rel-f1", "rel-amazon", "rel-stack", "rel-trial", "rel-avito"}
+# Verified 2026-09-17 against each dataset's materialize-receipt.json on RCI:
+# rel-hm 3/3, rel-amazon 3/3, rel-ratebeer 13/13, all ok=true.
+CACHED_ON_RCI: Set[str] = {"rel-f1", "rel-amazon", "rel-stack", "rel-trial", "rel-avito",
+                           "rel-hm", "rel-ratebeer"}
 
 # Job names carry the lane so a later submission can see which lanes are taken.
 JOB_PREFIX = "clg"
