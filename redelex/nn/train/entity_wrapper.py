@@ -24,6 +24,7 @@ class LightningEntityTaskWrapper(L.LightningModule):
         optimizer: torch.optim.Optimizer,
         task: Union[EntityTaskMixin, EntityTask],
         lr_scheduler_config: Optional[dict] = None,
+        modes: tuple[str, ...] = ("val", "test"),
     ):
         super().__init__()
 
@@ -33,7 +34,10 @@ class LightningEntityTaskWrapper(L.LightningModule):
         self.val_metrics, self.tune_metric, self.higher_is_better = get_metrics(
             self.task.task_type, num_classes=getattr(task, "num_classes", None)
         )
-        self.test_metrics = copy.deepcopy(self.val_metrics)
+        self.modes = modes
+        self.test_metrics = (
+            copy.deepcopy(self.val_metrics) if "test" in self.modes else None
+        )
         self.optimizer = optimizer
         self.lr_scheduler_config = lr_scheduler_config
         self.scheduler = (
@@ -85,6 +89,13 @@ class LightningEntityTaskWrapper(L.LightningModule):
         self.log_dict({"train_loss_epoch": train_loss}, prog_bar=True, logger=True)
 
     @torch.no_grad()
+    def _active_metrics_with_mode(self):
+        pairs = [(self.val_metrics, "val"), (self.test_metrics, "test")]
+        return [(m, mode) for m, mode in pairs if m is not None]
+
+    def _active_metrics(self):
+        return [m for m, _ in self._active_metrics_with_mode()]
+
     def validation_step(self, batch, batch_idx: int, dataloader_idx: int = 0):
         pred, target = self(batch)
 
@@ -93,6 +104,8 @@ class LightningEntityTaskWrapper(L.LightningModule):
 
         mode = "val" if dataloader_idx == 0 else "test"
         metrics = self.val_metrics if mode == "val" else self.test_metrics
+        if metrics is None:
+            return
 
         for _, m in metrics.items():
             m.update(pred, target)
@@ -101,7 +114,7 @@ class LightningEntityTaskWrapper(L.LightningModule):
         if self.trainer.sanity_checking:
             # Discard metric updates from the sanity-check batches so they do
             # not pollute first/best metrics of the real epochs.
-            for metrics in (self.val_metrics, self.test_metrics):
+            for metrics in self._active_metrics():
                 for m in metrics.values():
                     m.reset()
             return
@@ -112,10 +125,7 @@ class LightningEntityTaskWrapper(L.LightningModule):
         best_tune_metric = self.best_tune_metric.compute()
         self.best_tune_metric.update(tune_metric)
 
-        for metrics, mode in [
-            (self.val_metrics, "val"),
-            (self.test_metrics, "test"),
-        ]:
+        for metrics, mode in self._active_metrics_with_mode():
             for k, m in metrics.items():
                 val_metrics[f"{mode}_{k}"] = m.compute()
                 m.reset()
@@ -140,12 +150,23 @@ class LightningEntityTaskWrapper(L.LightningModule):
 
         self.log_dict(val_metrics, prog_bar=True, logger=True)
 
+        self._step_plateau_scheduler(tune_metric)
+
+    def _step_plateau_scheduler(self, tune_metric) -> None:
+        """Advance a ReduceLROnPlateau once per validation.
+
+        Stepping from the hook that produced the metric makes ``patience`` mean
+        "validations" for every mode and every dataset.
+        """
+        if self.scheduler is None:
+            return
+        value = tune_metric.item() if hasattr(tune_metric, "item") else float(tune_metric)
+        self.scheduler.step(value)
+        self.log("lr", self.optimizer.param_groups[0]["lr"], prog_bar=False, logger=True)
+
     def configure_optimizers(self):
-        if self.lr_scheduler_config is not None:
-            return {
-                "optimizer": self.optimizer,
-                **self.lr_scheduler_config,
-            }
+        # The scheduler is deliberately NOT handed to Lightning: it is stepped in
+        # `_step_plateau_scheduler` instead, once per validation. See there.
         return self.optimizer
 
 
