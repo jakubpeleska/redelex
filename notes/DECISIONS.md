@@ -42,3 +42,12 @@ still binding are restated here.
   A100-SXM4-40GB (the "amd" is the host CPU); `gpu*` partitions are V100-SXM2-32GB.
 - **MLflow:** `http://potato.felk.cvut.cz:2222`. The Python `MlflowClient` stalled on a large
   `search_runs` (2026-10-14) while the REST API answered in < 1 s; page the REST endpoint if it hangs.
+
+## Checkpoint A (2026-10-15, Jakub)
+
+- **rel-f1 holdout fraction: 20%.** The smallest fraction with at least 8 held-out drivers at every
+  update (10% leaves 4). Evidence: `notebooks/methodology/out/02_holdout_choice_rel-f1.json`. The
+  stopping signal stays noisy at 20% (entity-bootstrap SE: AUROC ~0.07, MAE ~0.8); notebook 03
+  measures what that costs.
+- **Calibration scope (notebook 03a):** driver-position + driver-dnf, regimes scratch_all /
+  cumulative / incremental, seeds 0-1, plus a plateau-LR arm on cumulative; ~13 GPU-h on RCI.
