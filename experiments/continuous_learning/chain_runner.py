@@ -92,7 +92,14 @@ class ChainConfig:
     out_dir: str
     variant: str = "main"
     # Protocol. None = the task's native value: ΔI = test - val span, stride = Δw.
+    # delta_i_days = 0 means "never update after the first" (ΔI = ∞).
     delta_i_days: Optional[float] = None
+    # Start the update grid at this date (ISO) instead of the first update with
+    # enough rows; it becomes the grid's reference, so every ΔI shares it (RQ4).
+    first_update: Optional[str] = None
+    # Adopt this model at the first update instead of training one (RQ4: every
+    # configuration starts from the same model trained up to t0).
+    init_model: Optional[str] = None
     anchor_stride_days: Optional[float] = None
     anchor_phase_days: float = 0.0
     holdout_frac: float = 0.1
@@ -111,6 +118,9 @@ class ChainConfig:
     check_min_steps: int = 10
     patiences: tuple = (5, 10)
     monitor: str = "val_loss"
+    # "convergence": stop on held-out loss. "budget": train exactly max_steps
+    # steps, no validation, keep the final weights (RQ4's steps per update B).
+    stop_rule: str = "convergence"
     min_selection_rows: int = 32
     selection_max_rows: Optional[int] = None
     # Reporting.
@@ -224,9 +234,20 @@ def build_context(
         task, db, anchors, cfg.holdout_frac, salt, cache_path=anchor_cache
     )
 
-    delta_i = _days(cfg.delta_i_days) or (dataset.test_timestamp - dataset.val_timestamp)
-    times = grid_update_times(dataset.val_timestamp, delta_i, first=anchors.min(), last=anchors.max())
+    native = dataset.test_timestamp - dataset.val_timestamp
+    if cfg.delta_i_days is None:
+        delta_i = native
+    elif cfg.delta_i_days == 0:
+        delta_i = None  # ΔI = ∞: the first model serves the whole horizon
+    else:
+        delta_i = pd.Timedelta(days=cfg.delta_i_days)
+    reference = pd.Timestamp(cfg.first_update) if cfg.first_update else dataset.val_timestamp
+    times = grid_update_times(reference, delta_i or native, first=anchors.min(), last=anchors.max())
+    if cfg.first_update:
+        times = [t for t in times if t >= reference]
     times = times[first_update_index(wrapper, times, cfg.min_initial_rows):]
+    if delta_i is None:
+        times = times[:1]
     plan = EpisodePlan(tuple(times), horizon_end=anchors.max() + pd.Timedelta(days=1), delta_w=dw)
 
     protocol = Protocol(
@@ -238,7 +259,8 @@ def build_context(
         anchor_phase=phase,
         holdout_frac=cfg.holdout_frac,
         holdout_salt=salt,
-        extra={"min_initial_rows": cfg.min_initial_rows, "first_update": times[0]},
+        extra={"min_initial_rows": cfg.min_initial_rows, "first_update": times[0],
+               "first_update_requested": cfg.first_update},
     )
 
     if col_to_stype is None:
@@ -374,7 +396,13 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
 
     model = new_model(ctx, cfg)
     loaded = False
-    if mode.warm_start and prev_model is not None:
+    adopt = ep.index == 1 and cfg.init_model is not None
+    if adopt and (mode.ewc_lambda is not None or mode.buffer_size is not None):
+        raise NotImplementedError("init_model is supported for stateless regimes only")
+    if adopt:
+        model.load_state_dict(torch.load(cfg.init_model, map_location="cpu"))
+        loaded = True
+    elif mode.warm_start and prev_model is not None:
         fresh = new_model(ctx, cfg) if mode.shrink is not None else None
         model.load_state_dict(torch.load(prev_model, map_location="cpu"))
         loaded = True
@@ -395,9 +423,18 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
         anchor = (ParameterAnchor.from_state_dict(state["anchor"]) if state.get("anchor")
                   else ParameterAnchor(lam=mode.ewc_lambda, gamma=0.9))
 
-    sources = training_sources(ctx, mode, ep, buffer=buffer)
+    sources = {} if adopt else training_sources(ctx, mode, ep, buffer=buffer)
     for name, (table, _) in sources.items():
         assert_no_holdout(table)
+    deploy = ctx.wrapper.get_table(*ep.deploy_span, part="all")
+    if adopt:
+        model.to(device)
+        torch.save(model.state_dict(), ep_dir / "model.pt")
+        return _score_and_record(ctx, cfg, mode, ep, ep_dir, model, deploy, seed, loaded, sources=sources,
+                                 meter=CostMeterCallback(), convergence=None, anytime_cb=None,
+                                 selection=None, selection_source=None, check_every=None,
+                                 steps_per_epoch=None, anytime_rows=0, setup_s=time.perf_counter() - t_setup,
+                                 optimizer=None, anchor=None, buffer=None, loss_fn=None)
     n_train = sum(len(t.df) for t, _ in sources.values())
     if n_train == 0:
         raise RuntimeError(f"update {ep.index}: no training rows for {mode.name}")
@@ -417,20 +454,22 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
         transform_factory=AttachTargetTransform,
     )
 
-    selection, selection_source = selection_table(ctx, cfg, ep)
-    val_loader = make_eval_loader(ctx.data, task, selection, _neighbors(cfg), cfg.eval_batch_size)
-    deploy = ctx.wrapper.get_table(*ep.deploy_span, part="all")
+    budget = cfg.stop_rule == "budget"
+    if cfg.stop_rule not in ("convergence", "budget"):
+        raise ValueError(f"unknown stop_rule {cfg.stop_rule!r}")
+    selection, selection_source = (None, None) if budget else selection_table(ctx, cfg, ep)
+    val_loader = None if budget else make_eval_loader(ctx.data, task, selection, _neighbors(cfg), cfg.eval_batch_size)
     anytime_table = _subsample(deploy, cfg.anytime_max_rows, f"{ctx.dataset_name}/{ctx.task_name}/{ep.index}/anytime")
 
     meter = CostMeterCallback(entity_table=task.entity_table, source_counts=train_loader.source_counts)
-    convergence = ConvergenceCallback(
+    convergence = None if budget else ConvergenceCallback(
         str(ep_dir),
         patiences=tuple(cfg.patiences),
         monitor=cfg.monitor,
         mode="min" if cfg.monitor == "val_loss" or cfg.monitor.endswith("mae") else "max",
         also_record=(f"val_{metric_name(task.task_type)}", "val_loss"),
     )
-    callbacks = [meter, convergence]
+    callbacks = [meter] + ([] if budget else [convergence])
     anytime_cb = None
     if cfg.anytime and len(anytime_table.df):
         target = anytime_table.df[task.target_col].to_numpy()
@@ -472,11 +511,12 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
         logger.log_hyperparams({"chain_key": cfg.chain_key, "seed": cfg.seed, "episode": ep.index,
                                 "update_time": str(ep.update_time), "protocol_hash": ctx.protocol.hash(),
                                 "mode": cfg.mode, "variant": cfg.variant})
-    check_every = _check_interval(cfg, n_train)
+    check_every = None if budget else _check_interval(cfg, n_train)
+    val_kwargs = (dict(limit_val_batches=0) if budget
+                  else dict(val_check_interval=check_every, check_val_every_n_epoch=None))
     trainer = L.Trainer(
         max_steps=cfg.max_steps,
-        val_check_interval=check_every,
-        check_val_every_n_epoch=None,
+        **val_kwargs,
         accelerator=device.type,
         devices=1,
         logger=logger,
@@ -490,12 +530,24 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
     setup_s = time.perf_counter() - t_setup
     trainer.fit(lightning_model, train_loader.loader, val_loader)
 
-    # Continue (and score) from the primary patience's best weights.
-    t_score = time.perf_counter()
-    best = ep_dir / "best_model.pt"
-    model.load_state_dict(torch.load(best, map_location="cpu"))
+    # Continue (and score) from the primary patience's best weights, or from the
+    # final weights under a fixed budget.
+    if not budget:
+        model.load_state_dict(torch.load(ep_dir / "best_model.pt", map_location="cpu"))
     model.to(device)
     torch.save(model.state_dict(), ep_dir / "model.pt")
+    return _score_and_record(ctx, cfg, mode, ep, ep_dir, model, deploy, seed, loaded, sources=sources,
+                             meter=meter, convergence=convergence, anytime_cb=anytime_cb,
+                             selection=selection, selection_source=selection_source, check_every=check_every,
+                             steps_per_epoch=steps_per_epoch, anytime_rows=len(anytime_table.df), setup_s=setup_s,
+                             optimizer=optimizer, anchor=anchor, buffer=buffer, loss_fn=lightning_model.loss_fn)
+
+
+def _score_and_record(ctx, cfg, mode, ep, ep_dir, model, deploy, seed, loaded, *, sources, meter, convergence,
+                      anytime_cb, selection, selection_source, check_every, steps_per_epoch, anytime_rows,
+                      setup_s, optimizer, anchor, buffer, loss_fn) -> dict:
+    task, device = ctx.task, ctx.device
+    t_score = time.perf_counter()
 
     mask = needed_rows(ctx.rows, ep.index, cfg.stale_windows)
     score_rows = ctx.wrapper.full_table.df[ROW_COL].isin(ctx.rows[ROW_COL][mask])
@@ -510,7 +562,7 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
 
     # Every other patience: its own next-window predictions (sensitivity of the stopping rule).
     deploy_scores = {}
-    for p in convergence.patiences:
+    for p in (convergence.patiences if convergence is not None else ()):
         path = ep_dir / f"best_P{p}.pt"
         if p != convergence.primary and path.exists():
             model.load_state_dict(torch.load(path, map_location="cpu"))
@@ -529,7 +581,7 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
             fisher = fisher_diagonal(
                 model,
                 (b.to(device) for b in fisher_loader),
-                lightning_model.loss_fn,
+                loss_fn,
                 lambda m, b: m(b, et).view(-1)[: b[et].batch_size],
                 lambda b: b[et].y.float()[: b[et].batch_size],
                 max_batches=64,
@@ -544,7 +596,8 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
                     "buffer_rows": len(buffer) if buffer is not None else None,
                     "buffer_seen": buffer.seen if buffer is not None else None}
     deploy_pred = pd.Series(pred, index=to_score.df[ROW_COL].to_numpy())
-    deploy_scores[str(convergence.primary)] = metric_value(
+    primary = str(convergence.primary) if convergence is not None else "final"
+    deploy_scores[primary] = metric_value(
         task.task_type, deploy.df[task.target_col], deploy_pred.reindex(deploy.df[ROW_COL]).to_numpy()
     )
     meter.add("scoring", time.perf_counter() - t_score)
@@ -563,24 +616,26 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
         "seed": cfg.seed,
         "update_seed": seed,
         "warm_started": loaded,
+        "trained": bool(sources),
+        "stop_rule": cfg.stop_rule,
         "protocol_hash": ctx.protocol.hash(),
         "train_rows": {name: len(t.df) for name, (t, _) in sources.items()},
         "train_shares": {name: share for name, (_, share) in sources.items()},
-        "selection_rows": len(selection.df),
-        "selection_entities": int(selection.df[task.entity_col].nunique()),
+        "selection_rows": None if selection is None else len(selection.df),
+        "selection_entities": None if selection is None else int(selection.df[task.entity_col].nunique()),
         "selection_source": selection_source,
         "deploy_rows": len(deploy.df),
         "scored_rows": len(to_score.df),
         "check_every": check_every,
-        "final_lr": float(optimizer.param_groups[0]["lr"]),
+        "final_lr": None if optimizer is None else float(optimizer.param_groups[0]["lr"]),
         "cl_state": cl_state,
         "steps_per_epoch": steps_per_epoch,
         "metric": metric_name(task.task_type),
         "deploy_score": deploy_scores,
-        "convergence": convergence.summary(),
+        "convergence": None if convergence is None else convergence.summary(),
         "cost": meter.summary(),
         "anytime": anytime_cb.records if anytime_cb is not None else [],
-        "anytime_rows": len(anytime_table.df),
+        "anytime_rows": anytime_rows,
     }
 
 
@@ -680,7 +735,7 @@ def parse_args(argv=None) -> ChainConfig:
             p.add_argument(flag, type=lambda s: s.lower() in ("1", "true", "yes"), default=value)
         elif isinstance(value, tuple):
             p.add_argument(flag, type=int, nargs="+", default=list(value))
-        elif value is None and name in ("mlflow_uri", "mlflow_experiment"):
+        elif value is None and name in ("mlflow_uri", "mlflow_experiment", "first_update", "init_model"):
             p.add_argument(flag, type=lambda s: None if s.lower() == "none" else s, default=None)
         elif value is None:
             p.add_argument(flag, type=lambda s: None if s.lower() == "none" else float(s), default=None)

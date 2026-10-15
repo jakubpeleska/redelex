@@ -209,3 +209,46 @@ def test_constant_lr_is_the_default(tmp_path):
     cfg = _cfg(tmp_path, mode="scratch_all", max_updates=1)
     run_chain(cfg, ctx=_ctx(cfg))
     assert _episodes(cfg)[0]["final_lr"] == cfg.lr
+
+
+def _ctx_for(cfg):
+    ds = StreamDataset()
+    return build_context(cfg, dataset=ds, task=StreamChurnTask(ds), text_embedder=FakeTextEmbedder(),
+                         col_to_stype=STREAM_COL_TO_STYPE)
+
+
+def test_budget_rule_trains_exactly_b_steps_without_validation(tmp_path):
+    cfg = _cfg(tmp_path, mode="incremental", stop_rule="budget", max_steps=30, max_updates=2)
+    run_chain(cfg, ctx=_ctx(cfg))
+
+    for ep in _episodes(cfg):
+        assert ep["cost"]["steps"] == 30 and ep["convergence"] is None
+        assert ep["selection_rows"] is None and ep["cost"]["seconds"]["val"] == 0.0
+        assert set(ep["deploy_score"]) == {"final"}
+
+
+def test_init_model_is_adopted_at_the_first_update(tmp_path):
+    src = _cfg(tmp_path / "src", mode="scratch_all", max_updates=1)
+    run_chain(src, ctx=_ctx(src))
+    init = src.seed_dir() / "ep001" / "model.pt"
+
+    cfg = _cfg(tmp_path / "rq4", mode="cumulative", max_updates=2, init_model=str(init))
+    run_chain(cfg, ctx=_ctx(cfg))
+    e1, e2 = _episodes(cfg)
+
+    assert e1["trained"] is False and e1["warm_started"] is True and e1["cost"]["steps"] == 0
+    assert e2["trained"] is True and e2["warm_started"] is True
+    a = pd.read_parquet(src.seed_dir() / "ep001" / "preds.parquet")
+    b = pd.read_parquet(cfg.seed_dir() / "ep001" / "preds.parquet")
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_update_grid_options_for_rq4():
+    never = _ctx_for(_cfg("/unused", delta_i_days=0))
+    monthly = _ctx_for(_cfg("/unused", delta_i_days=30, first_update="2021-01-01"))
+
+    assert never.plan.num_updates == 1
+    times = monthly.plan.update_times
+    assert times[0] == pd.Timestamp("2021-01-01")
+    assert all((b - a) == pd.Timedelta(days=30) for a, b in zip(times, times[1:]))
+    assert never.plan.horizon_end == monthly.plan.horizon_end
