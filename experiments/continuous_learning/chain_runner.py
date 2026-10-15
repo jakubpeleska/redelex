@@ -124,6 +124,9 @@ class ChainConfig:
     plateau_patience: Optional[int] = None
     stale_windows: Optional[int] = None
     eval_batch_size: int = 512
+    # Keep every patience's best weights (best_P*.pt) after their predictions are
+    # written. Off by default: model.pt is all a chain needs to continue or rescore.
+    keep_patience_models: bool = False
     # Runtime.
     device: str = "auto"
     torch_threads: Optional[int] = None
@@ -547,6 +550,10 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
     meter.add("scoring", time.perf_counter() - t_score)
     meter.add("setup", setup_s)
     (ep_dir / "best_running.pt").unlink(missing_ok=True)
+    (ep_dir / "best_model.pt").unlink(missing_ok=True)  # identical to model.pt
+    if not cfg.keep_patience_models:
+        for path in ep_dir.glob("best_P*.pt"):
+            path.unlink()
 
     return {
         "episode": ep.index,

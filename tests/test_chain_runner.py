@@ -87,8 +87,10 @@ def test_every_mode_runs_three_updates(tmp_path, mode):
     assert [e["warm_started"] for e in eps] == [False] + [spec.warm_start] * 2
     for e in eps:
         d = cfg.seed_dir() / f"ep{e['episode']:03d}"
-        assert (d / "model.pt").exists() and (d / "best_P2.pt").exists() and (d / "best_P3.pt").exists()
-        assert (d / "preds_P3.parquet").exists()
+        assert (d / "model.pt").exists() and (d / "preds_P3.parquet").exists()
+        # Only model.pt survives: the other weight files are duplicates or already scored.
+        expected = {"model.pt"} | ({"cl_state.pt"} if e["cl_state"] is not None else set())
+        assert {f.name for f in d.glob("*.pt")} == expected
         assert e["selection_rows"] > 0 and e["cost"]["steps"] > 0
         assert e["anytime"][0]["step"] == 0
         assert set(e["deploy_score"]) == {"2", "3"}
