@@ -34,6 +34,7 @@ class ModeSpec:
     perturb: Optional[float] = None
     ewc_lambda: Optional[float] = None
     buffer_size: Optional[int] = None
+    buffer_share: float = 0.5
     ablation: bool = False
 
     def __post_init__(self):
@@ -69,7 +70,8 @@ ABLATION_ROSTER = (
     # Ash & Adams (2020) shrink 0.4 / perturb 0.1 on a warm start over all data.
     ModeSpec("shrink_perturb", warm_start=True, history="all", shrink=0.4, perturb=0.1, ablation=True),
     ModeSpec("ewc", warm_start=True, history="last", ewc_lambda=100.0, ablation=True),
-    ModeSpec("reservoir", warm_start=True, history="last", new_share=None, buffer_size=10_000, ablation=True),
+    # Bounded replay: half of every update's samples from a 10k-row reservoir of past rows.
+    ModeSpec("reservoir", warm_start=True, history="last", buffer_size=10_000, buffer_share=0.5, ablation=True),
 )
 
 MODES = {m.name: m for m in MAIN_ROSTER + ABLATION_ROSTER}

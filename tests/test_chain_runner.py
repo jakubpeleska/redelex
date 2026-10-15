@@ -74,7 +74,7 @@ def test_plan_has_several_updates_and_a_label_delay():
         assert not train[ctx.task.time_col].between(lo, hi, inclusive="left").any()
 
 
-@pytest.mark.parametrize("mode", [m.name for m in MAIN_ROSTER + ABLATION_ROSTER if m.ewc_lambda is None and m.buffer_size is None])
+@pytest.mark.parametrize("mode", [m.name for m in MAIN_ROSTER + ABLATION_ROSTER])
 def test_every_mode_runs_three_updates(tmp_path, mode):
     cfg = _cfg(tmp_path, mode=mode)
     seen = []
@@ -169,12 +169,25 @@ def test_cli_round_trip():
     assert cfg.chain_key == "rel-f1__driver-dnf__cumulative__main"
 
 
-@pytest.mark.parametrize("mode", ["ewc", "reservoir"])
-def test_unwired_ablations_refuse_to_run(tmp_path, mode):
-    """Until EWC and the reservoir are wired in, running them must not quietly
-    train plain incremental fine-tuning under their names."""
-    with pytest.raises(NotImplementedError, match=mode):
-        run_chain(_cfg(tmp_path, mode=mode), ctx=_ctx(_cfg(tmp_path)))
+def test_stateful_ablations_carry_their_state(tmp_path):
+    ewc = _cfg(tmp_path, mode="ewc")
+    res = _cfg(tmp_path, mode="reservoir")
+    run_chain(ewc, ctx=_ctx(ewc))
+    run_chain(res, ctx=_ctx(res))
+
+    e = [x["cl_state"] for x in _episodes(ewc)]
+    r = [x["cl_state"] for x in _episodes(res)]
+    assert [x["anchor_updates"] for x in e] == [1, 2, 3] and e[0]["anchor_params"] > 0
+    assert [x["buffer_seen"] for x in r] == sorted(x["buffer_seen"] for x in r) and r[-1]["buffer_rows"] > 0
+    # From the second update on, the reservoir is a training source, and only of trainable rows.
+    eps = _episodes(res)
+    assert eps[0]["train_rows"]["buffer"] == 0 and eps[1]["train_rows"]["buffer"] > 0
+    ctx = _ctx(res)
+    import torch
+
+    buf = torch.load(res.seed_dir() / "ep003" / "cl_state.pt", weights_only=False)["buffer"]["row_ids"]
+    held = set(ctx.wrapper.full_table.df.loc[ctx.wrapper.full_table.df[HOLDOUT_COL], ROW_COL])
+    assert held.isdisjoint(buf)
 
 
 def test_calibration_options_dense_anytime_and_plateau(tmp_path):

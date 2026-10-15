@@ -106,6 +106,11 @@ class ContinuousWrapper:
         mask = trainable_mask(times, update_time, self.task.timedelta, after=after)
         return self._subset(mask & self._part_mask(part))
 
+    def get_rows(self, row_ids, part: Part = "train") -> Table:
+        """Rows by their ``__row__`` id, still restricted to ``part``."""
+        ids = self.full_table.df[ROW_COL].isin(np.asarray(row_ids)).to_numpy()
+        return self._subset(ids & self._part_mask(part))
+
     def get_splits(self, val_delta: pd.Timedelta = None):
         if val_delta is None:
             val_delta = (

@@ -57,6 +57,8 @@ class LightningEntityTaskWrapper(L.LightningModule):
             self.best_tune_metric.update(float("inf"))
 
         self.first_val = True
+        # Optional extra loss term, ``cl_penalty(model) -> scalar`` (e.g. EWC).
+        self.cl_penalty = None
 
     def forward(self, batch):
         pred = self.model(batch, self.task.entity_table)
@@ -77,6 +79,10 @@ class LightningEntityTaskWrapper(L.LightningModule):
         batch_size = pred.size(0)
 
         self.train_loss.update(loss.detach(), batch_size)
+        if self.cl_penalty is not None:
+            penalty = self.cl_penalty(self.model)
+            self.log("train_cl_penalty", penalty.detach(), batch_size=batch_size)
+            loss = loss + penalty
 
         self.log(
             "train_loss",

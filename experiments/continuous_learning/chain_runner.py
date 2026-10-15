@@ -41,6 +41,8 @@ from relbench.base import Table
 
 from redelex.continual.anchors import ROW_COL, grid_anchor_timestamps, labelled_anchor_range
 from redelex.continual.protocol import EpisodePlan, Protocol, grid_update_times
+from redelex.continual.regularization import ParameterAnchor, fisher_diagonal
+from redelex.continual.replay import ReservoirBuffer
 from redelex.continual.shrink_perturb import shrink_perturb_
 from redelex.loaders import MixtureLoader, Source, epoch_steps
 from redelex.nn.train import (
@@ -267,9 +269,19 @@ def new_model(ctx: ExperimentContext, cfg: ChainConfig) -> HeterogeneousSAGE:
     )
 
 
-def training_sources(ctx: ExperimentContext, mode: ModeSpec, ep) -> dict[str, tuple[Table, float]]:
+def training_sources(
+    ctx: ExperimentContext, mode: ModeSpec, ep, buffer: Optional[ReservoirBuffer] = None
+) -> dict[str, tuple[Table, float]]:
     """The tables an update trains on, with their sample shares."""
     w, T = ctx.wrapper, ep.update_time
+    if mode.buffer_size is not None:
+        # Bounded replay: the last episode plus the reservoir of earlier rows. The
+        # buffer is read back through the held-out filter like every other table.
+        held = buffer.row_ids if buffer is not None else []
+        return {
+            "new": (w.trainable(T, after=ep.new_after), 1.0 - mode.buffer_share),
+            "buffer": (w.get_rows(held, part="train"), mode.buffer_share),
+        }
     if mode.history == "all":
         if mode.new_share is None:
             return {"all": (w.trainable(T), 1.0)}
@@ -359,7 +371,19 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
     elif mode.warm_start and ep.index > 1:
         raise RuntimeError(f"{mode.name} needs the previous model at update {ep.index}")
 
-    sources = training_sources(ctx, mode, ep)
+    # Chain state of the stateful ablations travels next to the previous model.
+    state = {}
+    if (mode.ewc_lambda is not None or mode.buffer_size is not None) and prev_model is not None:
+        state = torch.load(prev_model.parent / "cl_state.pt", map_location="cpu", weights_only=False)
+    buffer = anchor = None
+    if mode.buffer_size is not None:
+        buffer = (ReservoirBuffer.from_state_dict(state["buffer"]) if state.get("buffer")
+                  else ReservoirBuffer(mode.buffer_size, seed=update_seed(cfg.seed, 0)))
+    if mode.ewc_lambda is not None:
+        anchor = (ParameterAnchor.from_state_dict(state["anchor"]) if state.get("anchor")
+                  else ParameterAnchor(lam=mode.ewc_lambda, gamma=0.9))
+
+    sources = training_sources(ctx, mode, ep, buffer=buffer)
     for name, (table, _) in sources.items():
         assert_no_holdout(table)
     n_train = sum(len(t.df) for t, _ in sources.values())
@@ -422,6 +446,8 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
     lightning_model = LightningEntityTaskWrapper(
         model=model, optimizer=optimizer, task=task, modes=("val",), lr_scheduler_config=scheduler_cfg
     )
+    if anchor is not None and len(anchor):
+        lightning_model.cl_penalty = anchor.penalty
     logger = False
     if cfg.mlflow_uri:
         from lightning.pytorch.loggers import MLFlowLogger
@@ -482,6 +508,29 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
             )
             deploy_scores[str(p)] = metric_value(task.task_type, deploy.df[task.target_col], pp)
     model.load_state_dict(torch.load(ep_dir / "model.pt", map_location="cpu"))
+    cl_state = None
+    if anchor is not None or buffer is not None:
+        new_rows = sources["new"][0]
+        if anchor is not None and len(new_rows.df):
+            et = task.entity_table
+            fisher_loader = make_eval_loader(ctx.data, task, new_rows, _neighbors(cfg), cfg.batch_size)
+            fisher = fisher_diagonal(
+                model,
+                (b.to(device) for b in fisher_loader),
+                lightning_model.loss_fn,
+                lambda m, b: m(b, et).view(-1)[: b[et].batch_size],
+                lambda b: b[et].y.float()[: b[et].batch_size],
+                max_batches=64,
+            )
+            anchor.consolidate(model, fisher)
+        if buffer is not None:
+            buffer.add(new_rows.df[ROW_COL].to_numpy())
+        torch.save({"anchor": anchor.state_dict() if anchor is not None else None,
+                    "buffer": buffer.state_dict() if buffer is not None else None}, ep_dir / "cl_state.pt")
+        cl_state = {"anchor_params": len(anchor) if anchor is not None else None,
+                    "anchor_updates": anchor.episodes if anchor is not None else None,
+                    "buffer_rows": len(buffer) if buffer is not None else None,
+                    "buffer_seen": buffer.seen if buffer is not None else None}
     deploy_pred = pd.Series(pred, index=to_score.df[ROW_COL].to_numpy())
     deploy_scores[str(convergence.primary)] = metric_value(
         task.task_type, deploy.df[task.target_col], deploy_pred.reindex(deploy.df[ROW_COL]).to_numpy()
@@ -508,6 +557,7 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
         "scored_rows": len(to_score.df),
         "check_every": check_every,
         "final_lr": float(optimizer.param_groups[0]["lr"]),
+        "cl_state": cl_state,
         "steps_per_epoch": steps_per_epoch,
         "metric": metric_name(task.task_type),
         "deploy_score": deploy_scores,
@@ -531,6 +581,8 @@ def completed_episodes(seed_dir: Path, protocol_hash: str) -> list[int]:
             raise RuntimeError(f"{path} was written under protocol {record.get('protocol_hash')}, not {protocol_hash}")
         if not (path.parent / "model.pt").exists() or not (path.parent / "preds.parquet").exists():
             break
+        if record.get("cl_state") and not (path.parent / "cl_state.pt").exists():
+            break
         done.append(e)
         e += 1
     return done
@@ -544,10 +596,6 @@ def _slurm_deadline() -> Optional[float]:
 def run_chain(cfg: ChainConfig, ctx: Optional[ExperimentContext] = None, **build_kwargs) -> dict:
     """Run (or resume) a chain. Returns a status summary; never trains an episode twice."""
     mode = get_mode(cfg.mode)
-    if mode.ewc_lambda is not None or mode.buffer_size is not None:
-        # Declared for the ablation phase but not wired in yet: refusing beats
-        # silently running them as plain incremental fine-tuning.
-        raise NotImplementedError(f"{mode.name}: EWC and reservoir replay are not implemented in the driver yet")
     if cfg.torch_threads is not None:
         torch.set_num_threads(int(cfg.torch_threads))
     ctx = ctx or build_context(cfg, **build_kwargs)
