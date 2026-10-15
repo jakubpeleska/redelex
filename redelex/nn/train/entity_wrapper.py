@@ -45,6 +45,10 @@ class LightningEntityTaskWrapper(L.LightningModule):
         )
 
         self.train_loss = MeanMetric().requires_grad_(False)
+        # The training loss over the validation loader, row-weighted. Early
+        # stopping monitors it: it is smoother than a ranking metric on a small
+        # selection set and is defined for every task type.
+        self.val_loss = MeanMetric().requires_grad_(False)
         self.best_tune_metric = MaxMetric() if self.higher_is_better else MinMetric()
         self.best_tune_metric.requires_grad_(False)
         if self.higher_is_better:
@@ -99,6 +103,10 @@ class LightningEntityTaskWrapper(L.LightningModule):
     def validation_step(self, batch, batch_idx: int, dataloader_idx: int = 0):
         pred, target = self(batch)
 
+        if dataloader_idx == 0:
+            loss = self.loss_fn(pred.float(), target)
+            self.val_loss.update(loss.detach(), pred.size(0))
+
         pred = pred.detach().cpu()
         target = target.detach().cpu()
 
@@ -117,9 +125,11 @@ class LightningEntityTaskWrapper(L.LightningModule):
             for metrics in self._active_metrics():
                 for m in metrics.values():
                     m.reset()
+            self.val_loss.reset()
             return
 
-        val_metrics: dict[str, float] = {}
+        val_metrics: dict[str, float] = {"val_loss": self.val_loss.compute()}
+        self.val_loss.reset()
 
         tune_metric = self.val_metrics[self.tune_metric].compute()
         best_tune_metric = self.best_tune_metric.compute()
