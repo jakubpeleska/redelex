@@ -262,3 +262,20 @@ def test_run_chain_restores_the_callers_thread_count(tmp_path):
     cfg = _cfg(tmp_path, mode="scratch_all", max_updates=1, torch_threads=1)
     run_chain(cfg, ctx=_ctx(cfg))
     assert torch.get_num_threads() == before
+
+
+def test_a_complete_chain_is_recognised_without_loading_data(tmp_path, monkeypatch):
+    import experiments.continuous_learning.chain_runner as cr
+
+    cfg = _cfg(tmp_path, mode="incremental", max_updates=2)
+    run_chain(cfg, ctx=_ctx(cfg))
+
+    def no_loading(*a, **k):
+        raise AssertionError("build_context must not run for a complete chain")
+
+    monkeypatch.setattr(cr, "build_context", no_loading)
+    again = run_chain(cfg)  # no ctx: would have to load data unless recognised
+    assert again["status"] == "complete" and again["ran_now"] == [] and again["episodes_done"] == 2
+    longer = _cfg(tmp_path, mode="incremental", max_updates=3)
+    with pytest.raises(AssertionError, match="must not run"):
+        run_chain(longer)  # not complete at 3 updates: it must load data and continue

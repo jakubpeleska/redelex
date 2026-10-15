@@ -676,7 +676,37 @@ def run_chain(cfg: ChainConfig, ctx: Optional[ExperimentContext] = None, **build
         torch.set_num_threads(threads_before)
 
 
+# Config fields that define a chain's protocol and extent: if they match the
+# recorded chain.json, a chain whose every update is committed is complete.
+_IDENTITY_FIELDS = ("dataset", "task", "mode", "seed", "variant", "delta_i_days", "anchor_stride_days",
+                    "anchor_phase_days", "holdout_frac", "min_initial_rows", "first_update", "max_updates")
+
+
+def _already_complete(cfg: ChainConfig) -> Optional[dict]:
+    """Recognise a finished chain without loading any data (a resumed job skips it in seconds)."""
+    meta_path = cfg.seed_dir() / "chain.json"
+    if not meta_path.exists():
+        return None
+    meta = json.loads(meta_path.read_text())
+    stored = meta.get("config", {})
+    if any(stored.get(f) != getattr(cfg, f) for f in _IDENTITY_FIELDS):
+        return None
+    n = len(meta["update_times"]) if cfg.max_updates is None else min(cfg.max_updates, len(meta["update_times"]))
+    try:
+        done = completed_episodes(cfg.seed_dir(), meta["protocol_hash"])
+    except RuntimeError:
+        return None
+    if len(done) < n:
+        return None
+    return {"chain_key": cfg.chain_key, "seed": cfg.seed, "status": "complete", "episodes_total": n,
+            "episodes_done": len(done), "ran_now": []}
+
+
 def _run_chain(cfg: ChainConfig, mode: ModeSpec, ctx: Optional[ExperimentContext], build_kwargs: dict) -> dict:
+    if ctx is None:
+        finished = _already_complete(cfg)
+        if finished is not None:
+            return finished
     ctx = ctx or build_context(cfg, **build_kwargs)
     seed_dir = cfg.seed_dir()
     seed_dir.mkdir(parents=True, exist_ok=True)
