@@ -8,7 +8,7 @@ tests use an in-memory relbench dataset.
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
-from relbench.base import Database, Dataset, Table, TaskType
+from relbench.base import Database, Dataset, EntityTask, Table, TaskType
 from torch_frame.testing.text_embedder import HashTextEmbedder
 
 from redelex.datasets.db_dataset import DBDataset
@@ -246,3 +246,141 @@ class UserTemporalBinaryTask(ImputeEntityTemporalTask):
     target_col = "target_cat"
     task_type = TaskType.BINARY_CLASSIFICATION
     timedelta = pd.Timedelta(days=30)
+
+
+# ---------------------------------------------------------------------------
+# Synthetic event stream for continual-learning tests: a forecasting task with
+# its own make_table, enough entities for an entity holdout, and enough time
+# for several update windows.
+# ---------------------------------------------------------------------------
+
+STREAM_START = pd.Timestamp("2019-01-01")
+STREAM_VAL_TIMESTAMP = pd.Timestamp("2021-07-01")
+STREAM_TEST_TIMESTAMP = pd.Timestamp("2022-01-01")
+STREAM_END = pd.Timestamp("2022-07-01")
+STREAM_N_USERS = 300
+STREAM_N_EVENTS = 6000
+
+
+def make_stream_db(seed: int = 0) -> Database:
+    """`users` (entity table, staggered sign-ups) and `events` (one stream).
+
+    Each user's events start at sign-up; event rates differ per user, so churn
+    and counts are learnable from history. One numerical cell is missing.
+    """
+    rng = np.random.default_rng(seed)
+    span_days = (STREAM_END - STREAM_START).days
+    signup = STREAM_START + pd.to_timedelta(
+        np.sort(rng.integers(0, int(span_days * 0.8), STREAM_N_USERS)), unit="D"
+    )
+    age = rng.integers(18, 70, STREAM_N_USERS).astype(float)
+    age[7] = np.nan
+    users = pd.DataFrame({"__PK__": np.arange(STREAM_N_USERS), "signup": signup, "age": age})
+
+    rate = rng.gamma(2.0, 1.0, STREAM_N_USERS)
+    owner = rng.choice(STREAM_N_USERS, size=STREAM_N_EVENTS, p=rate / rate.sum())
+    life = (STREAM_END - signup[owner]).days.to_numpy()
+    when = signup[owner] + pd.to_timedelta((rng.random(STREAM_N_EVENTS) * life).astype(int), unit="D")
+    order = np.argsort(when.to_numpy(), kind="stable")
+    events = pd.DataFrame(
+        {
+            "__PK__": np.arange(STREAM_N_EVENTS),
+            "FK_users": owner[order],
+            "event_time": when[order].to_numpy(),
+            "amount": rng.gamma(2.0, 10.0, STREAM_N_EVENTS)[order],
+        }
+    )
+    return Database(
+        table_dict={
+            "users": Table(df=users, fkey_col_to_pkey_table={}, pkey_col="__PK__", time_col="signup"),
+            "events": Table(
+                df=events,
+                fkey_col_to_pkey_table={"FK_users": "users"},
+                pkey_col="__PK__",
+                time_col="event_time",
+            ),
+        }
+    )
+
+
+class StreamDataset(Dataset):
+    val_timestamp = STREAM_VAL_TIMESTAMP
+    test_timestamp = STREAM_TEST_TIMESTAMP
+
+    def __init__(self, seed: int = 0):
+        self._seed = seed
+        super().__init__(cache_dir=None)
+
+    def make_db(self) -> Database:
+        return make_stream_db(self._seed)
+
+
+def _active_users(db: Database, timestamps) -> pd.DataFrame:
+    """(timestamp, user) pairs for users with an event in the 90 days up to t."""
+    events = db.table_dict["events"].df
+    rows = []
+    for t in pd.Series(timestamps):
+        recent = events[(events.event_time > t - pd.Timedelta(days=90)) & (events.event_time <= t)]
+        for u in np.unique(recent.FK_users.to_numpy()):
+            rows.append((t, u))
+    return pd.DataFrame(rows, columns=["timestamp", "user"])
+
+
+def _future_counts(db: Database, pairs: pd.DataFrame, delta: pd.Timedelta) -> np.ndarray:
+    events = db.table_dict["events"].df
+    counts = np.zeros(len(pairs), dtype=float)
+    for t, idx in pairs.groupby("timestamp").groups.items():
+        window = events[(events.event_time > t) & (events.event_time <= t + delta)]
+        per_user = window.FK_users.value_counts()
+        counts[np.asarray(pairs.index.get_indexer(idx))] = (
+            pairs.loc[idx, "user"].map(per_user).fillna(0).to_numpy()
+        )
+    return counts
+
+
+class StreamChurnTask(EntityTask):
+    """Will an active user have no event in the next 30 days?"""
+
+    task_type = TaskType.BINARY_CLASSIFICATION
+    entity_col = "user"
+    entity_table = "users"
+    time_col = "timestamp"
+    target_col = "churn"
+    timedelta = pd.Timedelta(days=30)
+    num_eval_timestamps = 3
+    metrics = []
+
+    def make_table(self, db: Database, timestamps) -> Table:
+        pairs = _active_users(db, timestamps)
+        pairs["churn"] = (_future_counts(db, pairs, self.timedelta) == 0).astype(int)
+        # Shuffled on purpose: relbench does not promise a row order.
+        df = pairs.sample(frac=1.0, random_state=1).reset_index(drop=True)
+        return Table(
+            df=df,
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
+
+
+class StreamCountTask(EntityTask):
+    """How many events will an active user have in the next 30 days?"""
+
+    task_type = TaskType.REGRESSION
+    entity_col = "user"
+    entity_table = "users"
+    time_col = "timestamp"
+    target_col = "count"
+    timedelta = pd.Timedelta(days=30)
+    num_eval_timestamps = 3
+    metrics = []
+
+    def make_table(self, db: Database, timestamps) -> Table:
+        pairs = _active_users(db, timestamps)
+        pairs["count"] = _future_counts(db, pairs, self.timedelta)
+        return Table(
+            df=pairs,
+            fkey_col_to_pkey_table={self.entity_col: self.entity_table},
+            pkey_col=None,
+            time_col=self.time_col,
+        )
