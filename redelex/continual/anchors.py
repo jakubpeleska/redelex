@@ -16,6 +16,7 @@ which anchors exist.
 from __future__ import annotations
 
 import math
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -94,8 +95,13 @@ def make_anchor_table(
         time_col=table.time_col,
     )
     if cache_path is not None:
-        Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
-        table.save(str(cache_path))
+        # Parallel jobs build the same table: write aside, then rename atomically,
+        # so a reader never sees a half-written file.
+        path = Path(cache_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(f".{path.stem}.{os.getpid()}.tmp.parquet")  # Table.save wants .parquet
+        table.save(str(tmp))
+        os.replace(tmp, path)
     return table
 
 
