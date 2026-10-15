@@ -1,0 +1,94 @@
+{
+  "identical": {
+    "1": true,
+    "2": true
+  },
+  "cost": [
+    {
+      "variant": "anytime_on",
+      "update": 1,
+      "steps": 60,
+      "fit wall s": 43.53,
+      "train compute s": 26.71,
+      "data s": 1.92,
+      "val s": 0.81,
+      "anytime s": 13.76,
+      "unaccounted": 0.008,
+      "val / train": 0.028
+    },
+    {
+      "variant": "anytime_on",
+      "update": 2,
+      "steps": 60,
+      "fit wall s": 60.98,
+      "train compute s": 37.82,
+      "data s": 2.19,
+      "val s": 2.36,
+      "anytime s": 18.42,
+      "unaccounted": 0.003,
+      "val / train": 0.059
+    },
+    {
+      "variant": "anytime_off",
+      "update": 1,
+      "steps": 60,
+      "fit wall s": 33.56,
+      "train compute s": 30.64,
+      "data s": 1.86,
+      "val s": 0.74,
+      "anytime s": 0.0,
+      "unaccounted": 0.01,
+      "val / train": 0.023
+    },
+    {
+      "variant": "anytime_off",
+      "update": 2,
+      "steps": 60,
+      "fit wall s": 47.6,
+      "train compute s": 43.28,
+      "data s": 2.07,
+      "val s": 2.09,
+      "anytime s": 0.0,
+      "unaccounted": 0.003,
+      "val / train": 0.046
+    }
+  ],
+  "shares": [
+    {
+      "mode": "replay_p50",
+      "update": 1,
+      "p": 1.0,
+      "new share measured": 1.0,
+      "samples": 7680,
+      "new rows": 656,
+      "old rows": 0
+    },
+    {
+      "mode": "replay_p50",
+      "update": 2,
+      "p": 0.5,
+      "new share measured": 0.4883,
+      "samples": 7680,
+      "new rows": 549,
+      "old rows": 656
+    },
+    {
+      "mode": "replay_p25",
+      "update": 1,
+      "p": 1.0,
+      "new share measured": 1.0,
+      "samples": 7680,
+      "new rows": 656,
+      "old rows": 0
+    },
+    {
+      "mode": "replay_p25",
+      "update": 2,
+      "p": 0.25,
+      "new share measured": 0.2471,
+      "samples": 7680,
+      "new rows": 549,
+      "old rows": 656
+    }
+  ]
+}

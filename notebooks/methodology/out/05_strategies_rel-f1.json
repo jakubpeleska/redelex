@@ -1,0 +1,570 @@
+{
+  "checks": [
+    {
+      "regime": "scratch_all",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_all",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_all",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_last",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_last",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_last",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "cumulative",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "cumulative",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "cumulative",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "replay_p50",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "replay_p50",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "replay_p50",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "incremental",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "incremental",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "incremental",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "replay_p25",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "replay_p25",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "replay_p25",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "replay_p75",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "replay_p75",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "replay_p75",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_k2",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_k2",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_k2",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_k4",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_k4",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_k4",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_k8",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_k8",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "scratch_k8",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "shrink_perturb",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "shrink_perturb",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "shrink_perturb",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "ewc",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "ewc",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "ewc",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": NaN
+    },
+    {
+      "regime": "reservoir",
+      "update": 1,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": 0.0
+    },
+    {
+      "regime": "reservoir",
+      "update": 2,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": 656.0
+    },
+    {
+      "regime": "reservoir",
+      "update": 3,
+      "rows ok": true,
+      "warm ok": true,
+      "buffer rows": 1205.0
+    }
+  ],
+  "step0": [
+    {
+      "regime": "scratch_all",
+      "update": 2,
+      "step-0 score": 0.5622,
+      "previous model on same window": 0.7079,
+      "diff": 0.1456,
+      "warm": false,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "scratch_all",
+      "update": 3,
+      "step-0 score": 0.5211,
+      "previous model on same window": 0.614,
+      "diff": 0.0929,
+      "warm": false,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "scratch_last",
+      "update": 2,
+      "step-0 score": 0.5628,
+      "previous model on same window": 0.7071,
+      "diff": 0.1443,
+      "warm": false,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "scratch_last",
+      "update": 3,
+      "step-0 score": 0.5068,
+      "previous model on same window": 0.6139,
+      "diff": 0.1071,
+      "warm": false,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "cumulative",
+      "update": 2,
+      "step-0 score": 0.7078,
+      "previous model on same window": 0.7078,
+      "diff": 0.0001,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "cumulative",
+      "update": 3,
+      "step-0 score": 0.6267,
+      "previous model on same window": 0.6282,
+      "diff": 0.0015,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "replay_p50",
+      "update": 2,
+      "step-0 score": 0.7076,
+      "previous model on same window": 0.7047,
+      "diff": 0.0029,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "replay_p50",
+      "update": 3,
+      "step-0 score": 0.6265,
+      "previous model on same window": 0.6294,
+      "diff": 0.0029,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "incremental",
+      "update": 2,
+      "step-0 score": 0.7075,
+      "previous model on same window": 0.7084,
+      "diff": 0.0009,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "incremental",
+      "update": 3,
+      "step-0 score": 0.6404,
+      "previous model on same window": 0.6333,
+      "diff": 0.0071,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "replay_p25",
+      "update": 2,
+      "step-0 score": 0.7077,
+      "previous model on same window": 0.708,
+      "diff": 0.0004,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "replay_p25",
+      "update": 3,
+      "step-0 score": 0.6602,
+      "previous model on same window": 0.6738,
+      "diff": 0.0135,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "replay_p75",
+      "update": 2,
+      "step-0 score": 0.7069,
+      "previous model on same window": 0.7079,
+      "diff": 0.001,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "replay_p75",
+      "update": 3,
+      "step-0 score": 0.6362,
+      "previous model on same window": 0.6387,
+      "diff": 0.0024,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "scratch_k2",
+      "update": 2,
+      "step-0 score": 0.5626,
+      "previous model on same window": 0.708,
+      "diff": 0.1455,
+      "warm": false,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "scratch_k2",
+      "update": 3,
+      "step-0 score": 0.5082,
+      "previous model on same window": 0.6106,
+      "diff": 0.1024,
+      "warm": false,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "scratch_k4",
+      "update": 2,
+      "step-0 score": 0.5643,
+      "previous model on same window": 0.7079,
+      "diff": 0.1436,
+      "warm": false,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "scratch_k4",
+      "update": 3,
+      "step-0 score": 0.5057,
+      "previous model on same window": 0.6185,
+      "diff": 0.1127,
+      "warm": false,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "scratch_k8",
+      "update": 2,
+      "step-0 score": 0.5629,
+      "previous model on same window": 0.7081,
+      "diff": 0.1452,
+      "warm": false,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "scratch_k8",
+      "update": 3,
+      "step-0 score": 0.5207,
+      "previous model on same window": 0.5995,
+      "diff": 0.0788,
+      "warm": false,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "shrink_perturb",
+      "update": 2,
+      "step-0 score": 0.7007,
+      "previous model on same window": 0.7079,
+      "diff": 0.0072,
+      "warm": true,
+      "shrink_perturb": true
+    },
+    {
+      "regime": "shrink_perturb",
+      "update": 3,
+      "step-0 score": 0.4072,
+      "previous model on same window": 0.3826,
+      "diff": 0.0246,
+      "warm": true,
+      "shrink_perturb": true
+    },
+    {
+      "regime": "ewc",
+      "update": 2,
+      "step-0 score": 0.7065,
+      "previous model on same window": 0.708,
+      "diff": 0.0015,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "ewc",
+      "update": 3,
+      "step-0 score": 0.6395,
+      "previous model on same window": 0.6411,
+      "diff": 0.0016,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "reservoir",
+      "update": 2,
+      "step-0 score": 0.6997,
+      "previous model on same window": 0.7074,
+      "diff": 0.0077,
+      "warm": true,
+      "shrink_perturb": false
+    },
+    {
+      "regime": "reservoir",
+      "update": 3,
+      "step-0 score": 0.6166,
+      "previous model on same window": 0.6161,
+      "diff": 0.0005,
+      "warm": true,
+      "shrink_perturb": false
+    }
+  ],
+  "state": [
+    {
+      "regime": "ewc",
+      "update": 1,
+      "anchor_params": 599.0,
+      "anchor_updates": 1.0,
+      "buffer_rows": NaN,
+      "buffer_seen": NaN,
+      "buffer \u2286 trainable": true
+    },
+    {
+      "regime": "ewc",
+      "update": 2,
+      "anchor_params": 599.0,
+      "anchor_updates": 2.0,
+      "buffer_rows": NaN,
+      "buffer_seen": NaN,
+      "buffer \u2286 trainable": true
+    },
+    {
+      "regime": "ewc",
+      "update": 3,
+      "anchor_params": 599.0,
+      "anchor_updates": 3.0,
+      "buffer_rows": NaN,
+      "buffer_seen": NaN,
+      "buffer \u2286 trainable": true
+    },
+    {
+      "regime": "reservoir",
+      "update": 1,
+      "anchor_params": NaN,
+      "anchor_updates": NaN,
+      "buffer_rows": 656.0,
+      "buffer_seen": 656.0,
+      "buffer \u2286 trainable": true
+    },
+    {
+      "regime": "reservoir",
+      "update": 2,
+      "anchor_params": NaN,
+      "anchor_updates": NaN,
+      "buffer_rows": 1205.0,
+      "buffer_seen": 1205.0,
+      "buffer \u2286 trainable": true
+    },
+    {
+      "regime": "reservoir",
+      "update": 3,
+      "anchor_params": NaN,
+      "anchor_updates": NaN,
+      "buffer_rows": 1823.0,
+      "buffer_seen": 1823.0,
+      "buffer \u2286 trainable": true
+    }
+  ],
+  "resume_ok": true
+}

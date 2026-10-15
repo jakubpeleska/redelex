@@ -1,0 +1,54 @@
+[
+  {
+    "mode":"incremental",
+    "\u0394I days":365.0,
+    "B":20,
+    "updates":4,
+    "steps":60,
+    "train s":68.8,
+    "anchor times":32,
+    "score":0.735581453,
+    "ci low":0.6962154117,
+    "ci high":0.7899170153,
+    "pareto":false
+  },
+  {
+    "mode":"incremental",
+    "\u0394I days":null,
+    "B":0,
+    "updates":1,
+    "steps":0,
+    "train s":0.0,
+    "anchor times":32,
+    "score":0.7736900877,
+    "ci low":0.7431086335,
+    "ci high":0.8268102206,
+    "pareto":true
+  },
+  {
+    "mode":"cumulative",
+    "\u0394I days":365.0,
+    "B":20,
+    "updates":4,
+    "steps":60,
+    "train s":47.1,
+    "anchor times":32,
+    "score":0.7684704199,
+    "ci low":0.7304142218,
+    "ci high":0.8188127084,
+    "pareto":false
+  },
+  {
+    "mode":"cumulative",
+    "\u0394I days":null,
+    "B":0,
+    "updates":1,
+    "steps":0,
+    "train s":0.0,
+    "anchor times":32,
+    "score":0.7736900877,
+    "ci low":0.7431086335,
+    "ci high":0.8268102206,
+    "pareto":true
+  }
+]

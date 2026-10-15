@@ -1,0 +1,12 @@
+{
+  "error": null,
+  "finished": "2026-10-15T17:53:59+00:00",
+  "gate_passed": true,
+  "notebook": "04_anytime_cost_meter.ipynb",
+  "parameters": {
+    "DEVICE": "cpu",
+    "SCALE": "smoke"
+  },
+  "seconds": 758.7,
+  "tag": "cpu-smoke"
+}

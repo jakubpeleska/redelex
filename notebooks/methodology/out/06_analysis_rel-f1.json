@@ -1,0 +1,101 @@
+{
+  "summary": [
+    {
+      "task": "driver-dnf",
+      "mode": "cumulative",
+      "seed": 0,
+      "next-window mean": 0.7052945612960372,
+      "S(1)": 0.02934452773627355,
+      "S(2)": 0.03367639851571802,
+      "holdout BWT": -0.03304020100502514
+    },
+    {
+      "task": "driver-dnf",
+      "mode": "cumulative",
+      "seed": 1,
+      "next-window mean": 0.7094342693791466,
+      "S(1)": 0.028012350879639825,
+      "S(2)": 0.027865294405937102,
+      "holdout BWT": 0.024498418016005868
+    },
+    {
+      "task": "driver-dnf",
+      "mode": "incremental",
+      "seed": 0,
+      "next-window mean": 0.7158126258658024,
+      "S(1)": 0.03827692222036572,
+      "S(2)": 0.03645942729118534,
+      "holdout BWT": -0.004258328680439331
+    },
+    {
+      "task": "driver-dnf",
+      "mode": "incremental",
+      "seed": 1,
+      "next-window mean": 0.70453247891326,
+      "S(1)": 0.04739346159145447,
+      "S(2)": 0.037334593572778796,
+      "holdout BWT": -0.007848967057509815
+    },
+    {
+      "task": "driver-dnf",
+      "mode": "replay_p50",
+      "seed": 0,
+      "next-window mean": 0.7203204321668438,
+      "S(1)": 0.04298243104320537,
+      "S(2)": 0.04640131625008759,
+      "holdout BWT": -0.016595012097524602
+    },
+    {
+      "task": "driver-dnf",
+      "mode": "replay_p50",
+      "seed": 1,
+      "next-window mean": 0.7160258545721442,
+      "S(1)": 0.05496440849474876,
+      "S(2)": 0.049289364979346106,
+      "holdout BWT": 0.03539642657733111
+    },
+    {
+      "task": "driver-dnf",
+      "mode": "scratch_all",
+      "seed": 0,
+      "next-window mean": 0.6763005558753793,
+      "S(1)": -0.011604515084573386,
+      "S(2)": -0.08135545753693207,
+      "holdout BWT": -0.0897496742974131
+    },
+    {
+      "task": "driver-dnf",
+      "mode": "scratch_all",
+      "seed": 1,
+      "next-window mean": 0.662108040611873,
+      "S(1)": 0.0002870704061917473,
+      "S(2)": -0.05943254218301486,
+      "holdout BWT": -0.06398706495440169
+    },
+    {
+      "task": "driver-dnf",
+      "mode": "scratch_last",
+      "seed": 0,
+      "next-window mean": 0.6928679533681988,
+      "S(1)": 0.04394373057770734,
+      "S(2)": 0.022806833298326668,
+      "holdout BWT": -0.008888888888888946
+    },
+    {
+      "task": "driver-dnf",
+      "mode": "scratch_last",
+      "seed": 1,
+      "next-window mean": 0.645875802918019,
+      "S(1)": 0.04311515121621501,
+      "S(2)": 0.04202548484211999,
+      "holdout BWT": -0.03147868974502147
+    }
+  ],
+  "ranks": {
+    "replay_p50": 1.0,
+    "incremental": 2.0,
+    "cumulative": 3.0,
+    "scratch_last": 4.0,
+    "scratch_all": 5.0
+  }
+}
