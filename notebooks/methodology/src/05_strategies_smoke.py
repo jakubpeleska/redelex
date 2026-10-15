@@ -163,8 +163,9 @@ state
 # ## Resume equals an uninterrupted chain
 
 # %%
-straight = cfg("replay_p50", variant="resume_a")
-resumed = cfg("replay_p50", variant="resume_b", max_updates=2)
+# Single-threaded: only then is a bitwise comparison meaningful (see notebook 04).
+straight = cfg("replay_p50", variant="resume_a", torch_threads=1)
+resumed = cfg("replay_p50", variant="resume_b", max_updates=2, torch_threads=1)
 run_chain(straight, ctx=ctx)
 run_chain(resumed, ctx=ctx)
 resumed.max_updates = 3

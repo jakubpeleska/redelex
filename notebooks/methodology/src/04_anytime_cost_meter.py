@@ -67,11 +67,13 @@ ctx = build_context(cfg("cumulative", "x"))
 # ## 1. Anytime evaluation does not change training
 #
 # The same two updates, once with the next window scored every 10 steps and once
-# with no anytime evaluation at all. Only on CPU is the comparison bitwise.
+# with no anytime evaluation at all. Bitwise equality is only meaningful on one
+# CPU thread: multi-threaded CPU kernels (and GPU atomics) accumulate sums in a
+# varying order, so two identical runs drift apart even without the callback.
 
 # %%
-with_any = cfg("cumulative", "anytime_on", anytime_every=10)
-without = cfg("cumulative", "anytime_off", anytime=False)
+with_any = cfg("cumulative", "anytime_on", anytime_every=10, torch_threads=1)
+without = cfg("cumulative", "anytime_off", anytime=False, torch_threads=1)
 run_chain(with_any, ctx=ctx)
 run_chain(without, ctx=ctx)
 

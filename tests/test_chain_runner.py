@@ -122,10 +122,11 @@ def test_sources_match_each_regime():
 
 
 def test_resume_equals_an_uninterrupted_chain(tmp_path):
-    full = _cfg(tmp_path / "full", mode="replay_p50")
+    # Single-threaded: multi-threaded CPU kernels are not bitwise reproducible.
+    full = _cfg(tmp_path / "full", mode="replay_p50", torch_threads=1)
     run_chain(full, ctx=_ctx(full))
 
-    part = _cfg(tmp_path / "part", mode="replay_p50", max_updates=2)
+    part = _cfg(tmp_path / "part", mode="replay_p50", max_updates=2, torch_threads=1)
     run_chain(part, ctx=_ctx(part))
     part.max_updates = 3
     again = run_chain(part, ctx=_ctx(part))
@@ -228,11 +229,11 @@ def test_budget_rule_trains_exactly_b_steps_without_validation(tmp_path):
 
 
 def test_init_model_is_adopted_at_the_first_update(tmp_path):
-    src = _cfg(tmp_path / "src", mode="scratch_all", max_updates=1)
+    src = _cfg(tmp_path / "src", mode="scratch_all", max_updates=1, torch_threads=1)
     run_chain(src, ctx=_ctx(src))
     init = src.seed_dir() / "ep001" / "model.pt"
 
-    cfg = _cfg(tmp_path / "rq4", mode="cumulative", max_updates=2, init_model=str(init))
+    cfg = _cfg(tmp_path / "rq4", mode="cumulative", max_updates=2, init_model=str(init), torch_threads=1)
     run_chain(cfg, ctx=_ctx(cfg))
     e1, e2 = _episodes(cfg)
 
@@ -252,3 +253,12 @@ def test_update_grid_options_for_rq4():
     assert times[0] == pd.Timestamp("2021-01-01")
     assert all((b - a) == pd.Timedelta(days=30) for a, b in zip(times, times[1:]))
     assert never.plan.horizon_end == monthly.plan.horizon_end
+
+
+def test_run_chain_restores_the_callers_thread_count(tmp_path):
+    import torch
+
+    before = torch.get_num_threads()
+    cfg = _cfg(tmp_path, mode="scratch_all", max_updates=1, torch_threads=1)
+    run_chain(cfg, ctx=_ctx(cfg))
+    assert torch.get_num_threads() == before

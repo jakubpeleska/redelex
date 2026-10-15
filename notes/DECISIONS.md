@@ -51,3 +51,12 @@ still binding are restated here.
   measures what that costs.
 - **Calibration scope (notebook 03a):** driver-position + driver-dnf, regimes scratch_all /
   cumulative / incremental, seeds 0-1, plus a plateau-LR arm on cumulative; ~13 GPU-h on RCI.
+
+## Training is reproducible only single-threaded (2026-10-15)
+
+- Two identical rel-f1 chains on 8 CPU threads diverge from the second update (max weight
+  difference 0.038); on 1 thread they are bit-identical. Multi-threaded CPU kernels, most likely
+  the scatter-add of message passing, accumulate in a varying order; GPU scatter-add uses atomics
+  and behaves the same. Consequence: bitwise checks (anytime non-interference, resume equivalence)
+  run single-threaded on CPU; full GPU runs are reproducible statistically, which is what the 5
+  seeds per configuration are for. Evidence: notebook 04, `scratchpad/determinism.py` runs.

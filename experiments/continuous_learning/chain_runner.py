@@ -667,8 +667,16 @@ def _slurm_deadline() -> Optional[float]:
 def run_chain(cfg: ChainConfig, ctx: Optional[ExperimentContext] = None, **build_kwargs) -> dict:
     """Run (or resume) a chain. Returns a status summary; never trains an episode twice."""
     mode = get_mode(cfg.mode)
+    threads_before = torch.get_num_threads()
     if cfg.torch_threads is not None:
         torch.set_num_threads(int(cfg.torch_threads))
+    try:
+        return _run_chain(cfg, mode, ctx, build_kwargs)
+    finally:
+        torch.set_num_threads(threads_before)
+
+
+def _run_chain(cfg: ChainConfig, mode: ModeSpec, ctx: Optional[ExperimentContext], build_kwargs: dict) -> dict:
     ctx = ctx or build_context(cfg, **build_kwargs)
     seed_dir = cfg.seed_dir()
     seed_dir.mkdir(parents=True, exist_ok=True)
