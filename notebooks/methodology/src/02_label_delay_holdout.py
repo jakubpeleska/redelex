@@ -205,13 +205,17 @@ noise.groupby(["task", "frac"])[["loss SE", "metric SE"]].median().round(4)
 # entity of every training seed.
 
 # %%
+import shutil
+
+audit_root = out / "02_audit"
+shutil.rmtree(audit_root, ignore_errors=True)  # a resumed chain would skip training and audit nothing
 audit_task = "driver-dnf" if "driver-dnf" in TASKS else TASKS[0]
 actx = contexts[audit_task]
 held_entities = set(actx.wrapper.full_table.df.loc[actx.wrapper.full_table.df[HOLDOUT_COL], actx.task.entity_col])
 audit = []
 for mode in AUDIT_MODES:
     seen = []
-    cfg = ChainConfig(DATASET, audit_task, mode, 0, str(out / "02_audit"), variant="audit", device=DEVICE,
+    cfg = ChainConfig(DATASET, audit_task, mode, 0, str(audit_root), variant="audit", device=DEVICE,
                       max_steps=20, check_every=10, patiences=(1, 2), anytime=False, max_updates=2,
                       extra={"audit_seen": seen})
     run_chain(cfg, ctx=actx)

@@ -1,0 +1,12 @@
+{
+  "error": null,
+  "finished": "2026-10-15T16:21:22+00:00",
+  "gate_passed": true,
+  "notebook": "01_anchor_tables.ipynb",
+  "parameters": {
+    "DEVICE": "cpu",
+    "SCALE": "smoke"
+  },
+  "seconds": 37.2,
+  "tag": "cpu-smoke"
+}

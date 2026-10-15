@@ -1,0 +1,128 @@
+{
+  "choice": [
+    {
+      "task": "driver-position",
+      "holdout_frac": 0.2,
+      "meets_minimum": true,
+      "min_entities_at_choice": 8
+    },
+    {
+      "task": "driver-dnf",
+      "holdout_frac": 0.2,
+      "meets_minimum": true,
+      "min_entities_at_choice": 8
+    },
+    {
+      "task": "driver-top3",
+      "holdout_frac": 0.2,
+      "meets_minimum": true,
+      "min_entities_at_choice": 8
+    }
+  ],
+  "audit": [
+    {
+      "mode": "scratch_all",
+      "seeds seen": 5120,
+      "distinct entities": 293,
+      "held-out entities seen": 0
+    },
+    {
+      "mode": "scratch_last",
+      "seeds seen": 5120,
+      "distinct entities": 305,
+      "held-out entities seen": 0
+    },
+    {
+      "mode": "cumulative",
+      "seeds seen": 5120,
+      "distinct entities": 293,
+      "held-out entities seen": 0
+    },
+    {
+      "mode": "replay_p50",
+      "seeds seen": 5120,
+      "distinct entities": 297,
+      "held-out entities seen": 0
+    },
+    {
+      "mode": "incremental",
+      "seeds seen": 5120,
+      "distinct entities": 305,
+      "held-out entities seen": 0
+    },
+    {
+      "mode": "replay_p25",
+      "seeds seen": 5120,
+      "distinct entities": 286,
+      "held-out entities seen": 0
+    },
+    {
+      "mode": "scratch_k2",
+      "seeds seen": 5120,
+      "distinct entities": 293,
+      "held-out entities seen": 0
+    },
+    {
+      "mode": "shrink_perturb",
+      "seeds seen": 5120,
+      "distinct entities": 293,
+      "held-out entities seen": 0
+    }
+  ],
+  "noise_median": [
+    {
+      "task": "driver-dnf",
+      "frac": 0.1,
+      "loss SE": 0.08375840913692319,
+      "metric SE": 0.07833112675885107
+    },
+    {
+      "task": "driver-dnf",
+      "frac": 0.2,
+      "loss SE": 0.0784188022834294,
+      "metric SE": 0.06880656382208053
+    },
+    {
+      "task": "driver-dnf",
+      "frac": 0.25,
+      "loss SE": 0.07344342318377953,
+      "metric SE": 0.06256856881377755
+    },
+    {
+      "task": "driver-position",
+      "frac": 0.1,
+      "loss SE": 1.0169395472686427,
+      "metric SE": 1.0169395496564029
+    },
+    {
+      "task": "driver-position",
+      "frac": 0.2,
+      "loss SE": 0.794895662439607,
+      "metric SE": 0.7948956581336298
+    },
+    {
+      "task": "driver-position",
+      "frac": 0.25,
+      "loss SE": 0.7313152348692977,
+      "metric SE": 0.7313152404005503
+    },
+    {
+      "task": "driver-top3",
+      "frac": 0.1,
+      "loss SE": 0.14738994342003828,
+      "metric SE": 0.09275018335680778
+    },
+    {
+      "task": "driver-top3",
+      "frac": 0.2,
+      "loss SE": 0.12814312846347214,
+      "metric SE": 0.07099667058466379
+    },
+    {
+      "task": "driver-top3",
+      "frac": 0.25,
+      "loss SE": 0.12346807048524029,
+      "metric SE": 0.06701463303678337
+    }
+  ]
+}

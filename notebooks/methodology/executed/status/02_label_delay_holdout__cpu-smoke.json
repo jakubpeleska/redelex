@@ -1,0 +1,12 @@
+{
+  "error": null,
+  "finished": "2026-10-15T16:54:37+00:00",
+  "gate_passed": true,
+  "notebook": "02_label_delay_holdout.ipynb",
+  "parameters": {
+    "DEVICE": "cpu",
+    "SCALE": "smoke"
+  },
+  "seconds": 781.5,
+  "tag": "cpu-smoke"
+}

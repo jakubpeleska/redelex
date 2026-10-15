@@ -1,0 +1,471 @@
+{
+  "env": {
+    "python": "3.12.3",
+    "torch": "2.9.1+cu128",
+    "relbench": "2.1.1",
+    "torch_geometric": "2.7.0",
+    "cuda_available": false,
+    "device_name": "x86_64",
+    "threads": 8,
+    "host": "dev-sandbox"
+  },
+  "summary": [
+    {
+      "task": "driver-position",
+      "type": "regression",
+      "\u0394w (days)": "60",
+      "\u0394I (days)": "1826",
+      "anchors": "349",
+      "rows": "9518",
+      "entities": "846",
+      "held-out entities": "81",
+      "updates": "14",
+      "first update": "1955-01-04",
+      "last update": "2020-01-01",
+      "load s": "3.6"
+    },
+    {
+      "task": "driver-dnf",
+      "type": "binary_classification",
+      "\u0394w (days)": "30",
+      "\u0394I (days)": "1826",
+      "anchors": "588",
+      "rows": "15013",
+      "entities": "855",
+      "held-out entities": "81",
+      "updates": "14",
+      "first update": "1955-01-04",
+      "last update": "2020-01-01",
+      "load s": "3.6"
+    },
+    {
+      "task": "driver-top3",
+      "type": "binary_classification",
+      "\u0394w (days)": "30",
+      "\u0394I (days)": "1826",
+      "anchors": "228",
+      "rows": "4973",
+      "entities": "168",
+      "held-out entities": "15",
+      "updates": "5",
+      "first update": "2000-01-02",
+      "last update": "2020-01-01",
+      "load s": "4.4"
+    }
+  ],
+  "windows": {
+    "driver-position": [
+      {
+        "window": "1",
+        "start": "1950-06-19",
+        "end": "1954-11-25",
+        "anchors": "18",
+        "rows": "660",
+        "entities": "211",
+        "held-out rows": "51",
+        "held-out entities": "14",
+        "target mean": "13.64"
+      },
+      {
+        "window": "2",
+        "start": "1955-03-25",
+        "end": "1959-12-29",
+        "anchors": "19",
+        "rows": "663",
+        "entities": "195",
+        "held-out rows": "73",
+        "held-out entities": "19",
+        "target mean": "12.98"
+      },
+      {
+        "window": "3",
+        "start": "1960-04-27",
+        "end": "1964-12-02",
+        "anchors": "21",
+        "rows": "667",
+        "entities": "171",
+        "held-out rows": "77",
+        "held-out entities": "21",
+        "target mean": "14.12"
+      },
+      {
+        "window": "4",
+        "start": "1965-04-01",
+        "end": "1969-09-07",
+        "anchors": "23",
+        "rows": "494",
+        "entities": "84",
+        "held-out rows": "21",
+        "held-out entities": "5",
+        "target mean": "10.31"
+      },
+      {
+        "window": "5",
+        "start": "1970-03-06",
+        "end": "1974-12-10",
+        "anchors": "24",
+        "rows": "721",
+        "entities": "105",
+        "held-out rows": "36",
+        "held-out entities": "7",
+        "target mean": "13.92"
+      },
+      {
+        "window": "6",
+        "start": "1975-02-08",
+        "end": "1979-11-14",
+        "anchors": "28",
+        "rows": "882",
+        "entities": "112",
+        "held-out rows": "97",
+        "held-out entities": "14",
+        "target mean": "15.07"
+      },
+      {
+        "window": "7",
+        "start": "1980-01-13",
+        "end": "1984-10-18",
+        "anchors": "23",
+        "rows": "706",
+        "entities": "81",
+        "held-out rows": "79",
+        "held-out entities": "12",
+        "target mean": "15.13"
+      },
+      {
+        "window": "8",
+        "start": "1985-02-15",
+        "end": "1989-09-22",
+        "anchors": "23",
+        "rows": "713",
+        "entities": "70",
+        "held-out rows": "120",
+        "held-out entities": "11",
+        "target mean": "15.84"
+      },
+      {
+        "window": "9",
+        "start": "1990-01-20",
+        "end": "1994-10-26",
+        "anchors": "26",
+        "rows": "834",
+        "entities": "84",
+        "held-out rows": "115",
+        "held-out entities": "9",
+        "target mean": "16.03"
+      },
+      {
+        "window": "10",
+        "start": "1995-02-23",
+        "end": "1999-09-30",
+        "anchors": "24",
+        "rows": "565",
+        "entities": "53",
+        "held-out rows": "71",
+        "held-out entities": "5",
+        "target mean": "11.9"
+      },
+      {
+        "window": "11",
+        "start": "2000-01-28",
+        "end": "2004-09-03",
+        "anchors": "25",
+        "rows": "548",
+        "entities": "46",
+        "held-out rows": "60",
+        "held-out entities": "4",
+        "target mean": "11.13"
+      },
+      {
+        "window": "12",
+        "start": "2005-03-02",
+        "end": "2009-10-07",
+        "anchors": "23",
+        "rows": "499",
+        "entities": "47",
+        "held-out rows": "65",
+        "held-out entities": "4",
+        "target mean": "11.08"
+      },
+      {
+        "window": "13",
+        "start": "2010-02-04",
+        "end": "2014-11-10",
+        "anchors": "28",
+        "rows": "659",
+        "entities": "47",
+        "held-out rows": "108",
+        "held-out entities": "7",
+        "target mean": "12.19"
+      },
+      {
+        "window": "14",
+        "start": "2015-03-10",
+        "end": "2019-10-15",
+        "anchors": "25",
+        "rows": "520",
+        "entities": "39",
+        "held-out rows": "100",
+        "held-out entities": "6",
+        "target mean": "10.79"
+      },
+      {
+        "window": "15",
+        "start": "2020-06-11",
+        "end": "2023-07-26",
+        "anchors": "19",
+        "rows": "387",
+        "entities": "32",
+        "held-out rows": "47",
+        "held-out entities": "4",
+        "target mean": "10.53"
+      }
+    ],
+    "driver-dnf": [
+      {
+        "window": "1",
+        "start": "1950-05-20",
+        "end": "1954-12-25",
+        "anchors": "26",
+        "rows": "839",
+        "entities": "221",
+        "held-out rows": "66",
+        "held-out entities": "14",
+        "positive rate": "0.892"
+      },
+      {
+        "window": "2",
+        "start": "1955-04-24",
+        "end": "1959-11-29",
+        "anchors": "27",
+        "rows": "779",
+        "entities": "189",
+        "held-out rows": "84",
+        "held-out entities": "17",
+        "positive rate": "0.828"
+      },
+      {
+        "window": "3",
+        "start": "1960-01-28",
+        "end": "1964-12-02",
+        "anchors": "31",
+        "rows": "864",
+        "entities": "178",
+        "held-out rows": "100",
+        "held-out entities": "22",
+        "positive rate": "0.881"
+      },
+      {
+        "window": "4",
+        "start": "1965-05-01",
+        "end": "1969-10-07",
+        "anchors": "36",
+        "rows": "713",
+        "entities": "84",
+        "held-out rows": "30",
+        "held-out entities": "5",
+        "positive rate": "0.871"
+      },
+      {
+        "window": "5",
+        "start": "1970-03-06",
+        "end": "1974-09-11",
+        "anchors": "41",
+        "rows": "1124",
+        "entities": "105",
+        "held-out rows": "53",
+        "held-out entities": "7",
+        "positive rate": "0.877"
+      },
+      {
+        "window": "6",
+        "start": "1975-01-09",
+        "end": "1979-12-14",
+        "anchors": "46",
+        "rows": "1352",
+        "entities": "112",
+        "held-out rows": "146",
+        "held-out entities": "14",
+        "positive rate": "0.875"
+      },
+      {
+        "window": "7",
+        "start": "1980-01-13",
+        "end": "1984-10-18",
+        "anchors": "41",
+        "rows": "1203",
+        "entities": "81",
+        "held-out rows": "130",
+        "held-out entities": "12",
+        "positive rate": "0.914"
+      },
+      {
+        "window": "8",
+        "start": "1985-03-17",
+        "end": "1989-10-22",
+        "anchors": "41",
+        "rows": "1244",
+        "entities": "70",
+        "held-out rows": "210",
+        "held-out entities": "11",
+        "positive rate": "0.926"
+      },
+      {
+        "window": "9",
+        "start": "1990-02-19",
+        "end": "1994-10-26",
+        "anchors": "46",
+        "rows": "1412",
+        "entities": "84",
+        "held-out rows": "192",
+        "held-out entities": "9",
+        "positive rate": "0.91"
+      },
+      {
+        "window": "10",
+        "start": "1995-03-25",
+        "end": "1999-10-30",
+        "anchors": "43",
+        "rows": "981",
+        "entities": "53",
+        "held-out rows": "124",
+        "held-out entities": "5",
+        "positive rate": "0.846"
+      },
+      {
+        "window": "11",
+        "start": "2000-02-27",
+        "end": "2004-10-03",
+        "anchors": "42",
+        "rows": "900",
+        "entities": "46",
+        "held-out rows": "100",
+        "held-out entities": "4",
+        "positive rate": "0.818"
+      },
+      {
+        "window": "12",
+        "start": "2005-03-02",
+        "end": "2009-10-07",
+        "anchors": "41",
+        "rows": "869",
+        "entities": "47",
+        "held-out rows": "111",
+        "held-out entities": "4",
+        "positive rate": "0.718"
+      },
+      {
+        "window": "13",
+        "start": "2010-03-06",
+        "end": "2014-11-10",
+        "anchors": "48",
+        "rows": "1119",
+        "entities": "47",
+        "held-out rows": "184",
+        "held-out entities": "7",
+        "positive rate": "0.652"
+      },
+      {
+        "window": "14",
+        "start": "2015-03-10",
+        "end": "2019-11-14",
+        "anchors": "47",
+        "rows": "967",
+        "entities": "39",
+        "held-out rows": "187",
+        "held-out entities": "6",
+        "positive rate": "0.733"
+      },
+      {
+        "window": "15",
+        "start": "2020-06-11",
+        "end": "2023-07-26",
+        "anchors": "32",
+        "rows": "647",
+        "entities": "32",
+        "held-out rows": "81",
+        "held-out entities": "4",
+        "positive rate": "0.611"
+      }
+    ],
+    "driver-top3": [
+      {
+        "window": "1",
+        "start": "1994-02-28",
+        "end": "1999-04-03",
+        "anchors": "35",
+        "rows": "853",
+        "entities": "69",
+        "held-out rows": "118",
+        "held-out entities": "6",
+        "positive rate": "0.151"
+      },
+      {
+        "window": "2",
+        "start": "2000-02-27",
+        "end": "2004-10-03",
+        "anchors": "24",
+        "rows": "500",
+        "entities": "43",
+        "held-out rows": "51",
+        "held-out entities": "4",
+        "positive rate": "0.204"
+      },
+      {
+        "window": "3",
+        "start": "2005-03-02",
+        "end": "2009-10-07",
+        "anchors": "42",
+        "rows": "891",
+        "entities": "47",
+        "held-out rows": "114",
+        "held-out entities": "4",
+        "positive rate": "0.213"
+      },
+      {
+        "window": "4",
+        "start": "2010-03-06",
+        "end": "2014-11-10",
+        "anchors": "48",
+        "rows": "1118",
+        "entities": "47",
+        "held-out rows": "183",
+        "held-out entities": "7",
+        "positive rate": "0.174"
+      },
+      {
+        "window": "5",
+        "start": "2015-03-10",
+        "end": "2019-11-14",
+        "anchors": "47",
+        "rows": "964",
+        "entities": "39",
+        "held-out rows": "187",
+        "held-out entities": "6",
+        "positive rate": "0.196"
+      },
+      {
+        "window": "6",
+        "start": "2020-06-11",
+        "end": "2023-07-26",
+        "anchors": "32",
+        "rows": "647",
+        "entities": "32",
+        "held-out rows": "81",
+        "held-out entities": "4",
+        "positive rate": "0.206"
+      }
+    ]
+  },
+  "benchmark": {
+    "task": "driver-dnf",
+    "device": "x86_64",
+    "threads": 8,
+    "train_rows": 12649,
+    "steps_timed": 27,
+    "compute_s_per_step": 0.7088287845253944,
+    "data_s_per_step": 0.013619959354400635,
+    "s_per_step": 0.7219321951270103,
+    "samples_per_s": 177.30196944254692
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "equivalence": [
+    {
+      "task": "driver-position",
+      "split": "train",
+      "anchors": "332",
+      "rows ours": "7453",
+      "rows relbench": "7453",
+      "identical": "True"
+    },
+    {
+      "task": "driver-position",
+      "split": "val",
+      "anchors": "30",
+      "rows ours": "499",
+      "rows relbench": "499",
+      "identical": "True"
+    },
+    {
+      "task": "driver-position",
+      "split": "test",
+      "anchors": "40",
+      "rows ours": "760",
+      "rows relbench": "760",
+      "identical": "True"
+    },
+    {
+      "task": "driver-dnf",
+      "split": "train",
+      "anchors": "665",
+      "rows ours": "11411",
+      "rows relbench": "11411",
+      "identical": "True"
+    },
+    {
+      "task": "driver-dnf",
+      "split": "val",
+      "anchors": "40",
+      "rows ours": "566",
+      "rows relbench": "566",
+      "identical": "True"
+    },
+    {
+      "task": "driver-dnf",
+      "split": "test",
+      "anchors": "40",
+      "rows ours": "702",
+      "rows relbench": "702",
+      "identical": "True"
+    },
+    {
+      "task": "driver-top3",
+      "split": "train",
+      "anchors": "665",
+      "rows ours": "1353",
+      "rows relbench": "1353",
+      "identical": "True"
+    },
+    {
+      "task": "driver-top3",
+      "split": "val",
+      "anchors": "40",
+      "rows ours": "588",
+      "rows relbench": "588",
+      "identical": "True"
+    },
+    {
+      "task": "driver-top3",
+      "split": "test",
+      "anchors": "40",
+      "rows ours": "726",
+      "rows relbench": "726",
+      "identical": "True"
+    }
+  ],
+  "coverage": [
+    {
+      "task": "driver-position",
+      "grid anchors": 447,
+      "grid anchors with rows": 349,
+      "native anchors": 402,
+      "new anchors (gaps filled)": 72,
+      "rows": 9518,
+      "build s": 0.5
+    },
+    {
+      "task": "driver-dnf",
+      "grid anchors": 895,
+      "grid anchors with rows": 588,
+      "native anchors": 745,
+      "new anchors (gaps filled)": 142,
+      "rows": 15013,
+      "build s": 0.9
+    },
+    {
+      "task": "driver-top3",
+      "grid anchors": 895,
+      "grid anchors with rows": 228,
+      "native anchors": 745,
+      "new anchors (gaps filled)": 142,
+      "rows": 4973,
+      "build s": 0.3
+    }
+  ],
+  "variants": [
+    {
+      "grid": "native stride",
+      "anchors": 895,
+      "rows": 15013,
+      "shares anchors with native": 895
+    },
+    {
+      "grid": "dense \u0394w/4",
+      "anchors": 3577,
+      "rows": 59923,
+      "shares anchors with native": 895
+    },
+    {
+      "grid": "shift 0.25\u0394w",
+      "anchors": 894,
+      "rows": null,
+      "shares anchors with native": 0
+    },
+    {
+      "grid": "shift 0.5\u0394w",
+      "anchors": 894,
+      "rows": 15062,
+      "shares anchors with native": 0
+    },
+    {
+      "grid": "shift 0.75\u0394w",
+      "anchors": 894,
+      "rows": null,
+      "shares anchors with native": 0
+    }
+  ]
+}
