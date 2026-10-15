@@ -24,10 +24,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import random
 import sys
 import time
+import warnings
 import zlib
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -72,6 +74,13 @@ from experiments.continuous_learning.utils import get_table_input
 DOWNLOAD = {"rel-amazon": True, "rel-stack": False}
 
 EPISODE_FILE = "episode.json"
+
+# Every update is its own short Trainer run without a Lightning logger: these
+# messages would repeat for each one and bury the output that matters.
+warnings.filterwarnings("ignore", message=r".*does not have many workers.*")
+warnings.filterwarnings("ignore", message=r".*but have no logger configured.*")
+logging.getLogger("lightning.pytorch.utilities.rank_zero").setLevel(logging.WARNING)
+logging.getLogger("lightning.pytorch.accelerators.cuda").setLevel(logging.WARNING)
 
 
 @dataclass

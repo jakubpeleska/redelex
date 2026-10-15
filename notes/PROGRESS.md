@@ -26,13 +26,26 @@ rel-f1 + rel-trial pilot passes E.
 | State check of repo, RCI, MLflow vs. the Oct-14 draft | DONE 2026-10-14 |
 | Plan approved, shared as a Claude Doc | DONE 2026-10-15 |
 | RCI clone reset to the GitHub branch (474259e), `analysis_out/` removed | DONE 2026-10-15 |
-| Library primitives + unit tests | TODO |
-| New driver `chain_runner.py` + inline scoring | TODO |
-| Notebooks 00-02 -> checkpoint A | TODO |
+| NaN-encoder fix ported onto the restarted base (`models.py`) | DONE 2026-10-15 |
+| Library primitives + unit tests: protocol, anchor tables + held-out entities, exact-share mixture loader, convergence / cost-meter / anytime callbacks, analysis | DONE 2026-10-15 |
+| New driver `chain_runner.py` + inline scoring; all 13 regimes incl. EWC and reservoir | DONE 2026-10-15 |
+| Notebook tooling (papermill, `scripts/run_methodology_notebooks.py`, `slurm/rci/run_notebook.sh`) | DONE 2026-10-15 |
+| Notebooks 00-02 -> checkpoint A | 00, 01 PASS on CPU; 02 running |
 | Notebooks 03-04 -> checkpoint B | TODO |
 | Notebooks 05-07 -> checkpoint C | TODO |
 | Notebook 08 budget -> checkpoint D | TODO |
 | Pilot rel-f1 + rel-trial main grid -> checkpoint E | TODO |
+
+## Where things are
+
+- Library: `redelex/continual/{protocol,anchors,analysis,regularization,replay,shrink_perturb}.py`,
+  `redelex/loaders/mixture.py`, `redelex/nn/train/{callbacks,anytime}.py`.
+- Driver: `experiments/continuous_learning/{chain_runner,modes,score_chain,continuous_task}.py`.
+  The legacy `continuous_learning.py` is untouched and not used by the rerun.
+- Notebooks: sources `notebooks/methodology/src/*.py`, built with `scripts/build_notebooks.py`,
+  executed copies + `status.json` in `notebooks/methodology/executed/`, small JSON outputs in
+  `notebooks/methodology/out/`.
+- Tests on CPU cap torch at 4 threads (`tests/conftest.py`); the default oversubscribes this box.
 
 ## Environment facts
 
