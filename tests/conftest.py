@@ -100,3 +100,27 @@ def hetero_graph(synthetic_dataset, text_embedder):
         db, col_to_stype, text_embedder=text_embedder
     )
     return data, col_stats_dict
+
+
+STREAM_COL_TO_STYPE = {
+    "users": {"age": stype.numerical},
+    "events": {"amount": stype.numerical},
+}
+
+
+@pytest.fixture()
+def stream_dataset():
+    from .helpers import StreamDataset
+
+    return StreamDataset()
+
+
+@pytest.fixture()
+def stream_graph(stream_dataset, text_embedder):
+    """Graph of the synthetic event stream, with `time` on both tables."""
+    from redelex.data import make_pkey_fkey_graph
+
+    db = stream_dataset.get_db(upto_test_timestamp=False)
+    col_to_stype = {t: dict(cols) for t, cols in STREAM_COL_TO_STYPE.items()}
+    data, col_stats_dict = make_pkey_fkey_graph(db, col_to_stype, text_embedder=text_embedder)
+    return data, col_stats_dict
