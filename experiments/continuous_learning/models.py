@@ -1,6 +1,7 @@
 from typing import Optional
 
 import torch
+import torch_frame
 from torch_geometric.data import HeteroData
 from torch_geometric.nn import SAGEConv, MLP
 from torch_geometric.typing import NodeType, EdgeType
@@ -21,13 +22,34 @@ class HeterogeneousSAGE(torch.nn.Module):
     ):
         super().__init__()
 
-        self.row_encoder = self.encoder = HeteroEncoder(
+        # `na_strategy` is not optional here. With the library default, a numerical
+        # column holding ANY missing cell gets a NaN gradient (the forward pass
+        # nan_to_num's its output, but the backward computes NaN * 0 = NaN), Adam
+        # turns that into a NaN weight on the first step, and the column is dead
+        # for the rest of the run. In a chain of updates the set of dead columns
+        # grows at whichever episode first samples a missing cell, which looks
+        # exactly like a model getting worse over time. MEAN maps a missing cell
+        # to the column mean. This differs from the RelBench default.
+        self.encoder = HeteroEncoder(
             channels=gnn_channels,
             node_to_col_names_dict={
                 node_type: data[node_type].tf.col_names_dict
                 for node_type in data.node_types
             },
             node_to_col_stats=col_stats_dict,
+            default_stype_encoder_cls_kwargs={
+                torch_frame.categorical: (torch_frame.nn.EmbeddingEncoder, {}),
+                torch_frame.numerical: (
+                    torch_frame.nn.LinearEncoder,
+                    {"na_strategy": torch_frame.NAStrategy.MEAN},
+                ),
+                torch_frame.multicategorical: (
+                    torch_frame.nn.MultiCategoricalEmbeddingEncoder,
+                    {},
+                ),
+                torch_frame.embedding: (torch_frame.nn.LinearEmbeddingEncoder, {}),
+                torch_frame.timestamp: (torch_frame.nn.TimestampEncoder, {}),
+            },
         )
 
         self.temporal_encoder = HeteroTemporalEncoder(
@@ -48,6 +70,12 @@ class HeterogeneousSAGE(torch.nn.Module):
         )
 
         self.reset_parameters()
+
+    @property
+    def row_encoder(self):
+        # An alias, not a second submodule: assigning both names registered the
+        # encoder twice, so every checkpoint stored it twice.
+        return self.encoder
 
     def reset_parameters(self):
         self.row_encoder.reset_parameters()
