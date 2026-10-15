@@ -108,6 +108,20 @@ def test_convergence_history_replays_every_check(tmp_path):
     assert [v for _, v in history] == pytest.approx([3.0, 2.0, 2.5, 2.6, 2.7])  # logged as float32
 
 
+def test_convergence_records_other_logged_values(tmp_path):
+    class TwoMetrics(Toy):
+        def on_validation_epoch_end(self):
+            super().on_validation_epoch_end()
+            self.log("val_aux", torch.tensor(float(self.k)))
+
+    cb = ConvergenceCallback(str(tmp_path), patiences=(2,), also_record=("val_aux", "val_missing"))
+    _fit(TwoMetrics([3.0, 2.0, 2.5, 2.6]), [cb], max_steps=500)
+
+    extra = cb.summary()["history_extra"]
+    assert extra["val_aux"] == [[10, 1.0], [20, 2.0], [30, 3.0], [40, 4.0]]
+    assert extra["val_missing"] == []
+
+
 def test_convergence_flags_runs_that_hit_the_step_cap(tmp_path):
     module = Toy([10.0 - i for i in range(50)])
     cb = ConvergenceCallback(str(tmp_path), patiences=(3,))

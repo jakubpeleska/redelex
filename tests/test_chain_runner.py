@@ -175,3 +175,22 @@ def test_unwired_ablations_refuse_to_run(tmp_path, mode):
     train plain incremental fine-tuning under their names."""
     with pytest.raises(NotImplementedError, match=mode):
         run_chain(_cfg(tmp_path, mode=mode), ctx=_ctx(_cfg(tmp_path)))
+
+
+def test_calibration_options_dense_anytime_and_plateau(tmp_path):
+    cfg = _cfg(tmp_path, mode="scratch_all", max_updates=1, anytime_every=10, plateau_patience=1, max_steps=60,
+               patiences=(4,))
+    run_chain(cfg, ctx=_ctx(cfg))
+    ep = _episodes(cfg)[0]
+
+    steps = [r["step"] for r in ep["anytime"]]
+    assert steps[:4] == [0, 10, 20, 30]
+    hist = ep["convergence"]["history_extra"]
+    assert len(hist["val_roc_auc"]) == ep["convergence"]["checks"] == len(hist["val_loss"])
+    assert ep["final_lr"] <= cfg.lr
+
+
+def test_constant_lr_is_the_default(tmp_path):
+    cfg = _cfg(tmp_path, mode="scratch_all", max_updates=1)
+    run_chain(cfg, ctx=_ctx(cfg))
+    assert _episodes(cfg)[0]["final_lr"] == cfg.lr

@@ -106,6 +106,11 @@ class ChainConfig:
     anytime: bool = True
     anytime_max_rows: int = 25_000
     anytime_schedule: tuple = (0, 10, 25, 50, 100, 250, 500, 1000, 2000)
+    # Calibration only: score the next window every `anytime_every` steps instead.
+    anytime_every: Optional[int] = None
+    # Calibration only: halve the LR after this many checks without improvement
+    # of the validation metric (default: constant LR).
+    plateau_patience: Optional[int] = None
     stale_windows: Optional[int] = None
     eval_batch_size: int = 512
     # Runtime.
@@ -387,6 +392,7 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
         patiences=tuple(cfg.patiences),
         monitor=cfg.monitor,
         mode="min" if cfg.monitor == "val_loss" or cfg.monitor.endswith("mae") else "max",
+        also_record=(f"val_{metric_name(task.task_type)}", "val_loss"),
     )
     callbacks = [meter, convergence]
     anytime_cb = None
@@ -397,7 +403,10 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
             pred = predict_table(m, ctx.data, task, anytime_table, _neighbors(cfg), cfg.eval_batch_size, device, seed=0)
             return {metric_name(task.task_type): metric_value(task.task_type, target, pred)}
 
-        anytime_cb = AnytimeEvalCallback(evaluate, base_schedule=tuple(cfg.anytime_schedule), meter=meter)
+        schedule = tuple(cfg.anytime_schedule)
+        if cfg.anytime_every is not None:
+            schedule = tuple(range(0, cfg.max_steps + 1, int(cfg.anytime_every)))
+        anytime_cb = AnytimeEvalCallback(evaluate, base_schedule=schedule, meter=meter)
         callbacks.append(anytime_cb)
 
     audit = cfg.extra.get("audit_seen")
@@ -405,7 +414,14 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
         callbacks.append(_SeedAudit(task.entity_table, audit))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=cfg.lr)
-    lightning_model = LightningEntityTaskWrapper(model=model, optimizer=optimizer, task=task, modes=("val",))
+    scheduler_cfg = None
+    if cfg.plateau_patience is not None:
+        higher = task.task_type.value != "regression"
+        scheduler_cfg = {"scheduler": torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, "max" if higher else "min", factor=0.5, patience=int(cfg.plateau_patience))}
+    lightning_model = LightningEntityTaskWrapper(
+        model=model, optimizer=optimizer, task=task, modes=("val",), lr_scheduler_config=scheduler_cfg
+    )
     logger = False
     if cfg.mlflow_uri:
         from lightning.pytorch.loggers import MLFlowLogger
@@ -491,6 +507,7 @@ def run_update(ctx: ExperimentContext, cfg: ChainConfig, mode: ModeSpec, ep, pre
         "deploy_rows": len(deploy.df),
         "scored_rows": len(to_score.df),
         "check_every": check_every,
+        "final_lr": float(optimizer.param_groups[0]["lr"]),
         "steps_per_epoch": steps_per_epoch,
         "metric": metric_name(task.task_type),
         "deploy_score": deploy_scores,
@@ -608,7 +625,8 @@ def parse_args(argv=None) -> ChainConfig:
     args = vars(p.parse_args(argv))
     for name in ("patiences", "anytime_schedule"):
         args[name] = tuple(args[name])
-    for name in ("check_every", "selection_max_rows", "stale_windows", "max_updates", "torch_threads"):
+    for name in ("check_every", "selection_max_rows", "stale_windows", "max_updates", "torch_threads",
+                 "anytime_every", "plateau_patience"):
         if args.get(name) is not None:
             args[name] = int(args[name])
     return ChainConfig(**args)

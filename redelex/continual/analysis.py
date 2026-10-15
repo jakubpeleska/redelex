@@ -170,6 +170,40 @@ def steps_to_target(steps: Sequence[int], scores: Sequence[float], target: float
     return float("inf")
 
 
+def replay_stopping(
+    history: Sequence[Sequence[float]],
+    every: int,
+    patience: int,
+    mode: str = "min",
+    min_delta: float = 0.0,
+) -> dict:
+    """Replay a stopping rule on a validation history recorded at a finer interval.
+
+    ``history`` is ``[(step, value), ...]``. The rule checks at the recorded steps
+    divisible by ``every`` and stops after ``patience`` consecutive checks without
+    improvement, exactly as :class:`~redelex.nn.train.ConvergenceCallback` would.
+    Returns the stop step (``None`` if the history ends before the rule fires),
+    the best step, and the number of checks made.
+    """
+    best_value, best_step, since, checks = None, None, 0, 0
+    for step, value in history:
+        step = int(step)
+        if step % every:
+            continue
+        checks += 1
+        better = best_value is None or (
+            value < best_value - min_delta if mode == "min" else value > best_value + min_delta
+        )
+        if better:
+            best_value, best_step, since = value, step, 0
+        else:
+            since += 1
+            if since >= patience:
+                return {"stop_step": step, "best_step": best_step, "checks": checks, "fired": True}
+    last = int(history[-1][0]) if len(history) else None
+    return {"stop_step": last, "best_step": best_step, "checks": checks, "fired": False}
+
+
 def horizon_cost(episodes: Iterable[Mapping]) -> dict:
     """Total steps, samples and training seconds over a chain's ``episode.json`` records."""
     total = {"steps": 0, "samples": 0, "train_seconds": 0.0, "val_seconds": 0.0, "updates": 0}
@@ -293,6 +327,7 @@ __all__ = [
     "next_window",
     "orient",
     "pareto_front",
+    "replay_stopping",
     "scratch_target",
     "score_long",
     "staleness_penalty",

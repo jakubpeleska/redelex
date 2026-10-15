@@ -128,3 +128,16 @@ def test_ranks_and_tests():
     assert ranks.to_dict() == {"a": 1.0, "b": 2.0, "c": 3.0}
     assert p < 0.05
     assert set(w.config) == {"b", "c"} and (w.p_holm >= w.p).all() and (w.median_diff < 0).all()
+
+
+def test_replay_stopping_matches_the_callback_rule():
+    # Recorded every 10 steps; the same losses as the callback test, at checks 10..100.
+    losses = [5.0, 4.0, 3.0, 3.5, 3.6, 2.9, 3.0, 3.1, 3.2, 3.3]
+    history = [(10 * (i + 1), v) for i, v in enumerate(losses)]
+
+    assert A.replay_stopping(history, every=10, patience=2) == {"stop_step": 50, "best_step": 30, "checks": 5, "fired": True}
+    assert A.replay_stopping(history, every=10, patience=4)["stop_step"] == 100
+    # Checking every 20 steps sees 4.0, 3.5, 2.9, 3.1, 3.3.
+    assert A.replay_stopping(history, every=20, patience=2) == {"stop_step": 100, "best_step": 60, "checks": 5, "fired": True}
+    unfired = A.replay_stopping(history, every=10, patience=9)
+    assert unfired["fired"] is False and unfired["stop_step"] == 100 and unfired["best_step"] == 60

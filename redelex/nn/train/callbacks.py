@@ -121,6 +121,7 @@ class ConvergenceCallback(L.Callback):
         mode: str = "min",
         min_delta: float = 0.0,
         primary: Optional[int] = None,
+        also_record: Sequence[str] = (),
     ):
         super().__init__()
         if not patiences or any(p < 1 for p in patiences):
@@ -142,6 +143,8 @@ class ConvergenceCallback(L.Callback):
         self.checks = 0
         self.since_best = 0
         self.history: list[tuple[int, float]] = []
+        self.also_record = tuple(also_record)
+        self.extra_history: dict[str, list[tuple[int, float]]] = {k: [] for k in self.also_record}
         self.stopped: dict[int, dict] = {}
 
     @property
@@ -181,6 +184,10 @@ class ConvergenceCallback(L.Callback):
         step = int(trainer.global_step)
         self.checks += 1
         self.history.append((step, value))
+        for key in self.also_record:
+            other = trainer.callback_metrics.get(key)
+            if other is not None:
+                self.extra_history[key].append((step, _scalar(other)))
 
         if self._improved(value):
             self.best_value, self.best_step, self.since_best = value, step, 0
@@ -210,6 +217,7 @@ class ConvergenceCallback(L.Callback):
             # Every check as (step, value): enough to replay any other stopping
             # rule offline (calibration of N and P).
             "history": [[int(s), float(v)] for s, v in self.history],
+            "history_extra": {k: [[int(s), float(v)] for s, v in h] for k, h in self.extra_history.items()},
         }
 
 

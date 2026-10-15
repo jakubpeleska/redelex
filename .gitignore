@@ -166,3 +166,6 @@ logs/
 /notebooks/data
 results/
 /data/
+# Methodology notebooks: commit the executed copies and the small JSON outputs,
+# never the chains (models, predictions) that notebooks write into subdirectories.
+notebooks/methodology/out/*/
