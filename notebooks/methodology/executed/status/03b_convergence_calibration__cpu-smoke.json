@@ -1,0 +1,11 @@
+{
+  "error": null,
+  "finished": "2026-10-15T17:12:52+00:00",
+  "gate_passed": true,
+  "notebook": "03b_convergence_calibration.ipynb",
+  "parameters": {
+    "SCALE": "smoke"
+  },
+  "seconds": 10.5,
+  "tag": "cpu-smoke"
+}
