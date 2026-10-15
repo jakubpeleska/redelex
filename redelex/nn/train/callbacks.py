@@ -207,6 +207,9 @@ class ConvergenceCallback(L.Callback):
             "primary": self.primary,
             "checks": self.checks,
             "patience": {str(p): self.stopped.get(p) for p in self.patiences},
+            # Every check as (step, value): enough to replay any other stopping
+            # rule offline (calibration of N and P).
+            "history": [[int(s), float(v)] for s, v in self.history],
         }
 
 

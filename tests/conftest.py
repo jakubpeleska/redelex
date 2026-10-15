@@ -22,6 +22,11 @@ from .helpers import (  # noqa: E402
 )
 
 
+# Tiny models on a shared machine: torch's default of one intra-op thread per
+# core oversubscribes the CPU and makes a three-step update take a minute.
+torch.set_num_threads(4)
+
+
 @pytest.fixture(autouse=True)
 def _seed():
     random.seed(0)

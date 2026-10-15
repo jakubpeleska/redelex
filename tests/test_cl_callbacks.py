@@ -97,6 +97,17 @@ def test_convergence_tracks_every_patience_in_one_run(tmp_path):
     assert all(torch.equal(primary[k], p2[k]) for k in p2)
 
 
+def test_convergence_history_replays_every_check(tmp_path):
+    module = Toy([3.0, 2.0, 2.5, 2.6, 2.7])
+    cb = ConvergenceCallback(str(tmp_path), patiences=(3,))
+
+    _fit(module, [cb], max_steps=500)
+
+    history = cb.summary()["history"]
+    assert [s for s, _ in history] == [10, 20, 30, 40, 50]
+    assert [v for _, v in history] == pytest.approx([3.0, 2.0, 2.5, 2.6, 2.7])  # logged as float32
+
+
 def test_convergence_flags_runs_that_hit_the_step_cap(tmp_path):
     module = Toy([10.0 - i for i in range(50)])
     cb = ConvergenceCallback(str(tmp_path), patiences=(3,))
@@ -165,15 +176,39 @@ def _metered(sleep):
     return meter.summary()
 
 
-def test_cost_meter_keeps_anytime_and_validation_out_of_training_time():
-    quiet, slow = _metered(0.0), _metered(0.2)
+def test_cost_meter_real_run_accounts_for_its_wall_clock():
+    s = _metered(0.05)
 
-    assert slow["steps"] == quiet["steps"] == 60
-    assert slow["seconds"]["anytime"] >= 5 * 0.2 * 0.9
-    # One second of evaluation sleeps must not show up as data-loading time.
-    assert slow["seconds"]["train_data"] - quiet["seconds"]["train_data"] < 0.3
-    accounted = slow["train_seconds"] + slow["seconds"]["val"] + slow["seconds"]["anytime"]
-    assert accounted <= slow["fit_wall_seconds"] * 1.05
+    assert s["steps"] == 60
+    assert s["seconds"]["anytime"] >= 5 * 0.05 * 0.9
+    accounted = s["train_seconds"] + s["seconds"]["val"] + s["seconds"]["anytime"]
+    assert accounted <= s["fit_wall_seconds"] * 1.05
+
+
+def test_cost_meter_subtracts_measured_work_from_the_data_gap(monkeypatch):
+    """Fake clock: the gap between two batches is 8 s, of which 2 s are
+    validation and 2 s an anytime evaluation; only 4 s are data time."""
+    import redelex.nn.train.callbacks as cbm
+
+    clock = iter([0.0, 1.0, 4.0, 4.0, 6.0, 9.0, 11.0, 12.0, 20.0])
+    monkeypatch.setattr(cbm.time, "perf_counter", lambda: next(clock))
+    meter = CostMeterCallback()
+    trainer = SimpleNamespace(global_step=1)
+
+    meter.on_fit_start(trainer, None)                    # 0
+    meter.on_train_batch_start(trainer, None, None, 0)   # 1
+    meter.on_train_batch_end(trainer, None, None, None, 0)  # 4  -> 3 s compute
+    meter.on_validation_start(trainer, None)             # 4
+    meter.on_validation_end(trainer, None)               # 6  -> 2 s val
+    with meter.measure("anytime"):                       # 9 .. 11 -> 2 s anytime
+        pass
+    meter.on_train_batch_start(trainer, None, None, 1)   # 12 -> gap 8 s minus 4 s measured
+    meter.on_fit_end(trainer, None)                      # 20
+
+    sec = meter.summary()["seconds"]
+    assert sec["train_compute"] == 3.0
+    assert sec["val"] == 2.0 and sec["anytime"] == 2.0
+    assert sec["train_data"] == 4.0
 
 
 def test_cost_meter_counts_samples_by_source():
