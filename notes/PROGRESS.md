@@ -30,7 +30,7 @@ rel-f1 + rel-trial pilot passes E.
 | Library primitives + unit tests: protocol, anchor tables + held-out entities, exact-share mixture loader, convergence / cost-meter / anytime callbacks, analysis | DONE 2026-10-15 |
 | New driver `chain_runner.py` + inline scoring; all 13 regimes incl. EWC and reservoir | DONE 2026-10-15 |
 | Notebook tooling (papermill, `scripts/run_methodology_notebooks.py`, `slurm/rci/run_notebook.sh`) | DONE 2026-10-15 |
-| Notebooks 00-02 -> checkpoint A | 00, 01 PASS on CPU; 02 running |
+| Notebooks 00-02 -> checkpoint A | PASS on CPU (smoke) 2026-10-15; awaiting review |
 | Notebooks 03-04 -> checkpoint B | TODO |
 | Notebooks 05-07 -> checkpoint C | TODO |
 | Notebook 08 budget -> checkpoint D | TODO |
