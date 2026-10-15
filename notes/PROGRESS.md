@@ -30,10 +30,15 @@ rel-f1 + rel-trial pilot passes E.
 | Library primitives + unit tests: protocol, anchor tables + held-out entities, exact-share mixture loader, convergence / cost-meter / anytime callbacks, analysis | DONE 2026-10-15 |
 | New driver `chain_runner.py` + inline scoring; all 13 regimes incl. EWC and reservoir | DONE 2026-10-15 |
 | Notebook tooling (papermill, `scripts/run_methodology_notebooks.py`, `slurm/rci/run_notebook.sh`) | DONE 2026-10-15 |
-| Notebooks 00-02 -> checkpoint A | PASS on CPU (smoke) 2026-10-15; awaiting review |
-| Notebooks 03-04 -> checkpoint B | TODO |
-| Notebooks 05-07 -> checkpoint C | TODO |
-| Notebook 08 budget -> checkpoint D | TODO |
+| Notebooks 00-02 -> checkpoint A | PASS on CPU (smoke); A approved 2026-10-15 (rel-f1 holdout 20%) |
+| Notebooks 03a/03b, 04-07 smoke on CPU | PASS 2026-10-15 (machinery only; 03b's choice is meaningless at smoke scale) |
+| RQ4 driver support (init_model, first_update, delta_i_days=0, stop_rule=budget) | DONE 2026-10-15 |
+| Launch tooling: run_chain2.sh, submit_chains.py, benchmarks, setup_env, notebook jobs | DONE 2026-10-15 |
+| **BLOCKED: Jakub pushes the branch** | then: reset RCI clone, `sbatch slurm/rci/setup_env.sh` |
+| Notebook 03a full on RCI (6 shards) + 03b -> checkpoint B | TODO, after push |
+| Notebook 00 on an A100 + `submit_benchmarks.sh` -> inputs of 08 | TODO, after push |
+| Notebooks 05-07 full on RCI -> checkpoint C | TODO |
+| Notebook 08 budget -> checkpoint D | drafted, needs 03 + benchmarks |
 | Pilot rel-f1 + rel-trial main grid -> checkpoint E | TODO |
 
 ## Where things are
