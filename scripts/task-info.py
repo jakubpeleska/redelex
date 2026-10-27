@@ -15,8 +15,8 @@ from torch_geometric.utils import to_networkx
 from torch_geometric.loader import NeighborLoader
 
 from relbench.base import Database, Dataset, EntityTask, TaskType
-from relbench.datasets import get_dataset_names, get_dataset
-from relbench.tasks import get_task_names, get_task
+from redelex.datasets import get_dataset_names, get_dataset
+from redelex.tasks import get_task_names, get_task
 from relbench.modeling.graph import get_node_train_table_input
 
 from redelex.data import GloveTextEmbedder, make_pkey_fkey_graph, guess_schema
@@ -109,7 +109,7 @@ for dataset_name in all_datasets:
         task: Union[EntityTask, CTUEntityTask, CTUEntityTaskTemporal] = get_task(
             dataset_name, task_name
         )
-        if task.task_type == TaskType.LINK_PREDICTION:
+        if task.task_type == TaskType.RECOMMENDATION:
             continue
 
         dataset = get_dataset(dataset_name)

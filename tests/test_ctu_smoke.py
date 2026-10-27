@@ -26,10 +26,9 @@ import pandas as pd
 import pytest
 from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype
 from relbench.base import TaskType
-from relbench.datasets import dataset_registry
-from relbench.tasks import task_registry
 
-import redelex  # noqa: F401  (registers the CTU datasets and tasks)
+from redelex.datasets import dataset_registry
+from redelex.tasks import task_registry
 
 pytestmark = [pytest.mark.needs_network, pytest.mark.slow]
 
@@ -75,7 +74,7 @@ def dataset_factory(smoke_cache_dir):
     """Build (and reuse within the session) dataset objects from the registry.
 
     Instantiating from the registry directly keeps the cache inside the test
-    directory instead of the user's relbench cache.
+    directory instead of the user's redelex cache.
     """
     built = {}
 

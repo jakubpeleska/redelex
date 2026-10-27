@@ -5,6 +5,8 @@ model downloads. DB-layer tests use a local sqlite file, task and graph
 tests use an in-memory relbench dataset.
 """
 
+from functools import lru_cache
+
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
@@ -12,6 +14,7 @@ from relbench.base import Database, Dataset, Table, TaskType
 from torch_frame.testing.text_embedder import HashTextEmbedder
 
 from redelex.datasets.db_dataset import DBDataset
+from redelex.db.utils import reindex_keys
 from redelex.tasks.task_impute import ImputeEntityStaticTask, ImputeEntityTemporalTask
 
 
@@ -148,7 +151,7 @@ def make_users_visits_db() -> Database:
     """Two-table database: `users` (entity table with targets) and `visits`.
 
     Rows are pre-sorted by their time columns with arange primary keys, so
-    relbench's reindex_pkeys_and_fkeys keeps row order stable.
+    reindex_keys (relbench's reindex_pkeys_and_fkeys) keeps row order stable.
     """
     reg_dates = pd.date_range("2019-01-01", periods=N_USERS, freq="MS")
     target_cat = pd.Series(["yes", "no"] * (N_USERS // 2), dtype=object)
@@ -209,10 +212,19 @@ class InMemoryDataset(Dataset):
 
     def __init__(self, db: Database):
         self._db = db
-        super().__init__(cache_dir=None)
 
     def make_db(self) -> Database:
         return self._db
+
+    @lru_cache(maxsize=None)  # noqa: B019
+    def get_db(self, upto_test_timestamp: bool = True) -> Database:
+        # DBDataset.get_db without its disk cache: keys re-indexed, result
+        # cached in memory, as relbench 2's Dataset.get_db did.
+        db = reindex_keys(self.make_db())
+        if upto_test_timestamp:
+            db = db.upto(self.test_timestamp)
+        self.validate_and_correct_db(db)
+        return db
 
 
 class UserStaticBinaryTask(ImputeEntityStaticTask):

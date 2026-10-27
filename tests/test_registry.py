@@ -8,12 +8,12 @@ builds the connection URL, the database is downloaded on the first
 import pandas as pd
 import pytest
 from relbench.base import TaskType
-from relbench.datasets import dataset_registry
-from relbench.tasks import task_registry
 
 import redelex
 from redelex import datasets as redelex_datasets
 from redelex import tasks as redelex_tasks
+from redelex.datasets import dataset_registry
+from redelex.tasks import task_registry
 
 CTU_DATASETS = sorted(n for n in dataset_registry if n.startswith("ctu-"))
 CTU_TASKS = [

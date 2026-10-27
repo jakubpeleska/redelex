@@ -23,8 +23,8 @@ from typing import Optional
 
 import sqlalchemy as sa
 from relbench.base import TaskType
-from relbench.datasets import dataset_registry
-from relbench.tasks import task_registry
+from redelex.datasets import dataset_registry
+from redelex.tasks import task_registry
 
 import redelex  # noqa: F401  (registers the CTU datasets and tasks)
 
