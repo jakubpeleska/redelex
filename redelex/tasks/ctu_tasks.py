@@ -149,7 +149,7 @@ class CraftBeerOriginalTask(CTUEntityTask):
 class CreditOriginalTask(CTULinkTask):
     entity_table = "member"
     target_col = "region_no"
-    task_type = TaskType.LINK_PREDICTION
+    task_type = TaskType.RECOMMENDATION
 
 
 class DallasOriginalTask(CTUEntityTask):
@@ -183,14 +183,14 @@ class DiabetesOriginalTask(CTUEntityTask):
 class DunurOriginalTask(CTULinkTask):
     entity_table = "target"
     target_col = "is_dunur"
-    task_type = TaskType.LINK_PREDICTION
+    task_type = TaskType.RECOMMENDATION
 
 
 # TODO: fix link prediction tasks
 class EltiOriginalTask(CTULinkTask):
     entity_table = "target"
     target_col = "is_elti"
-    task_type = TaskType.LINK_PREDICTION
+    task_type = TaskType.RECOMMENDATION
 
 
 class EmployeeOriginalTask(CTUEntityTask):
@@ -378,7 +378,7 @@ class MondialOriginalTask(CTUEntityTask):
 # TODO: fix link prediction tasks
 class MooneyOriginalTask(CTULinkTask):
     entity_table = "uncle"
-    task_type = TaskType.LINK_PREDICTION
+    task_type = TaskType.RECOMMENDATION
 
 
 class MovieLensOriginalTask(CTUEntityTask):
@@ -501,7 +501,7 @@ class SAPSalesTemporalTask(CTUEntityTaskTemporal):
 # TODO: fix link prediction tasks
 class SatelliteOriginalTask(CTULinkTask):
     entity_table = "tm"
-    task_type = TaskType.LINK_PREDICTION
+    task_type = TaskType.RECOMMENDATION
 
 
 class SeznamOriginalTask(CTUEntityTask):
@@ -531,7 +531,7 @@ class SFScoresTemporalTask(CTUEntityTaskTemporal):
 # TODO: fix link prediction tasks
 class ShakespeareOriginalTask(CTULinkTask):
     entity_table = "paragraphs"
-    task_type = TaskType.LINK_PREDICTION
+    task_type = TaskType.RECOMMENDATION
 
 
 class StatsOriginalTask(CTUEntityTask):

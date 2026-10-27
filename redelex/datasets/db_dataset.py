@@ -1,4 +1,7 @@
+import time
 import warnings
+from functools import lru_cache
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
@@ -7,12 +10,14 @@ from relbench.base import Database, Dataset, Table
 from tqdm.std import tqdm
 
 from redelex.db import DBInspector, ForeignKey
+from redelex.db.cache import load_db, save_db
 from redelex.db.utils import (
     SQL_DATE_MAP,
     SQL_DATE_TYPES,
     get_db_connection,
     get_db_url,
     reindex_fk,
+    reindex_keys,
     resolve_column_dtype,
 )
 
@@ -75,12 +80,63 @@ class DBDataset(Dataset):
         self.keep_original_keys = keep_original_keys
         self.keep_original_compound_keys = keep_original_compound_keys
 
-        super().__init__(cache_dir)
+        self.cache_dir = cache_dir
 
     def __repr__(self) -> str:
         # Render via sa.URL to hide the password in logs and tracebacks.
         url = sa.engine.make_url(self.remote_url)
         return f"{self.__class__.__name__}(remote_url={url})"
+
+    # Cached per instance like relbench 2's Dataset.get_db; the dataset is kept
+    # alive by the cache on purpose.
+    @lru_cache(maxsize=None)  # noqa: B019
+    def get_db(self, upto_test_timestamp: bool = True) -> Database:
+        r"""Return the database object.
+
+        The returned database object is cached in memory. If ``cache_dir`` is set,
+        it is also cached on disk in ``<cache_dir>/db``: the first call downloads
+        and processes the database, later calls load the cached parquet files.
+
+        Args:
+            upto_test_timestamp: If True, only return rows upto test_timestamp.
+
+        Returns:
+            Database: The database object.
+
+        `upto_test_timestamp` is True by default to prevent test leakage.
+        """
+        # A port of relbench 2.1 `Dataset.get_db`. relbench 3 reduced it to
+        # make_db -> upto -> validate_and_correct_db, without the caching and
+        # without re-indexing the keys, which `upto` relies on.
+        db_path = f"{self.cache_dir}/db"
+        if self.cache_dir and Path(db_path).exists() and any(Path(db_path).iterdir()):
+            print(f"Loading Database object from {db_path}...")
+            tic = time.time()
+            db = load_db(db_path)
+            toc = time.time()
+            print(f"Done in {toc - tic:.2f} seconds.")
+
+        else:
+            print("Making Database object from scratch...")
+            tic = time.time()
+            db = self.make_db()
+            reindex_keys(db)
+            toc = time.time()
+            print(f"Done in {toc - tic:.2f} seconds.")
+
+            if self.cache_dir:
+                print(f"Caching Database object to {db_path}...")
+                tic = time.time()
+                save_db(db, db_path)
+                toc = time.time()
+                print(f"Done in {toc - tic:.2f} seconds.")
+
+        if upto_test_timestamp:
+            db = db.upto(self.test_timestamp)
+
+        self.validate_and_correct_db(db)
+
+        return db
 
     def customize_db(self, db: Database) -> Database:
         """

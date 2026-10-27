@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
+from relbench.base import Database
 
 try:
     import psycopg2  # noqa: F401
@@ -202,6 +203,63 @@ def reindex_fk(
     return fk_col, fk_name
 
 
+def reindex_keys(db: Database) -> Database:
+    """Sort time-indexed tables by time and re-index their primary and foreign keys.
+
+    Primary keys are replaced by consecutive indices ``0..n-1`` in row order and
+    foreign keys are mapped onto them; missing references become ``<NA>``. Tables
+    with a primary key and a time column are sorted by time first, so that rows cut
+    by ``Database.upto`` keep their keys.
+
+    Args:
+        db (Database): The database to re-index in place.
+
+    Returns:
+        Database: The re-indexed database.
+    """
+    # A port of relbench 2.1 `Database.reindex_pkeys_and_fkeys`, which relbench 3
+    # dropped while its `Dataset.get_db` still requires the result. The sort call is
+    # kept as it was so that row order (and thus the static task splits) does not
+    # change; numpy's default sort is not stable, ties follow its implementation.
+    pkey_dict: Dict[str, pd.DataFrame] = {}
+    for table_name, table in db.table_dict.items():
+        if table.pkey_col is not None:
+            if table.time_col is not None:
+                table.df = table.df.sort_values(table.time_col).reset_index(drop=True)
+
+            ser = table.df[table.pkey_col]
+
+            if ser.nunique() != len(ser):
+                raise RuntimeError(
+                    f"The primary key '{table.pkey_col}' "
+                    f"of table '{table_name}' contains "
+                    "duplicated elements"
+                )
+            arange_ser = pd.RangeIndex(len(ser)).astype("Int64")
+            # Old key under a temporary name, the new one as `__PK__`, the
+            # layout `reindex_fk` resolves references against.
+            pkey_dict[table_name] = pd.DataFrame(
+                {"__old_key__": ser.to_numpy(), "__PK__": arange_ser}
+            )
+            table.df[table.pkey_col] = arange_ser
+
+    for table in db.table_dict.values():
+        for fkey_col, pkey_table_name in table.fkey_col_to_pkey_table.items():
+            # Separate dict keys, a self-referencing foreign key points at its
+            # own table.
+            fk_col, _ = reindex_fk(
+                {"src": table.df, "ref": pkey_dict[pkey_table_name]},
+                "src",
+                [fkey_col],
+                "ref",
+                ["__old_key__"],
+            )
+            # `reindex_fk` returns a fresh index; the table may keep its own.
+            table.df[fkey_col] = fk_col.set_axis(table.df.index)
+
+    return db
+
+
 def get_db_connection(connection_url: str) -> sa.Connection:
     """
     Create a new SQLAlchemy Connection instance to the remote database.
@@ -225,6 +283,7 @@ __all__ = [
     "get_db_connection",
     "resolve_column_dtype",
     "reindex_fk",
+    "reindex_keys",
     "HAS_PSYCOPG2",
     "HAS_PG8000",
     "HAS_MYSQL",

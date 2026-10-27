@@ -1,7 +1,6 @@
 import os
 
 import pandas as pd
-from relbench.datasets import register_dataset
 
 from .ctu_dataset import CTUDataset
 
@@ -80,6 +79,13 @@ from .ctu_datasets import (
     World,
 )
 from .db_dataset import DBDataset
+from .registry import (
+    dataset_registry,
+    get_cache_dir,
+    get_dataset,
+    get_dataset_names,
+    register_dataset,
+)
 
 # fmt: on
 
@@ -169,6 +175,7 @@ register_dataset("ctu-world", World)
 # fmt: off
 __all__ = [
     "get_dataset_info", "get_all_datasets_info",
+    "dataset_registry", "get_cache_dir", "get_dataset", "get_dataset_names", "register_dataset",
     
     "DBDataset", "CTUDataset",
     

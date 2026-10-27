@@ -6,6 +6,8 @@ import pandas as pd
 from numpy.typing import NDArray
 from relbench.base import Database, Dataset, Table, TaskType
 
+from redelex.db.cache import load_table, save_table
+
 
 class BaseTask:
     r"""Base class for a task on a dataset.
@@ -100,7 +102,7 @@ class BaseTask:
 
         table_path = f"{self.cache_dir}/{split}.parquet"
         if self.cache_dir and db is None and Path(table_path).exists():
-            table = Table.load(table_path)
+            table = load_table(table_path)
         else:
             print(f"Making task table for {split} split from scratch...")
             tic = time.time()
@@ -109,7 +111,7 @@ class BaseTask:
             print(f"Done in {toc - tic:.2f} seconds.")
 
             if self.cache_dir and db is None:
-                table.save(table_path)
+                save_table(table, table_path)
 
         if mask_input_cols:
             table = self._mask_input_cols(table)

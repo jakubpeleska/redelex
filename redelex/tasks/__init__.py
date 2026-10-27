@@ -1,7 +1,6 @@
 import os
 
 import pandas as pd
-from relbench.tasks import register_task
 
 # fmt: off
 from .ctu_tasks import (
@@ -97,6 +96,7 @@ from .ctu_tasks import (
     WebKPOriginalTask,
     WorldOriginalTask,
 )
+from .registry import get_task, get_task_names, register_task, task_registry
 from .task_impute import ImputeEntityStaticTask, ImputeEntityTemporalTask
 from .utils import is_temporal_task
 
@@ -270,6 +270,7 @@ register_task("ctu-world", "world-original", WorldOriginalTask)
 # fmt: off
 __all__ = [
     "get_task_info", "get_all_tasks_info", "is_temporal_task",
+    "task_registry", "get_task", "get_task_names", "register_task",
     
     "ImputeEntityStaticTask", "ImputeEntityTemporalTask",
     "CTUEntityTask", "CTUEntityTaskTemporal",
