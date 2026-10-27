@@ -20,7 +20,7 @@ dependencies = [
     "inflect>=7.5.0",
     "tqdm>=4.67.1",
     "attrs>=25.4.0",
-    "relbench>=2.1.1",
+    "relbench>=3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -48,23 +48,23 @@ cpu = [
     "sentence-transformers>=4.0.1",
 ]
 cu124 = [
-    "torch==2.4.1",
-    "torchvision==0.19.1",
-    "torchaudio==2.4.1",
-    "pyg-lib>=0.4.0",
-    "torch-scatter>=2.1.2",
-    "torch-sparse>=0.6.18",
+    "torch==2.4.1; sys_platform != 'darwin'",
+    "torchvision==0.19.1; sys_platform != 'darwin'",
+    "torchaudio==2.4.1; sys_platform != 'darwin'",
+    "pyg-lib>=0.4.0; sys_platform != 'darwin'",
+    "torch-scatter>=2.1.2; sys_platform != 'darwin'",
+    "torch-sparse>=0.6.18; sys_platform != 'darwin'",
     "pytorch-frame>=0.2.5",
     "torch-geometric>=2.6.1",
     "sentence-transformers>=4.0.1",
 ]
 cu128 = [
-    "torch==2.9.1",
-    "torchvision==0.24.1",
-    "torchaudio==2.9.1",
-    "pyg-lib>=0.6.0",
-    "torch-scatter>=2.1.2",
-    "torch-sparse>=0.6.18",
+    "torch==2.9.1; sys_platform != 'darwin'",
+    "torchvision==0.24.1; sys_platform != 'darwin'",
+    "torchaudio==2.9.1; sys_platform != 'darwin'",
+    "pyg-lib>=0.6.0; sys_platform != 'darwin'",
+    "torch-scatter>=2.1.2; sys_platform != 'darwin'",
+    "torch-sparse>=0.6.18; sys_platform != 'darwin'",
     "pytorch-frame>=0.3.0",
     "torch-geometric>=2.7.0",
     "sentence-transformers>=4.0.1",
@@ -89,17 +89,22 @@ visualization = ["jinja2>=3.1.6", "pydot>=4.0.1"]
 
 [tool.uv]
 default-groups = ["dev", "cpu", "experiments", "visualization"]
-# Guarantee that the lock file contains wheels usable on Linux x86_64. Without
+# Supported platforms: lock only for these, and guarantee wheels for each. Without
 # this, uv can pick a torch build whose local version sorts highest but only
 # ships wheels for another platform (e.g. torchvision "+d801a34" is win_arm64).
-required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
-conflicts = [
-    [
-        { group = "cpu" },
-        { group = "cu124" },
-        { group = "cu128" },
-    ],
+# There is no CUDA on macOS, so the CUDA groups skip the packages pinned to the
+# CUDA indexes there (see cu124/cu128).
+environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sys_platform == 'win32' and platform_machine == 'AMD64'",
 ]
+required-environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sys_platform == 'win32' and platform_machine == 'AMD64'",
+]
+conflicts = [[{ group = "cpu" }, { group = "cu124" }, { group = "cu128" }]]
 
 [tool.uv.sources]
 torch = [
