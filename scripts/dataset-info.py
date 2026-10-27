@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from torch_frame import stype
 
 from relbench.base import Database, Dataset
-from relbench.datasets import get_dataset_names, get_dataset
+from redelex.datasets import get_dataset_names, get_dataset
 
 from redelex.data import guess_schema
 from redelex.datasets import CTUDataset, DBDataset

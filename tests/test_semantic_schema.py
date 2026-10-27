@@ -150,7 +150,7 @@ def test_guess_table_stypes_task_types():
     reg = SimpleNamespace(target_col="target", task_type=TaskType.REGRESSION)
     assert guess_table_stypes(table, task=reg)["target"] == stype.numerical
 
-    bad = SimpleNamespace(target_col="target", task_type=TaskType.LINK_PREDICTION)
+    bad = SimpleNamespace(target_col="target", task_type=TaskType.RECOMMENDATION)
     with pytest.raises(ValueError, match="task type"):
         guess_table_stypes(table, task=bad)
 

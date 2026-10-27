@@ -29,30 +29,39 @@ Install ReDeLEx via pip:
 pip install redelex
 ```
 
-If you're using [RelBench](https://github.com/snap-stanford/relbench), the CTU datasets are automatically supported.
-
 ## 🚀 Quickstart
 
 ### Loading CTU datasets
 
-Using RelBench interface:
+By name, using the RelBench-style registry:
 
 ```python
-from relbench.datasets import get_dataset
-import redelex
+from redelex.datasets import get_dataset
+from redelex.tasks import get_task, get_task_names
 
-dataset = get_dataset('ctu-seznam')
+dataset = get_dataset('ctu-financial')
 db = dataset.get_db()
+
+get_task_names('ctu-financial')
+task = get_task('ctu-financial', 'financial-original')
+train_table = task.get_table('train')
 ```
+
+The database is downloaded on the first `get_db()` call and cached as parquet files
+in `~/.cache/redelex/<dataset>/db`; task tables are cached next to it. Set
+`REDELEX_CACHE_DIR` before importing ReDeLEx to change the location, and delete the
+cache directory to rebuild it.
 
 Using ReDeLEx directly:
 
 ```python
 from redelex import datasets as ctu_datasets
 
-dataset = ctu_datasets.Seznam()
+dataset = ctu_datasets.Financial(cache_dir='./cache/ctu-financial')
 db = dataset.get_db()
 ```
+
+Without a `cache_dir`, the database is downloaded again for every new dataset object.
 
 ### Loading a custom SQL database
 
@@ -130,8 +139,10 @@ More info: [https://docs.astral.sh/uv/getting-started/installation/](https://doc
 
 ### Install dependencies
 
-Requires Python 3.12. Each command installs everything, including the compiled
-PyTorch Geometric extensions (`pyg-lib`, `torch-scatter`, `torch-sparse`).
+Requires Python 3.12 on Linux x86_64, macOS arm64 (Apple silicon) or Windows x86_64;
+Intel Macs are not supported, as PyTorch 2.9 has no wheels for them. Each command
+installs everything, including the compiled PyTorch Geometric extensions (`pyg-lib`,
+`torch-scatter`, `torch-sparse`).
 
 CPU (torch 2.9.1):
 
@@ -151,8 +162,9 @@ CUDA 12.4 (old CUDA env, torch 2.4.1):
 uv sync --no-group cpu --group cu124
 ```
 
-The CUDA groups are Linux/Windows only, because the PyTorch Geometric extensions
-are not built for macOS against a CUDA torch; on macOS use the CPU group.
+The CUDA groups are Linux/Windows only, because there is no CUDA on macOS; on macOS
+they install a CPU torch without the PyTorch Geometric extensions, so use the CPU
+group there.
 
 ### Run the tests
 

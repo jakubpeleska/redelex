@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from relbench.base import Database, Table
 
+from redelex.db.utils import reindex_fk
 from redelex.utils.datetime import TIMESTAMP_MAX, TIMESTAMP_MIN
 
 from .ctu_dataset import CTUDataset
@@ -685,7 +686,7 @@ class GOSales(CTUDataset):
         )
 
     def customize_db(self, db: Database) -> Database:
-        fk_col, fk_name = self._reindex_fk(
+        fk_col, fk_name = reindex_fk(
             {name: t.df for name, t in db.table_dict.items()},
             "go_daily_sales",
             ["Product number"],
@@ -695,7 +696,7 @@ class GOSales(CTUDataset):
         db.table_dict["go_daily_sales"].df[fk_name] = fk_col
         db.table_dict["go_daily_sales"].fkey_col_to_pkey_table[fk_name] = "go_products"
 
-        fk_col, fk_name = self._reindex_fk(
+        fk_col, fk_name = reindex_fk(
             {name: t.df for name, t in db.table_dict.items()},
             "go_daily_sales",
             ["Retailer code"],
@@ -1213,7 +1214,7 @@ class SAP(CTUDataset):
         ][0]
 
         mailings_3 = db.table_dict["mailings3"].df
-        fk_col, _ = self._reindex_fk(
+        fk_col, _ = reindex_fk(
             {tn: t.df for tn, t in db.table_dict.items()},
             "mailings3",
             ["REFID"],
@@ -1460,7 +1461,7 @@ class TPCD(CTUDataset):
 
     def customize_db(self, db: Database) -> Database:
         # Add missing foreign keys
-        fk_col, fk_name = self._reindex_fk(
+        fk_col, fk_name = reindex_fk(
             {tn: t.df for tn, t in db.table_dict.items()},
             "dss_partsupp",
             ["ps_partkey"],

@@ -25,7 +25,7 @@ def test_get_loss_mapping():
     )
     assert isinstance(get_loss(TaskType.REGRESSION), torch.nn.L1Loss)
     with pytest.raises(ValueError, match="unsupported"):
-        get_loss(TaskType.LINK_PREDICTION)
+        get_loss(TaskType.RECOMMENDATION)
 
 
 def test_get_metrics_binary_and_regression():

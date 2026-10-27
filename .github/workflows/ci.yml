@@ -29,8 +29,14 @@ jobs:
         run: uvx ruff@0.15.6 format --check redelex tests
 
   test:
-    name: Tests
-    runs-on: ubuntu-latest
+    name: Tests (${{ matrix.os }})
+    # The platforms the lock supports, see `environments` in pyproject.toml;
+    # macos-latest is arm64.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
 
@@ -43,6 +49,7 @@ jobs:
       # tests/test_visualize.py renders a schema to SVG and skips itself
       # without the `dot` executable.
       - name: Install Graphviz
+        if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y graphviz
 
       # --locked fails if uv.lock has drifted from pyproject.toml, the same
